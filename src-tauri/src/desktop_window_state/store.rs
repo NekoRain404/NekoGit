@@ -1,3 +1,5 @@
+//! Persistent window state store for Window state persistence.
+
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -35,6 +37,7 @@ fn write_desktop_window_state(path: &Path, state: &DesktopWindowState) -> Result
 }
 
 impl DesktopWindowStateStore {
+    /// Creates a new instance.
     pub(crate) fn new(path: PathBuf) -> Self {
         let state = read_desktop_window_state(&path);
 
@@ -44,6 +47,7 @@ impl DesktopWindowStateStore {
         }
     }
 
+    /// Current.
     pub(crate) fn current(&self) -> Option<DesktopWindowState> {
         self.state.lock().ok().and_then(|state| *state)
     }

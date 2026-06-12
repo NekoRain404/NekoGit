@@ -1,7 +1,10 @@
+//! Diff command builder for Local git repository operations / Diff computation.
+
 use std::process::{Command, Stdio};
 
 use crate::local_repository::parse::git_command_failure_details;
 
+/// Runs the main operation.
 pub(crate) fn run_git_diff(
     repository_path: &str,
     args: &[&str],

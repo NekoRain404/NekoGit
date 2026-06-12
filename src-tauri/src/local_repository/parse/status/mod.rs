@@ -14,6 +14,7 @@ pub(super) fn is_unmerged_git_status_pair(status_pair: &str) -> bool {
     conflict::is_unmerged_git_status_pair(status_pair)
 }
 
+/// Parses the input.
 pub(crate) fn parse_local_repository_git_status_output(
     repository_url: String,
     repository_path: String,

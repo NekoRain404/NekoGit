@@ -1,7 +1,10 @@
+//! Clone destination resolution for Local git repository operations / Repository URL handling.
+
 use std::path::{Path, PathBuf};
 
 use crate::local_repository::url::normalize_github_repository_clone_url;
 
+/// Creates a deep copy.
 pub(crate) fn clone_destination_path(
     repository_url: &str,
     destination_directory: &Path,

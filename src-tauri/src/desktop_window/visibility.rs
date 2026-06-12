@@ -1,7 +1,10 @@
+//! Window show/hide logic for Window management.
+
 use tauri::{Manager, Runtime};
 
 use super::constants::MAIN_WINDOW_LABEL;
 
+/// Shows the resource.
 pub(crate) fn show_main_window<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
     if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
         window
@@ -18,6 +21,7 @@ pub(crate) fn show_main_window<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<
     Ok(())
 }
 
+/// Hides the resource.
 pub(crate) fn hide_main_window<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
     if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
         window

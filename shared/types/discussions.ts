@@ -1,9 +1,11 @@
+/** Discussion Author. */
 export interface DiscussionAuthor {
   login: string;
   avatarUrl?: string;
   url?: string;
 }
 
+/** Discussion Category. */
 export interface DiscussionCategory {
   id: string;
   name: string;
@@ -13,11 +15,13 @@ export interface DiscussionCategory {
   slug?: string;
 }
 
+/** Discussion Page Info. */
 export interface DiscussionPageInfo {
   hasNextPage: boolean;
   endCursor: string | null;
 }
 
+/** Discussion Reply. */
 export interface DiscussionReply {
   id: string;
   nodeId: string;
@@ -30,22 +34,26 @@ export interface DiscussionReply {
   replyToId: string | null;
 }
 
+/** Discussion Replies Payload. */
 export interface DiscussionRepliesPayload {
   items: DiscussionReply[];
   totalCount: number;
   pageInfo: DiscussionPageInfo;
 }
 
+/** Discussion Comment. */
 export interface DiscussionComment extends DiscussionReply {
   replies: DiscussionRepliesPayload;
 }
 
+/** Discussion Comments Payload. */
 export interface DiscussionCommentsPayload {
   items: DiscussionComment[];
   totalCount: number;
   pageInfo: DiscussionPageInfo;
 }
 
+/** Discussion Detail Payload. */
 export interface DiscussionDetailPayload {
   id: string;
   nodeId: string;

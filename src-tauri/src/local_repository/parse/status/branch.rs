@@ -1,3 +1,5 @@
+//! Branch status parsing for Local git repository operations / Output parsing.
+
 pub(super) fn parse_local_repository_git_branch_line(
     line: &str,
 ) -> (Option<String>, Option<String>, u32, u32) {

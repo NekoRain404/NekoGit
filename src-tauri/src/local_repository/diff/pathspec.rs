@@ -1,3 +1,5 @@
+//! Git pathspec construction for Local git repository operations / Diff computation.
+
 pub(crate) fn git_diff_pathspecs(path: &str, previous_path: Option<&str>) -> Vec<String> {
     let mut pathspecs = Vec::new();
     if let Some(previous_path) = previous_path {

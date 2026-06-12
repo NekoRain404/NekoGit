@@ -1,5 +1,8 @@
+//! Command input normalization for Local git repository operations / Output parsing.
+
 use crate::local_repository::types::MAX_LOCAL_REPOSITORY_COMMIT_MESSAGE_CHARS;
 
+/// Normalizes the input.
 pub(crate) fn normalize_local_branch_name(value: &str) -> Result<String, String> {
     let value = value.trim();
     if value.is_empty() {
@@ -29,6 +32,7 @@ pub(crate) fn normalize_local_branch_name(value: &str) -> Result<String, String>
     Ok(value.to_owned())
 }
 
+/// Normalizes the input.
 pub(crate) fn normalize_origin_remote_branch_name(value: &str) -> Result<(String, String), String> {
     let value = value.trim();
     let local_name = value
@@ -42,6 +46,7 @@ pub(crate) fn normalize_origin_remote_branch_name(value: &str) -> Result<(String
     Ok((format!("origin/{local_name}"), local_name))
 }
 
+/// Normalizes the input.
 pub(crate) fn normalize_local_commit_message(value: &str) -> Result<String, String> {
     let value = value.replace("\r\n", "\n").replace('\r', "\n");
     let value = value.trim();

@@ -1,3 +1,5 @@
+//! GitHub URL matching and routing for URL routing and handling.
+
 use tauri::Url;
 
 const GITHUB_WEB_RESERVED_OWNER_SEGMENTS: &[&str] = &[
@@ -38,6 +40,7 @@ fn is_supported_github_launch_url(url: &Url) -> bool {
     )
 }
 
+/// Normalizes the input.
 pub(crate) fn normalize_supported_github_url(value: &str) -> Option<String> {
     if value.chars().any(char::is_control) {
         return None;
@@ -106,6 +109,7 @@ fn is_nekogit_dashboard_raw_target(url: &Url) -> bool {
     url_path_segments(url).len() >= 4
 }
 
+/// Checks a condition.
 pub(crate) fn is_nekogit_dashboard_github_target_url(url: &Url) -> bool {
     if url.scheme() != "https" {
         return false;

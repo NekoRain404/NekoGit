@@ -1,3 +1,5 @@
+//! Untracked file diff handling for Local git repository operations / Diff computation.
+
 use std::{
     fs,
     fs::File,
@@ -6,6 +8,7 @@ use std::{
     process::{Command, Stdio},
 };
 
+/// Checks a condition.
 pub(crate) fn is_untracked_repository_file(repository_path: &str, path: &str) -> bool {
     Command::new("git")
         .arg("-C")
@@ -19,6 +22,7 @@ pub(crate) fn is_untracked_repository_file(repository_path: &str, path: &str) ->
         .unwrap_or(false)
 }
 
+/// Reads the data.
 pub(crate) fn read_untracked_file_diff(
     local_path: &Path,
     relative_path: &str,

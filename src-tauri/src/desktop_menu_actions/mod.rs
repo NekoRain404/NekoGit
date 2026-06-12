@@ -5,6 +5,7 @@ mod window;
 
 use tauri::Runtime;
 
+/// Handles the event or request.
 pub(crate) fn handle_menu_event<R: Runtime>(app: &tauri::AppHandle<R>, item_id: &str) {
     if window::handle_window_menu_event(app, item_id) {
         return;

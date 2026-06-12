@@ -1,3 +1,5 @@
+//! Changed file list parsing for Local git repository operations / Output parsing.
+
 use crate::local_repository::types::DesktopLocalRepositoryChangedFile;
 
 use super::status::is_unmerged_git_status_pair;
@@ -29,6 +31,7 @@ fn classify_changed_file_status(
     }
 }
 
+/// Parses the input.
 pub(crate) fn parse_local_repository_changed_files_output(
     output: &[u8],
     limit: usize,

@@ -1,9 +1,12 @@
+//! Branch list parsing for Local git repository operations / Output parsing.
+
 use crate::local_repository::types::{
     DesktopLocalRepositoryBranch, DesktopLocalRepositoryRemoteBranch,
 };
 
 use super::input::normalize_origin_remote_branch_name;
 
+/// Parses the input.
 pub(crate) fn parse_local_repository_branches_output(
     output: &str,
 ) -> Vec<DesktopLocalRepositoryBranch> {
@@ -32,6 +35,7 @@ pub(crate) fn parse_local_repository_branches_output(
         .collect()
 }
 
+/// Parses the input.
 pub(crate) fn parse_local_repository_remote_branches_output(
     output: &str,
 ) -> Vec<DesktopLocalRepositoryRemoteBranch> {

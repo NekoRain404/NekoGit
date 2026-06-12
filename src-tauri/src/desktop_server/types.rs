@@ -1,3 +1,5 @@
+//! Type definitions for Desktop server management.
+
 use std::{
     path::PathBuf,
     process::Child,
@@ -46,6 +48,7 @@ impl Drop for DesktopServer {
 }
 
 impl DesktopServer {
+    /// Returns the current status.
     pub(crate) fn status(&self) -> Result<DesktopServerStatus, String> {
         let mut child = self
             .child

@@ -7,8 +7,10 @@ import type {
   CustomTabSort,
 } from '#shared/types/custom-search';
 
+/** Git Hub Issue Search Sort. */
 export type GitHubIssueSearchSort = Exclude<CustomTabSort, 'best-match'>;
 
+/** ISSUE SEARCH SORTS. */
 const ISSUE_SEARCH_SORTS: readonly GitHubIssueSearchSort[] = [
   'comments',
   'reactions',
@@ -17,8 +19,10 @@ const ISSUE_SEARCH_SORTS: readonly GitHubIssueSearchSort[] = [
   'updated',
 ];
 
+/** SEARCH SCOPES. */
 const SEARCH_SCOPES: readonly CustomTabSearchScope[] = ['title', 'body', 'comments'];
 
+/** TRIMMED QUERY PARAM FIELDS. */
 const TRIMMED_QUERY_PARAM_FIELDS = [
   'text',
   'repo',
@@ -34,6 +38,7 @@ const TRIMMED_QUERY_PARAM_FIELDS = [
   'head',
 ] as const satisfies readonly (keyof CustomTabQuery)[];
 
+/** SIMPLE QUERY PARAM FIELDS. */
 const SIMPLE_QUERY_PARAM_FIELDS = [
   'type',
   'state',
@@ -44,6 +49,7 @@ const SIMPLE_QUERY_PARAM_FIELDS = [
   'order',
 ] as const satisfies readonly (keyof CustomTabQuery)[];
 
+/** SEARCH QUALIFIER FIELDS. */
 const SEARCH_QUALIFIER_FIELDS = [
   'repo',
   'org',
@@ -56,11 +62,13 @@ const SEARCH_QUALIFIER_FIELDS = [
   'milestone',
 ] as const satisfies readonly (keyof CustomTabQuery)[];
 
+/** PULL SEARCH QUALIFIER FIELDS. */
 const PULL_SEARCH_QUALIFIER_FIELDS = [
   'base',
   'head',
 ] as const satisfies readonly (keyof CustomTabQuery)[];
 
+/** FALLBACK INVOLVES BLOCKING FIELDS. */
 const FALLBACK_INVOLVES_BLOCKING_FIELDS = [
   'repo',
   'org',
@@ -72,63 +80,78 @@ const FALLBACK_INVOLVES_BLOCKING_FIELDS = [
   'involves',
 ] as const satisfies readonly (keyof CustomTabQuery)[];
 
+/** get One Year Ago Search Date. */
 export const getOneYearAgoSearchDate = () => {
+  /** today. */
   const today = new Date();
+  /** one Year Ago. */
   const oneYearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
   return oneYearAgo.toISOString().slice(0, 10);
 };
 
+/** quote Search Value. */
 export const quoteSearchValue = (value: string) => {
   return /[\s"]/.test(value) ? `"${value.replaceAll('"', '\\"')}"` : value;
 };
 
+/** normalize Issue Search Type. */
 export const normalizeIssueSearchType = (value: string): CustomTabSearchType => {
   return value === 'pulls' || value === 'all' ? value : 'issues';
 };
 
+/** normalize Issue Search Sort. */
 export const normalizeIssueSearchSort = (value: string): GitHubIssueSearchSort | '' => {
   return ISSUE_SEARCH_SORTS.includes(value as GitHubIssueSearchSort)
     ? (value as GitHubIssueSearchSort)
     : '';
 };
 
+/** normalize Issue Search Order. */
 export const normalizeIssueSearchOrder = (value: string): CustomTabOrder => {
   return value === 'asc' ? 'asc' : 'desc';
 };
 
+/** normalize Issue Search Scopes. */
 export const normalizeIssueSearchScopes = (values: string[]) => {
   return values.filter((scope): scope is CustomTabSearchScope => {
     return SEARCH_SCOPES.includes(scope as CustomTabSearchScope);
   });
 };
 
+/** clean List. */
 const cleanList = (values: string[] | undefined) => {
   return values?.map((value) => value.trim()).filter((value) => value.length > 0) ?? [];
 };
 
+/** append Trimmed Param. */
 const appendTrimmedParam = (params: URLSearchParams, key: string, value: string | undefined) => {
+  /** trimmed Value. */
   const trimmedValue = value?.trim();
   if (trimmedValue) {
     params.set(key, trimmedValue);
   }
 };
 
+/** append Custom Tab Query Params. */
 export const appendCustomTabQueryParams = (params: URLSearchParams, query: CustomTabQuery) => {
   for (const field of TRIMMED_QUERY_PARAM_FIELDS) {
     appendTrimmedParam(params, field, query[field]);
   }
 
+  /** labels. */
   const labels = cleanList(query.labels);
   if (labels.length > 0) {
     params.set('labels', labels.join(','));
   }
 
+  /** scopes. */
   const scopes = cleanList(query.scopes);
   if (scopes.length > 0) {
     params.set('scopes', scopes.join(','));
   }
 
   for (const field of SIMPLE_QUERY_PARAM_FIELDS) {
+    /** value. */
     const value = query[field];
     if (value) params.set(field, value);
   }
@@ -136,18 +159,23 @@ export const appendCustomTabQueryParams = (params: URLSearchParams, query: Custo
   if (query.sort && query.sort !== 'best-match') params.set('sort', query.sort);
 };
 
+/** append Search Qualifier. */
 const appendSearchQualifier = (parts: string[], qualifier: string, value: string | undefined) => {
+  /** trimmed Value. */
   const trimmedValue = value?.trim();
   if (trimmedValue) {
     parts.push(`${qualifier}:${quoteSearchValue(trimmedValue)}`);
   }
 };
 
+/** build Issue Search Parts. */
 export const buildIssueSearchParts = (
   query: CustomTabQuery,
   options: { createdAfter?: string; fallbackInvolves?: string } = {}
 ) => {
+  /** text. */
   const text = query.text?.trim();
+  /** parts. */
   const parts = text ? [text] : [];
 
   if (options.createdAfter) {
@@ -170,6 +198,7 @@ export const buildIssueSearchParts = (
     parts.push(`state:${query.state}`);
   }
 
+  /** scopes. */
   const scopes = normalizeIssueSearchScopes(cleanList(query.scopes));
   if (scopes.length > 0) {
     parts.push(`in:${scopes.join(',')}`);

@@ -1,3 +1,5 @@
+//! Fetch/push/pull operations for Local git repository operations / Write git operations.
+
 use std::path::Path;
 
 use crate::local_repository::{
@@ -9,6 +11,7 @@ use crate::local_repository::{
 
 use super::git::git_command;
 
+/// Fetches data from the source.
 pub(crate) fn fetch_local_repository(
     app_data_dir: &Path,
     repository_url: &str,
@@ -31,6 +34,7 @@ pub(crate) fn fetch_local_repository(
     local_repository_git_status(app_data_dir, &status.repository_url)
 }
 
+/// Pulls changes from the remote.
 pub(crate) fn pull_local_repository(
     app_data_dir: &Path,
     repository_url: &str,
@@ -53,6 +57,7 @@ pub(crate) fn pull_local_repository(
     local_repository_git_status(app_data_dir, &status.repository_url)
 }
 
+/// Pushes changes to the remote.
 pub(crate) fn push_local_repository(
     app_data_dir: &Path,
     repository_url: &str,

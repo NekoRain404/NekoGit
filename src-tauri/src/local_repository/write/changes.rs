@@ -1,3 +1,5 @@
+//! Changes for Local git repository operations / Write git operations.
+
 use std::path::Path;
 
 use crate::local_repository::{
@@ -8,6 +10,7 @@ use crate::local_repository::{
 
 use super::git::git_command;
 
+/// Creates a git commit.
 pub(crate) fn commit_local_repository_changes(
     app_data_dir: &Path,
     repository_url: &str,
@@ -61,6 +64,7 @@ pub(crate) fn commit_local_repository_changes(
     local_repository_git_status(app_data_dir, &git_status.repository_url)
 }
 
+/// Stashes current changes.
 pub(crate) fn stash_local_repository_changes(
     app_data_dir: &Path,
     repository_url: &str,

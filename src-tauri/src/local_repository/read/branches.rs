@@ -1,3 +1,5 @@
+//! Branch list parsing for Local git repository operations / Read-only git queries.
+
 use std::path::Path;
 
 use super::git::{resolve_local_repository_path, run_read_git_command};
@@ -8,6 +10,7 @@ use crate::local_repository::{
     types::DesktopLocalRepositoryBranches,
 };
 
+/// Local repository branches.
 pub(crate) fn local_repository_branches(
     app_data_dir: &Path,
     repository_url: &str,

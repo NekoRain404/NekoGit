@@ -1,3 +1,5 @@
+//! Frontend notification commands for Desktop menu action handlers.
+
 use tauri::Runtime;
 
 use crate::{

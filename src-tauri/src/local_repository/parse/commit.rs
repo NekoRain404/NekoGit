@@ -1,5 +1,8 @@
+//! Commit log parsing for Local git repository operations / Output parsing.
+
 use crate::local_repository::types::DesktopLocalRepositoryGitCommit;
 
+/// Parses the input.
 pub(crate) fn parse_local_repository_git_commit_output(
     output: &str,
 ) -> Option<DesktopLocalRepositoryGitCommit> {
@@ -30,6 +33,7 @@ pub(crate) fn parse_local_repository_git_commit_output(
     })
 }
 
+/// Parses the input.
 pub(crate) fn parse_local_repository_git_commit_history_output(
     output: &str,
 ) -> Vec<DesktopLocalRepositoryGitCommit> {

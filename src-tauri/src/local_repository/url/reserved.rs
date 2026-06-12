@@ -1,3 +1,5 @@
+//! Reserved path detection for Local git repository operations / Repository URL handling.
+
 const GITHUB_WEB_RESERVED_OWNER_SEGMENTS: &[&str] = &[
     "apps",
     "codespaces",
@@ -24,6 +26,7 @@ const GITHUB_WEB_RESERVED_OWNER_SEGMENTS: &[&str] = &[
     "trending",
 ];
 
+/// Checks a condition.
 pub(crate) fn is_reserved_github_web_owner_segment(value: &str) -> bool {
     GITHUB_WEB_RESERVED_OWNER_SEGMENTS
         .iter()

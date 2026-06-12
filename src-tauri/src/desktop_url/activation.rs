@@ -1,3 +1,5 @@
+//! Activation and focus handling for URL routing and handling.
+
 use std::env;
 
 use super::{deep_link::normalize_nekogit_deep_link_url, github::normalize_dashboard_github_url};
@@ -22,10 +24,12 @@ where
         .next()
 }
 
+/// Current launch target url.
 pub(crate) fn current_launch_target_url() -> Option<String> {
     launch_target_url_from_args(env::args().skip(1))
 }
 
+/// Activation message.
 pub(crate) fn activation_message(target_url: Option<&str>) -> String {
     match target_url {
         Some(target_url) => format!("open {target_url}\n"),
@@ -33,6 +37,7 @@ pub(crate) fn activation_message(target_url: Option<&str>) -> String {
     }
 }
 
+/// Parses the input.
 pub(crate) fn parse_activation_request(value: &str) -> ActivationRequest {
     let value = value.trim();
 

@@ -1,3 +1,5 @@
+//! Window title management for Window management.
+
 use tauri::{Manager, Runtime};
 
 use super::constants::{DEFAULT_WINDOW_TITLE, MAIN_WINDOW_LABEL, MAX_DESKTOP_WINDOW_TITLE_CHARS};
@@ -18,6 +20,7 @@ fn normalize_desktop_window_title(value: &str) -> String {
         .collect()
 }
 
+/// Updates the resource.
 pub(crate) fn update_desktop_window_title<R: Runtime>(
     app: &tauri::AppHandle<R>,
     title: &str,

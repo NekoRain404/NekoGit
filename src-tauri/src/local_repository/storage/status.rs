@@ -1,3 +1,5 @@
+//! Path status detection for Local git repository operations / Local storage management.
+
 use std::path::{Path, PathBuf};
 
 use crate::local_repository::{
@@ -11,6 +13,7 @@ use crate::local_repository::{
     url::normalize_github_repository_clone_url,
 };
 
+/// Remember local repository.
 pub(crate) fn remember_local_repository(
     app_data_dir: &Path,
     repository_url: &str,
@@ -39,6 +42,7 @@ pub(crate) fn remember_local_repository(
     Ok(entry)
 }
 
+/// Local repository status.
 pub(crate) fn local_repository_status(
     app_data_dir: &Path,
     repository_url: &str,

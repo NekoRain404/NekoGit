@@ -1,3 +1,5 @@
+//! Window control menu actions for Desktop menu action handlers.
+
 use tauri::{Manager, Runtime};
 
 use crate::{

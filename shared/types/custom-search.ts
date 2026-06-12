@@ -1,7 +1,12 @@
+/** Custom Tab State. */
 export type CustomTabState = 'open' | 'closed' | 'all';
+/** Custom Tab Source. */
 export type CustomTabSource = 'github-search';
+/** Custom Tab Search Type. */
 export type CustomTabSearchType = 'issues' | 'pulls' | 'all';
+/** Custom Tab Search Scope. */
 export type CustomTabSearchScope = 'title' | 'body' | 'comments';
+/** Custom Tab Sort. */
 export type CustomTabSort =
   | 'best-match'
   | 'comments'
@@ -9,12 +14,18 @@ export type CustomTabSort =
   | 'interactions'
   | 'created'
   | 'updated';
+/** Custom Tab Order. */
 export type CustomTabOrder = 'desc' | 'asc';
+/** Custom Tab Visibility. */
 export type CustomTabVisibility = 'any' | 'public' | 'private';
+/** Custom Tab Archived. */
 export type CustomTabArchived = 'exclude' | 'include' | 'only';
+/** Custom Tab Draft. */
 export type CustomTabDraft = 'any' | 'draft' | 'ready';
+/** Custom Tab Review. */
 export type CustomTabReview = 'any' | 'none' | 'required' | 'approved' | 'changes_requested';
 
+/** Custom Tab Query. */
 export interface CustomTabQuery {
   text?: string;
   type?: CustomTabSearchType;
@@ -41,6 +52,7 @@ export interface CustomTabQuery {
   perPage?: number;
 }
 
+/** Custom Tab. */
 export interface CustomTab {
   id: string;
   groupId: string;

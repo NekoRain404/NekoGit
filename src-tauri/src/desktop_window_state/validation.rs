@@ -1,3 +1,5 @@
+//! Window state validation for Window state persistence.
+
 use super::{
     constants::{
         MAX_WINDOW_COORDINATE_ABS, MAX_WINDOW_DIMENSION, MIN_WINDOW_HEIGHT, MIN_WINDOW_WIDTH,

@@ -1,5 +1,8 @@
+//! Dashboard URL routing for URL routing and handling.
+
 use tauri::Url;
 
+/// Dashboard url for github launch.
 pub(crate) fn dashboard_url_for_github_launch(
     client_url: &str,
     target_url: &str,

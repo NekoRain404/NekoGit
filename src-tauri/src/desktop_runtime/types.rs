@@ -1,3 +1,5 @@
+//! Type definitions for Desktop runtime environment.
+
 use std::{env, path::PathBuf};
 
 use serde::Serialize;
@@ -37,6 +39,7 @@ pub(crate) struct DesktopRuntimeInfo {
 }
 
 impl DesktopRuntime {
+    /// Logs an info message.
     pub(crate) fn info(&self) -> DesktopRuntimeInfo {
         DesktopRuntimeInfo {
             product_name: "NekoGit",
@@ -55,6 +58,7 @@ impl DesktopRuntime {
         }
     }
 
+    /// Unmanaged server status.
     pub(crate) fn unmanaged_server_status(&self) -> DesktopServerStatus {
         DesktopServerStatus {
             bundled_server: false,

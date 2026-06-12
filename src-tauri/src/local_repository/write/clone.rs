@@ -1,3 +1,5 @@
+//! Repository cloning for Local git repository operations / Write git operations.
+
 use std::{
     path::Path,
     process::{Command, Stdio},
@@ -10,6 +12,7 @@ use crate::local_repository::{
     url::{clone_destination_path, normalize_github_repository_clone_url},
 };
 
+/// Creates a deep copy.
 pub(crate) fn clone_github_repository(
     app_data_dir: &Path,
     repository_url: &str,

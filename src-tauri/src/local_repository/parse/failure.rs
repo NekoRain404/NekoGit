@@ -1,5 +1,8 @@
+//! Parse error types for Local git repository operations / Output parsing.
+
 use std::process::Output;
 
+/// Git command failure details.
 pub(crate) fn git_command_failure_details(output: &Output) -> String {
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_owned();
     let stdout = String::from_utf8_lossy(&output.stdout).trim().to_owned();

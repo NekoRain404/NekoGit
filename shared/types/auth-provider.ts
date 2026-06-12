@@ -1,5 +1,7 @@
+/** Auth Provider Mode. */
 export type AuthProviderMode = 'personal' | 'pat-only' | 'oauth-only' | 'hybrid';
 
+/** Auth Provider State. */
 export interface AuthProviderState {
   personalMode: boolean;
   patEnabled: boolean;

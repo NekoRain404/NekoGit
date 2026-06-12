@@ -1,3 +1,5 @@
+//! Changed file list parsing for Local git repository operations / Read-only git queries.
+
 use std::path::Path;
 
 use super::git::{resolve_local_repository_path, run_read_git_command};
@@ -5,6 +7,7 @@ use crate::local_repository::{
     parse::parse_local_repository_changed_files_output, types::DesktopLocalRepositoryChangedFiles,
 };
 
+/// Local repository changed files.
 pub(crate) fn local_repository_changed_files(
     app_data_dir: &Path,
     repository_url: &str,

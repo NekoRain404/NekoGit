@@ -1,3 +1,5 @@
+//! Core git status reading for Local git repository operations / Read-only git queries.
+
 use std::{
     path::Path,
     process::{Command, Output, Stdio},
@@ -7,6 +9,7 @@ use crate::local_repository::{
     parse::git_command_failure_details, storage::local_repository_status,
 };
 
+/// Resolves the value or path.
 pub(crate) fn resolve_local_repository_path(
     app_data_dir: &Path,
     repository_url: &str,
@@ -19,6 +22,7 @@ pub(crate) fn resolve_local_repository_path(
     Ok((status.repository_url, repository_path))
 }
 
+/// Runs the main operation.
 pub(crate) fn run_read_git_command(
     repository_path: &str,
     args: &[&str],

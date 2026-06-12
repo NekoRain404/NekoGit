@@ -1,3 +1,5 @@
+//! Core git status reading for Local git repository operations / Write git operations.
+
 use std::process::{Command, Stdio};
 
 pub(super) fn git_command(repository_path: &str) -> Command {

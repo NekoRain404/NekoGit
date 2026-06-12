@@ -1,3 +1,5 @@
+//! Server process management for Desktop server management.
+
 use std::{
     fs::File,
     net::TcpStream,

@@ -1,3 +1,5 @@
+//! Change count aggregation for Local git repository operations / Output parsing.
+
 use super::is_unmerged_git_status_pair;
 
 #[derive(Default)]

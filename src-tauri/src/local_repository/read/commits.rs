@@ -1,3 +1,5 @@
+//! Commit history reading for Local git repository operations / Read-only git queries.
+
 use std::path::Path;
 
 use super::git::{resolve_local_repository_path, run_read_git_command};
@@ -8,6 +10,7 @@ use crate::local_repository::{
     types::{DesktopLocalRepositoryCommitHistory, DesktopLocalRepositoryGitCommit},
 };
 
+/// Local repository last commit.
 pub(crate) fn local_repository_last_commit(
     repository_path: &str,
 ) -> Option<DesktopLocalRepositoryGitCommit> {
@@ -22,6 +25,7 @@ pub(crate) fn local_repository_last_commit(
     parse_local_repository_git_commit_output(&String::from_utf8_lossy(&output.stdout))
 }
 
+/// Local repository commit history.
 pub(crate) fn local_repository_commit_history(
     app_data_dir: &Path,
     repository_url: &str,

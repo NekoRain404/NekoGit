@@ -1,3 +1,5 @@
+//! Deep link protocol handling for URL routing and handling.
+
 use tauri::Url;
 
 use super::github::normalize_dashboard_github_url;

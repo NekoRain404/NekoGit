@@ -1,9 +1,13 @@
+/** Notification Subject Kind. */
 export type NotificationSubjectKind = 'Issue' | 'PullRequest' | 'Discussion' | 'Release' | string;
 
+/** Notification Subject State. */
 export type NotificationSubjectState = 'open' | 'closed' | 'merged';
 
+/** Notification Subject State Status. */
 export type NotificationSubjectStateStatus = 'pending' | 'loaded' | 'error' | 'unavailable';
 
+/** Dashboard Notification Subject. */
 export interface DashboardNotificationSubject {
   title?: string;
   type?: NotificationSubjectKind;
@@ -13,6 +17,7 @@ export interface DashboardNotificationSubject {
   stateStatus?: NotificationSubjectStateStatus;
 }
 
+/** Dashboard Notification Repository. */
 export interface DashboardNotificationRepository {
   full_name?: string;
   owner?: {
@@ -21,6 +26,7 @@ export interface DashboardNotificationRepository {
   };
 }
 
+/** Dashboard Notification. */
 export interface DashboardNotification {
   id: PropertyKey;
   subject?: DashboardNotificationSubject;
@@ -32,6 +38,7 @@ export interface DashboardNotification {
   [key: string]: unknown;
 }
 
+/** Notification Subject State Target. */
 export interface NotificationSubjectStateTarget {
   key: string;
   owner: string;
@@ -40,6 +47,7 @@ export interface NotificationSubjectStateTarget {
   number: number;
 }
 
+/** Notification Subject State Result. */
 export interface NotificationSubjectStateResult {
   key: string;
   state?: NotificationSubjectState;

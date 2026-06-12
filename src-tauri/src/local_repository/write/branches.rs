@@ -1,3 +1,5 @@
+//! Branch list parsing for Local git repository operations / Write git operations.
+
 use std::path::Path;
 
 use crate::local_repository::{
@@ -11,6 +13,7 @@ use crate::local_repository::{
 
 use super::git::{branch_name_exists, git_command, remote_branch_exists};
 
+/// Switch local repository branch.
 pub(crate) fn switch_local_repository_branch(
     app_data_dir: &Path,
     repository_url: &str,
@@ -43,6 +46,7 @@ pub(crate) fn switch_local_repository_branch(
     local_repository_git_status(app_data_dir, &git_status.repository_url)
 }
 
+/// Creates a new resource.
 pub(crate) fn create_local_repository_branch(
     app_data_dir: &Path,
     repository_url: &str,
@@ -72,6 +76,7 @@ pub(crate) fn create_local_repository_branch(
     local_repository_git_status(app_data_dir, &git_status.repository_url)
 }
 
+/// Switches to a branch or ref.
 pub(crate) fn checkout_remote_local_repository_branch(
     app_data_dir: &Path,
     repository_url: &str,

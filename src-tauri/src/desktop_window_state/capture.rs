@@ -1,3 +1,5 @@
+//! Window geometry capture for Window state persistence.
+
 use tauri::{Manager, Runtime, WebviewWindow};
 
 use super::{
@@ -40,6 +42,7 @@ fn capture_window_state<R: Runtime>(
     })
 }
 
+/// Saves the data.
 pub(crate) fn save_window_state<R: Runtime>(
     store: &DesktopWindowStateStore,
     window: &WebviewWindow<R>,
@@ -53,6 +56,7 @@ pub(crate) fn save_window_state<R: Runtime>(
     }
 }
 
+/// Saves the data.
 pub(crate) fn save_main_window_state<R: Runtime>(
     app: &tauri::AppHandle<R>,
     main_window_label: &str,

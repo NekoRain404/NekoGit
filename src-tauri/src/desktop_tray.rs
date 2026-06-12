@@ -1,3 +1,5 @@
+//! System tray integration.
+
 use tauri::{
     menu::MenuItem,
     tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
@@ -37,6 +39,7 @@ fn tray_tooltip_for_unread_count(count: u32) -> String {
     }
 }
 
+/// Normalizes the input.
 pub(crate) fn normalize_desktop_unread_count(count: u32) -> u32 {
     count.min(MAX_DESKTOP_UNREAD_COUNT)
 }
@@ -63,6 +66,7 @@ fn handle_tray_icon_event<R: Runtime>(
     }
 }
 
+/// Builds the final value.
 pub(crate) fn build_tray_icon<R: Runtime>(
     app: &tauri::App<R>,
     handlers: DesktopTrayHandlers<R>,
@@ -89,6 +93,7 @@ pub(crate) fn build_tray_icon<R: Runtime>(
     Ok((mark_visible_notifications_read, mark_all_notifications_read))
 }
 
+/// Updates the resource.
 pub(crate) fn update_desktop_unread_count<R: Runtime>(
     app: &tauri::AppHandle<R>,
     main_window_label: &str,

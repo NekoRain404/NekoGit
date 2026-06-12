@@ -1,3 +1,5 @@
+//! Runtime path resolution for Desktop runtime environment.
+
 use std::{fs, path::PathBuf};
 
 use tauri::{Manager, Runtime};
@@ -6,6 +8,7 @@ pub(super) fn path_to_display_string(path: &std::path::Path) -> String {
     path.to_string_lossy().into_owned()
 }
 
+/// App data root path.
 pub(crate) fn app_data_root_path<R: Runtime, M: Manager<R>>(
     manager: &M,
 ) -> Result<PathBuf, String> {

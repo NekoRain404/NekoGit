@@ -1,3 +1,5 @@
+//! Window dimension constants for Window state persistence.
+
 pub(crate) const WINDOW_STATE_FILE: &str = "window-state.json";
 pub(crate) const MIN_WINDOW_HEIGHT: f64 = 680.0;
 pub(crate) const MIN_WINDOW_WIDTH: f64 = 1024.0;

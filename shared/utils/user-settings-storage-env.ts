@@ -1,31 +1,41 @@
 /** Resolves user settings storage backend configuration from environment variables. */
 export const DEFAULT_USER_SETTINGS_STORAGE_DRIVER = 'fs';
+/** DEFAULT USER SETTINGS FS BASE. */
 export const DEFAULT_USER_SETTINGS_FS_BASE = './.data/user-settings';
+/** DEFAULT USER SETTINGS UPSTASH BASE. */
 export const DEFAULT_USER_SETTINGS_UPSTASH_BASE = 'nekogit:user-settings';
+/** DEFAULT USER SETTINGS UPSTASH ENV PREFIX. */
 export const DEFAULT_USER_SETTINGS_UPSTASH_ENV_PREFIX = 'UPSTASH_REDIS_REST';
 
+/** User Settings Storage Driver. */
 export type UserSettingsStorageDriver = 'fs' | 'upstash' | string;
 
+/** Upstash Redis Credentials. */
 export type UpstashRedisCredentials = {
   url: string;
   token: string;
 };
 
+/** Upstash Redis Credential Candidate. */
 export type UpstashRedisCredentialCandidate = {
   urlKey: string;
   tokenKey: string;
 };
 
+/** normalize Optional String. */
 export const normalizeOptionalString = (value: string | undefined) => {
+  /** normalized. */
   const normalized = value?.trim();
 
   return normalized || undefined;
 };
 
+/** normalize User Settings Storage Driver. */
 export const normalizeUserSettingsStorageDriver = (value: string | undefined) => {
   return normalizeOptionalString(value)?.toLowerCase() ?? DEFAULT_USER_SETTINGS_STORAGE_DRIVER;
 };
 
+/** default User Settings Storage Base. */
 export const defaultUserSettingsStorageBase = (driver: string) => {
   if (driver === 'fs') return DEFAULT_USER_SETTINGS_FS_BASE;
   if (driver === 'upstash') return DEFAULT_USER_SETTINGS_UPSTASH_BASE;
@@ -33,6 +43,7 @@ export const defaultUserSettingsStorageBase = (driver: string) => {
   return undefined;
 };
 
+/** add Prefixed Upstash Credential Candidates. */
 const addPrefixedUpstashCredentialCandidates = (
   candidates: UpstashRedisCredentialCandidate[],
   prefix: string
@@ -49,6 +60,7 @@ const addPrefixedUpstashCredentialCandidates = (
   );
 };
 
+/** unique Upstash Credential Candidates. */
 const uniqueUpstashCredentialCandidates = (candidates: UpstashRedisCredentialCandidate[]) => {
   return candidates.filter((candidate, index) => {
     return (
@@ -59,10 +71,13 @@ const uniqueUpstashCredentialCandidates = (candidates: UpstashRedisCredentialCan
   });
 };
 
+/** get Upstash Redis Credential Candidates. */
 export const getUpstashRedisCredentialCandidates = (
   env: Record<string, string | undefined>
 ): UpstashRedisCredentialCandidate[] => {
+  /** candidates. */
   const candidates: UpstashRedisCredentialCandidate[] = [];
+  /** explicit Prefix. */
   const explicitPrefix = normalizeOptionalString(
     env.NUXT_NEKOGIT_USER_SETTINGS_STORAGE_UPSTASH_ENV_PREFIX
   );
@@ -89,11 +104,14 @@ export const getUpstashRedisCredentialCandidates = (
   return uniqueUpstashCredentialCandidates(candidates);
 };
 
+/** resolve Optional Upstash Redis Credentials. */
 export function resolveOptionalUpstashRedisCredentials(
   env: Record<string, string | undefined>
 ): UpstashRedisCredentials | undefined {
   for (const candidate of getUpstashRedisCredentialCandidates(env)) {
+    /** url. */
     const url = normalizeOptionalString(env[candidate.urlKey]);
+    /** token. */
     const token = normalizeOptionalString(env[candidate.tokenKey]);
 
     if (url && token) {
@@ -104,9 +122,11 @@ export function resolveOptionalUpstashRedisCredentials(
   return undefined;
 }
 
+/** resolve Upstash Redis Credentials. */
 export function resolveUpstashRedisCredentials(
   env: Record<string, string | undefined>
 ): UpstashRedisCredentials {
+  /** credentials. */
   const credentials = resolveOptionalUpstashRedisCredentials(env);
 
   if (credentials) {

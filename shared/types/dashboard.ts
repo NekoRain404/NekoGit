@@ -1,11 +1,13 @@
 import type { NotificationSubjectState } from './notifications';
 
+/** Search Item Label. */
 export interface SearchItemLabel {
   id: number | string;
   name: string;
   color: string;
 }
 
+/** Dashboard Issue Search Item. */
 export interface DashboardIssueSearchItem {
   id: PropertyKey;
   title: string;
@@ -20,6 +22,7 @@ export interface DashboardIssueSearchItem {
   [key: string]: unknown;
 }
 
+/** Dashboard Repository List Item. */
 export interface DashboardRepositoryListItem {
   id: PropertyKey;
   name: string;

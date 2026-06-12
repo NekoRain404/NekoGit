@@ -9,6 +9,7 @@ use tauri::Manager;
 
 use super::{LOCAL_SERVER_HOST, NODE_RUNTIME_BINARY, SERVER_LOG_FILE};
 
+/// Resolves the value or path.
 pub(crate) fn resolve_external_client_url() -> Option<String> {
     env::var("NEKOGIT_CLIENT_URL")
         .ok()

@@ -24,6 +24,7 @@ use crate::local_repository::{
     },
 };
 
+/// Local repository file diff.
 pub(crate) fn local_repository_file_diff(
     app_data_dir: &Path,
     repository_url: &str,

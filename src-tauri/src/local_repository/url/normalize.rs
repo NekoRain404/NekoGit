@@ -1,7 +1,10 @@
+//! Path normalization for Local git repository operations / Repository URL handling.
+
 use tauri::Url;
 
 use crate::local_repository::url::reserved::is_reserved_github_web_owner_segment;
 
+/// Normalizes the input.
 pub(crate) fn normalize_github_repository_clone_url(value: &str) -> Option<String> {
     if value.chars().any(char::is_control) {
         return None;

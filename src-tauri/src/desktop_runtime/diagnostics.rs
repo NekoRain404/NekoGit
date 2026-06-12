@@ -1,3 +1,5 @@
+//! Diagnostic reporting utilities for Desktop runtime environment.
+
 use crate::{desktop_autostart::DesktopAutostartStatus, desktop_server::DesktopServerStatus};
 
 use super::types::DesktopRuntimeInfo;
@@ -22,6 +24,7 @@ fn bool_diagnostic_value(value: bool) -> &'static str {
     }
 }
 
+/// Format desktop diagnostics report.
 pub(crate) fn format_desktop_diagnostics_report(diagnostics: &DesktopDiagnostics) -> String {
     let runtime = &diagnostics.runtime;
     let server = &diagnostics.server_status;

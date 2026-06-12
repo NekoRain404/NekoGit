@@ -1,3 +1,5 @@
+//! Server configuration for Desktop server management.
+
 use std::{env, path::PathBuf};
 
 use super::types::DesktopServerConfig;

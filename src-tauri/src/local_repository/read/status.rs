@@ -1,3 +1,5 @@
+//! Path status detection for Local git repository operations / Read-only git queries.
+
 use std::path::Path;
 
 use super::{
@@ -8,6 +10,7 @@ use crate::local_repository::{
     parse::parse_local_repository_git_status_output, types::DesktopLocalRepositoryGitStatus,
 };
 
+/// Local repository git status.
 pub(crate) fn local_repository_git_status(
     app_data_dir: &Path,
     repository_url: &str,

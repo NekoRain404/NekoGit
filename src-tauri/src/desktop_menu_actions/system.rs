@@ -1,3 +1,5 @@
+//! System-level menu actions for Desktop menu action handlers.
+
 use tauri::{Manager, Runtime, Url};
 
 use crate::{

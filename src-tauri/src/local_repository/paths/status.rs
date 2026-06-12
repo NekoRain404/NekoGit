@@ -1,3 +1,5 @@
+//! Path status detection for Local git repository operations / Path resolution.
+
 use std::path::{Path, PathBuf};
 
 use crate::local_repository::{
@@ -6,6 +8,7 @@ use crate::local_repository::{
     types::DesktopLocalRepositoryPathStatus,
 };
 
+/// Local repository path status.
 pub(crate) fn local_repository_path_status(
     app_data_dir: &Path,
     repository_url: &str,

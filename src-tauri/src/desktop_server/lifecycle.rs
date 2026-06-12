@@ -1,3 +1,5 @@
+//! Server lifecycle management for Desktop server management.
+
 use std::{
     path::Path,
     sync::{atomic::AtomicBool, Arc, Mutex},
@@ -20,6 +22,7 @@ use super::{
     types::{DesktopServer, DesktopServerLaunch},
 };
 
+/// Restart bundled desktop server.
 pub(crate) fn restart_bundled_desktop_server<R: Runtime>(
     app: &tauri::AppHandle<R>,
 ) -> Result<(), String> {
@@ -30,6 +33,7 @@ pub(crate) fn restart_bundled_desktop_server<R: Runtime>(
     restart_desktop_server_child(server.inner())
 }
 
+/// Spawn desktop server.
 pub(crate) fn spawn_desktop_server(
     app: &tauri::App,
     app_data_dir: &Path,

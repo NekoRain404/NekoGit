@@ -1,3 +1,5 @@
+//! Repository index management for Local git repository operations / Local storage management.
+
 use std::{collections::HashSet, fs, path::Path};
 
 use crate::local_repository::{
@@ -40,6 +42,7 @@ fn normalize_local_repository_index(
     DesktopLocalRepositoryIndex { repositories }
 }
 
+/// Reads the data.
 pub(crate) fn read_local_repository_index(path: &Path) -> DesktopLocalRepositoryIndex {
     fs::read_to_string(path)
         .ok()
@@ -48,6 +51,7 @@ pub(crate) fn read_local_repository_index(path: &Path) -> DesktopLocalRepository
         .unwrap_or_default()
 }
 
+/// Writes the data.
 pub(crate) fn write_local_repository_index(
     path: &Path,
     index: &DesktopLocalRepositoryIndex,

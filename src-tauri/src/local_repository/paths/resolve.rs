@@ -1,5 +1,8 @@
+//! Path resolution for Local git repository operations / Path resolution.
+
 use std::path::{Path, PathBuf};
 
+/// Validated repository file path.
 pub(crate) fn validated_repository_file_path(
     repository_path: &str,
     normalized_relative_path: &Path,

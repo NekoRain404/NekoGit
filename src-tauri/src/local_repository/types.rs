@@ -1,3 +1,5 @@
+//! Type definitions for Local git repository operations.
+
 use serde::{Deserialize, Serialize};
 
 pub(crate) const LOCAL_REPOSITORIES_FILE: &str = "local-repositories.json";

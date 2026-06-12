@@ -1,9 +1,13 @@
+//! Path normalization for Local git repository operations / Path resolution.
+
 use std::path::{Component, Path, PathBuf};
 
+/// Repository relative path string.
 pub(crate) fn repository_relative_path_string(path: &Path) -> String {
     path.to_string_lossy().replace('\\', "/")
 }
 
+/// Normalizes the input.
 pub(crate) fn normalize_repository_relative_path(value: &str) -> Result<PathBuf, String> {
     if value.chars().any(char::is_control) {
         return Err("repository path contains unsupported control characters".to_owned());

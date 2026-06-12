@@ -1,3 +1,5 @@
+//! In-app navigation state for Window management.
+
 use tauri::{webview::NewWindowResponse, Manager, Runtime, Url};
 
 use crate::{
@@ -8,6 +10,7 @@ use crate::{
 
 use super::{constants::MAIN_WINDOW_LABEL, visibility::show_main_window};
 
+/// Opens the resource.
 pub(crate) fn open_github_launch_url<R: Runtime>(
     app: &tauri::AppHandle<R>,
     target_url: &str,
@@ -42,6 +45,7 @@ fn navigate_to_dashboard_github_target<R: Runtime>(
         .map_err(|error| format!("failed to navigate NekoGit window: {error}"))
 }
 
+/// Handles the event or request.
 pub(crate) fn handle_navigation<R: Runtime>(
     app: &tauri::AppHandle<R>,
     client_origin: &Url,
@@ -69,6 +73,7 @@ pub(crate) fn handle_navigation<R: Runtime>(
     false
 }
 
+/// Handles the event or request.
 pub(crate) fn handle_new_window_navigation<R: Runtime>(
     app: &tauri::AppHandle<R>,
     client_origin: &Url,

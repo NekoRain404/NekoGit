@@ -1,3 +1,5 @@
+//! Server log access for Desktop server management.
+
 use std::{
     fs,
     fs::{File, OpenOptions},
