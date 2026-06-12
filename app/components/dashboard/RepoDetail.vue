@@ -1,0 +1,1257 @@
+<!-- Repo Detail — NekoGit dashboard component. -->
+<script setup lang="ts">
+import {
+  ArchiveIcon,
+  BookmarkIcon,
+  EyeIcon,
+  ExternalLinkIcon,
+  FileTextIcon,
+  GlobeIcon,
+  GitForkIcon,
+  GithubIcon,
+  InfoIcon,
+  Loader2Icon,
+  StarIcon,
+  XIcon,
+} from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import type { LocationQueryRaw } from 'vue-router';
+
+import LocalRepositoryPanel from '~/components/dashboard/repo/LocalRepositoryPanel.vue';
+
+const props = defineProps<{
+  repository: any;
+  owner: string;
+  repo: string;
+}>();
+
+/** Repo Detail Icon. */
+type RepoDetailIcon = typeof GithubIcon;
+
+const { locale, t } = useI18n();
+const localePath = useLocalePath();
+const apiFetch = useNekoGitApiFetch();
+const { navigateToFile } = useNavigationHistory();
+const {
+  branches,
+  currentBranch,
+  defaultBranch,
+  directoryContents,
+  loading: loadingFiles,
+  error: filesError,
+  navigateToBranch,
+} = useRepoFiles({ explicitTarget: { owner: props.owner, repo: props.repo } });
+
+/** License Info. */
+interface LicenseInfo {
+  name: string | null;
+  spdxId: string | null;
+  url: string | null;
+  path: string | null;
+}
+
+/** About Item. */
+interface AboutItem {
+  label: string;
+  value: string;
+  href?: string;
+  to?: string;
+  icon: RepoDetailIcon;
+  onClick?: () => void;
+}
+
+const copy = computed(() => {
+  if (locale.value.startsWith('zh')) {
+    return {
+      about: '关于',
+      archived: '已归档',
+      branch: '默认分支',
+      created: '创建',
+      fork: '衍生',
+      forks: '分叉',
+      homepage: '主页',
+      issues: '开放问题',
+      language: '语言',
+      license: '许可证',
+      clone: '克隆',
+      copied: '已复制',
+      copyCloneUrl: '复制 Clone URL',
+      gitAhead: '领先',
+      gitBehind: '落后',
+      gitBranch: '分支',
+      gitBranchesUnavailable: '无法读取分支',
+      gitChanged: '有改动',
+      gitChangedFiles: '改动文件',
+      gitClean: '干净',
+      gitCommit: '提交',
+      gitCommitChanges: '提交变更',
+      gitCommitMessage: '提交说明',
+      gitCommitting: '提交中',
+      gitConflicted: '冲突',
+      gitCommits: '提交记录',
+      gitCheckoutRemoteBranch: '检出远程',
+      gitCheckingOutRemoteBranch: '检出中',
+      gitCopied: '复制',
+      gitCreateBranch: '创建分支',
+      gitCreatingBranch: '创建中',
+      gitDeleted: '删除',
+      gitDiff: 'Diff',
+      gitDiffEmpty: '这个文件当前没有可显示的文本 diff',
+      gitDiffTruncated: 'diff 已截断',
+      gitLastCommit: '最近提交',
+      gitModified: '修改',
+      gitRenamed: '重命名',
+      gitSwitchBranch: '切换分支',
+      gitSwitchingBranch: '切换中',
+      gitFetch: '拉取远端',
+      gitFetching: '拉取中',
+      gitPull: '快进更新',
+      gitPulling: '更新中',
+      gitPublishBranch: '发布分支',
+      gitPush: '推送',
+      gitPushing: '推送中',
+      gitStaged: '暂存',
+      gitStash: '贮藏改动',
+      gitStashing: '贮藏中',
+      gitUnstaged: '未暂存',
+      gitUntracked: '未跟踪',
+      localChecking: '检查中',
+      localChangesUnavailable: '无法读取改动文件',
+      localDiffUnavailable: '无法读取 diff',
+      localGitUnavailable: '无法读取 Git 状态',
+      localHistoryUnavailable: '无法读取提交记录',
+      localMissing: '未克隆',
+      localRepository: '本地仓库',
+      localReady: '已在本机',
+      openTerminal: '打开终端',
+      openFile: '打开文件',
+      noDescription: '这个仓库暂无描述',
+      notWatching: '不关注',
+      openGitHub: '在 GitHub 查看',
+      openLocal: '打开本地',
+      private: '私有',
+      public: '公开',
+      pushed: '最近推送',
+      readme: 'README',
+      repository: '仓库',
+      source: '链接',
+      star: 'Star',
+      starCount: 'Stars',
+      starred: '已 Star',
+      stats: '统计',
+      unstar: 'Unstar',
+      updated: '更新',
+      watchAll: '关注所有',
+      watchIgnore: '忽略',
+      watchNone: '仅被@时',
+      watching: '关注',
+      watchers: '关注者',
+    };
+  }
+
+  return {
+    about: 'About',
+    archived: 'Archived',
+    branch: 'Default branch',
+    created: 'Created',
+    fork: 'Fork',
+    forks: 'Forks',
+    homepage: 'Homepage',
+    issues: 'Open issues',
+    language: 'Language',
+    license: 'License',
+    clone: 'Clone',
+    copied: 'Copied',
+    copyCloneUrl: 'Copy clone URL',
+    gitAhead: 'Ahead',
+    gitBehind: 'Behind',
+    gitBranch: 'Branch',
+    gitBranchesUnavailable: 'Branches unavailable',
+    gitChanged: 'Changed',
+    gitChangedFiles: 'Changed files',
+    gitClean: 'Clean',
+    gitCommit: 'Commit',
+    gitCommitChanges: 'Commit changes',
+    gitCommitMessage: 'Commit message',
+    gitCommitting: 'Committing',
+    gitConflicted: 'Conflicts',
+    gitCommits: 'Commits',
+    gitCheckoutRemoteBranch: 'Checkout remote',
+    gitCheckingOutRemoteBranch: 'Checking out',
+    gitCopied: 'Copied',
+    gitCreateBranch: 'Create branch',
+    gitCreatingBranch: 'Creating',
+    gitDeleted: 'Deleted',
+    gitDiff: 'Diff',
+    gitDiffEmpty: 'No displayable text diff for this file',
+    gitDiffTruncated: 'Diff truncated',
+    gitLastCommit: 'Last commit',
+    gitModified: 'Modified',
+    gitRenamed: 'Renamed',
+    gitSwitchBranch: 'Switch branch',
+    gitSwitchingBranch: 'Switching',
+    gitFetch: 'Fetch',
+    gitFetching: 'Fetching',
+    gitPull: 'Pull',
+    gitPulling: 'Pulling',
+    gitPublishBranch: 'Publish branch',
+    gitPush: 'Push',
+    gitPushing: 'Pushing',
+    gitStaged: 'Staged',
+    gitStash: 'Stash changes',
+    gitStashing: 'Stashing',
+    gitUnstaged: 'Unstaged',
+    gitUntracked: 'Untracked',
+    localChecking: 'Checking',
+    localChangesUnavailable: 'Changed files unavailable',
+    localDiffUnavailable: 'Diff unavailable',
+    localGitUnavailable: 'Git status unavailable',
+    localHistoryUnavailable: 'Commit history unavailable',
+    localMissing: 'Not cloned',
+    localRepository: 'Local repository',
+    localReady: 'On disk',
+    openTerminal: 'Open terminal',
+    openFile: 'Open file',
+    noDescription: 'No description provided',
+    notWatching: 'Ignore',
+    openGitHub: 'View on GitHub',
+    openLocal: 'Open local',
+    private: 'Private',
+    public: 'Public',
+    pushed: 'Pushed',
+    readme: 'README',
+    repository: 'Repository',
+    source: 'Links',
+    star: 'Star',
+    starCount: 'Stars',
+    starred: 'Starred',
+    stats: 'Stats',
+    unstar: 'Unstar',
+    updated: 'Updated',
+    watchAll: 'All',
+    watchIgnore: 'Ignore',
+    watchNone: 'Default',
+    watching: 'Watching',
+    watchers: 'Watchers',
+  };
+});
+
+const localeCode = computed(() => locale.value);
+const relativeTimeNow = useRelativeTimeNow();
+
+const isStarred = ref(false);
+const loadingStar = ref(false);
+const starCount = ref(props.repository.stargazers_count ?? 0);
+
+/** Watch State. */
+type WatchState = 'all' | 'default' | 'ignore';
+const watchState = ref<WatchState | null>(null);
+const loadingWatch = ref(false);
+const showWatchDropdown = ref(false);
+const watchCount = ref(props.repository.watchers_count ?? 0);
+
+const readmeContent = ref<string | null>(null);
+const readmePath = ref<string | null>(null);
+const loadingReadme = ref(false);
+const readmeRequestId = ref(0);
+
+const licenseInfo = ref<LicenseInfo | null>(null);
+const loadingLicense = ref(false);
+const licenseRequestId = ref(0);
+const languageColor = computed(() => getLanguageColor(props.repository.language));
+const repoDefaultBranch = computed(
+  () => defaultBranch.value || props.repository.default_branch || ''
+);
+const repoCurrentBranch = computed(() => currentBranch.value || repoDefaultBranch.value);
+const canonicalBranch = computed(() => repoCurrentBranch.value || undefined);
+const currentBranchQueryValue = computed(() => {
+  return repoCurrentBranch.value && repoCurrentBranch.value !== repoDefaultBranch.value
+    ? repoCurrentBranch.value
+    : undefined;
+});
+
+const visibility = computed(() =>
+  props.repository.private ? copy.value.private : copy.value.public
+);
+
+const repoBadges = computed(() => {
+  const badges: { icon: RepoDetailIcon; label: string; tone: string }[] = [
+    {
+      icon: GithubIcon,
+      label: visibility.value,
+      tone: props.repository.private ? 'muted' : 'neutral',
+    },
+  ];
+
+  if (props.repository.fork) {
+    badges.push({ icon: GitForkIcon, label: copy.value.fork, tone: 'neutral' });
+  }
+
+  if (props.repository.archived) {
+    badges.push({ icon: ArchiveIcon, label: copy.value.archived, tone: 'muted' });
+  }
+
+  return badges;
+});
+
+const watchStateLabel = computed(() => {
+  if (watchState.value === 'all') return copy.value.watching;
+  if (watchState.value === 'ignore') return copy.value.notWatching;
+  return copy.value.watchNone;
+});
+
+const isSubscribedWatchState = (state: WatchState | null) => state === 'all' || state === 'ignore';
+
+const buildRepoFileQuery = (path: string): LocationQueryRaw => ({
+  repo: `${props.owner}/${props.repo}`,
+  path,
+  branch: currentBranchQueryValue.value,
+});
+
+const buildRepoFileTo = (path: string) => {
+  return localePath({
+    path: '/dashboard',
+    query: buildRepoFileQuery(path),
+  });
+};
+
+const trackFileNavigation = (path: string) => {
+  navigateToFile(props.owner, props.repo, path, canonicalBranch.value);
+};
+
+const aboutItems = computed(() => {
+  const items: AboutItem[] = [];
+
+  if (props.repository.homepage) {
+    const url = props.repository.homepage.startsWith('http')
+      ? props.repository.homepage
+      : `https://${props.repository.homepage}`;
+    items.push({
+      label: copy.value.homepage,
+      value: props.repository.homepage,
+      href: url,
+      icon: GlobeIcon,
+    });
+  }
+
+  if (licenseInfo.value?.name && licenseInfo.value.path) {
+    const licensePath = licenseInfo.value.path;
+    items.push({
+      label: copy.value.license,
+      value: licenseInfo.value.name,
+      to: buildRepoFileTo(licensePath),
+      icon: FileTextIcon,
+      onClick: () => trackFileNavigation(licensePath),
+    });
+  }
+
+  items.push({
+    label: copy.value.branch,
+    value: props.repository.default_branch || '-',
+    icon: GitForkIcon,
+  });
+
+  items.push({
+    label: copy.value.created,
+    value: formatDate(props.repository.created_at),
+    icon: BookmarkIcon,
+  });
+
+  items.push({
+    label: copy.value.updated,
+    value: formatDate(props.repository.updated_at),
+    icon: BookmarkIcon,
+  });
+
+  return items;
+});
+
+const stats = computed(() => [
+  { label: copy.value.starCount, value: starCount.value, icon: StarIcon, color: '#f59e0b' },
+  { label: copy.value.watchers, value: watchCount.value, icon: EyeIcon, color: '#3b82f6' },
+  {
+    label: copy.value.forks,
+    value: props.repository.forks_count ?? 0,
+    icon: GitForkIcon,
+    color: '#10b981',
+  },
+  {
+    label: copy.value.issues,
+    value: props.repository.open_issues_count ?? 0,
+    icon: InfoIcon,
+    color: '#8b5cf6',
+  },
+]);
+
+const formatDate = (value?: string | null) => {
+  if (!value) return '-';
+  return formatDurationFromNow(value, localeCode.value, relativeTimeNow.value);
+};
+
+const toggleStar = async () => {
+  if (loadingStar.value) return;
+  loadingStar.value = true;
+
+  const previousState = isStarred.value;
+  const previousCount = starCount.value;
+
+  try {
+    if (isStarred.value) {
+      isStarred.value = false;
+      starCount.value = Math.max(0, starCount.value - 1);
+      await apiFetch(`/api/repos/${props.owner}/${props.repo}/star`, { method: 'DELETE' });
+    } else {
+      isStarred.value = true;
+      starCount.value = starCount.value + 1;
+      await apiFetch(`/api/repos/${props.owner}/${props.repo}/star`, { method: 'PUT' });
+    }
+  } catch {
+    isStarred.value = previousState;
+    starCount.value = previousCount;
+  } finally {
+    loadingStar.value = false;
+  }
+};
+
+const setWatchState = async (state: WatchState) => {
+  if (loadingWatch.value) return;
+  loadingWatch.value = true;
+  showWatchDropdown.value = false;
+
+  const previousState = watchState.value;
+  const previousSubscribed = isSubscribedWatchState(previousState);
+
+  try {
+    if (state === 'default') {
+      await apiFetch(`/api/repos/${props.owner}/${props.repo}/subscription`, { method: 'DELETE' });
+    } else {
+      await apiFetch(`/api/repos/${props.owner}/${props.repo}/subscription`, {
+        method: 'PUT',
+        body: { subscribed: state === 'all', ignored: state === 'ignore' },
+      });
+    }
+
+    watchState.value = state;
+
+    const nextSubscribed = isSubscribedWatchState(state);
+    if (previousSubscribed !== nextSubscribed) {
+      watchCount.value = previousSubscribed
+        ? Math.max(0, watchCount.value - 1)
+        : watchCount.value + 1;
+    }
+  } catch {
+    watchState.value = previousState;
+  } finally {
+    loadingWatch.value = false;
+  }
+};
+
+const toggleWatchDropdown = () => {
+  showWatchDropdown.value = !showWatchDropdown.value;
+};
+
+const closeWatchDropdown = () => {
+  showWatchDropdown.value = false;
+};
+
+const fetchStarState = async () => {
+  try {
+    const data = await apiFetch<{ starred: boolean }>(
+      `/api/repos/${props.owner}/${props.repo}/star`
+    );
+    isStarred.value = data.starred;
+  } catch {
+    // Silently fail - default to unstarred
+  }
+};
+
+const fetchWatchState = async () => {
+  try {
+    const data = await apiFetch<{ subscribed: boolean; ignored: boolean }>(
+      `/api/repos/${props.owner}/${props.repo}/subscription`
+    );
+    if (data.subscribed) {
+      watchState.value = 'all';
+    } else if (data.ignored) {
+      watchState.value = 'ignore';
+    } else {
+      watchState.value = 'default';
+    }
+  } catch {
+    watchState.value = 'default';
+  }
+};
+
+const buildRefQuery = () => {
+  const branch = currentBranchQueryValue.value;
+  return branch ? `?ref=${encodeURIComponent(branch)}` : '';
+};
+
+const fetchReadme = async () => {
+  const requestId = readmeRequestId.value + 1;
+  readmeRequestId.value = requestId;
+  loadingReadme.value = true;
+  try {
+    const data = await apiFetch<{ content: string | null; path?: string | null }>(
+      `/api/repos/${props.owner}/${props.repo}/readme${buildRefQuery()}`
+    );
+    if (requestId !== readmeRequestId.value) return;
+
+    readmeContent.value = data.content;
+    readmePath.value = data.path ?? null;
+  } catch {
+    if (requestId === readmeRequestId.value) {
+      readmeContent.value = null;
+      readmePath.value = null;
+    }
+  } finally {
+    if (requestId === readmeRequestId.value) {
+      loadingReadme.value = false;
+    }
+  }
+};
+
+const fetchLicense = async () => {
+  const requestId = licenseRequestId.value + 1;
+  licenseRequestId.value = requestId;
+  licenseInfo.value = null;
+  loadingLicense.value = true;
+  try {
+    const data = await apiFetch<LicenseInfo>(
+      `/api/repos/${props.owner}/${props.repo}/license${buildRefQuery()}`
+    );
+    if (requestId !== licenseRequestId.value) return;
+
+    licenseInfo.value = data;
+  } catch {
+    if (requestId === licenseRequestId.value) {
+      licenseInfo.value = null;
+    }
+  } finally {
+    if (requestId === licenseRequestId.value) {
+      loadingLicense.value = false;
+    }
+  }
+};
+
+onMounted(() => {
+  fetchStarState();
+  fetchWatchState();
+});
+
+watch(
+  () => [props.owner, props.repo, repoCurrentBranch.value],
+  () => {
+    if (!repoCurrentBranch.value) return;
+
+    fetchReadme();
+    fetchLicense();
+  },
+  { immediate: true }
+);
+
+// Close dropdown on outside click
+const handleClickOutside = (e: MouseEvent) => {
+  const target = e.target;
+  if (!(target instanceof Element) || !target.closest('.watch-dropdown-wrapper')) {
+    closeWatchDropdown();
+  }
+};
+
+onMounted(() => document.addEventListener('click', handleClickOutside));
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+</script>
+
+<template>
+  <div class="repo-detail-layout">
+    <div class="columns">
+      <div class="column detail-main-column">
+        <section class="repo-detail-header">
+          <div class="repo-detail-header__title-row">
+            <GithubIcon :size="28" class="repo-detail-header__icon" />
+            <h1 class="title is-3 repo-detail-header__title">{{ repository.name }}</h1>
+            <div class="repo-detail-header__actions">
+              <button
+                class="repo-action-btn"
+                :class="{ 'repo-action-btn--active': isStarred }"
+                :disabled="loadingStar"
+                @click="toggleStar"
+              >
+                <Loader2Icon v-if="loadingStar" :size="14" class="spin-animation" />
+                <StarIcon v-else :size="14" :fill="isStarred ? 'currentColor' : 'none'" />
+                <span>{{ isStarred ? copy.starred : copy.star }}</span>
+              </button>
+
+              <div class="watch-dropdown-wrapper">
+                <button
+                  class="repo-action-btn"
+                  :class="{ 'repo-action-btn--active': watchState === 'all' }"
+                  :disabled="loadingWatch"
+                  @click.stop="toggleWatchDropdown"
+                >
+                  <Loader2Icon v-if="loadingWatch" :size="14" class="spin-animation" />
+                  <EyeIcon v-else :size="14" />
+                  <span>{{ watchStateLabel }}</span>
+                </button>
+                <div v-if="showWatchDropdown" class="watch-dropdown">
+                  <button
+                    class="watch-dropdown__item"
+                    :class="{ 'watch-dropdown__item--active': watchState === 'all' }"
+                    @click="setWatchState('all')"
+                  >
+                    <EyeIcon :size="14" />
+                    <div class="watch-dropdown__item-content">
+                      <span class="watch-dropdown__item-label">{{ copy.watchAll }}</span>
+                      <span class="watch-dropdown__item-desc">
+                        {{ t('repoDetail.watchAllDescription') }}
+                      </span>
+                    </div>
+                  </button>
+                  <button
+                    class="watch-dropdown__item"
+                    :class="{ 'watch-dropdown__item--active': watchState === 'default' }"
+                    @click="setWatchState('default')"
+                  >
+                    <EyeIcon :size="14" />
+                    <div class="watch-dropdown__item-content">
+                      <span class="watch-dropdown__item-label">{{ copy.watchNone }}</span>
+                      <span class="watch-dropdown__item-desc">
+                        {{ t('repoDetail.watchDefaultDescription') }}
+                      </span>
+                    </div>
+                  </button>
+                  <button
+                    class="watch-dropdown__item"
+                    :class="{ 'watch-dropdown__item--active': watchState === 'ignore' }"
+                    @click="setWatchState('ignore')"
+                  >
+                    <XIcon :size="14" />
+                    <div class="watch-dropdown__item-content">
+                      <span class="watch-dropdown__item-label">{{ copy.watchIgnore }}</span>
+                      <span class="watch-dropdown__item-desc">
+                        {{ t('repoDetail.watchIgnoreDescription') }}
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <BranchSelector
+                :branches="branches"
+                :current-branch="repoCurrentBranch"
+                :default-branch="repoDefaultBranch"
+                :loading="loadingFiles"
+                @select="navigateToBranch"
+              />
+            </div>
+          </div>
+
+          <div class="repo-detail-header__meta">
+            <span class="tag mr-2 repo-detail-header__type">{{ copy.repository }}</span>
+            <span class="subtitle mb-0 is-6 has-text-weight-medium">{{ owner }}/{{ repo }}</span>
+            <span
+              v-if="repository.language"
+              class="tag is-link is-light ml-3 repo-detail-header__language"
+            >
+              <span
+                class="repo-detail-header__language-dot"
+                :style="{ backgroundColor: languageColor }"
+              />
+              <span>{{ repository.language }}</span>
+            </span>
+            <span
+              v-for="badge in repoBadges"
+              :key="badge.label"
+              class="tag ml-2 repo-detail-header__badge"
+            >
+              <component :is="badge.icon" :size="13" />
+              <span>{{ badge.label }}</span>
+            </span>
+          </div>
+
+          <div v-if="repository.description" class="repo-detail-description mb-4">
+            <p class="repo-detail-description__body">
+              {{ repository.description }}
+            </p>
+          </div>
+
+          <div class="repo-about mb-4">
+            <div class="repo-about__grid">
+              <div v-for="item in aboutItems" :key="item.label" class="repo-about__item">
+                <component :is="item.icon" :size="14" class="repo-about__item-icon" />
+                <span class="repo-about__item-label">{{ item.label }}:</span>
+                <NuxtLinkLocale
+                  v-if="item.to"
+                  :to="item.to"
+                  class="repo-about__item-value repo-about__item-value--link"
+                  @click="item.onClick?.()"
+                >
+                  {{ item.value }}
+                </NuxtLinkLocale>
+                <a
+                  v-else-if="item.href"
+                  :href="item.href"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-nekogit-external
+                  class="repo-about__item-value repo-about__item-value--link"
+                >
+                  {{ item.value }}
+                  <ExternalLinkIcon :size="10" />
+                </a>
+                <span v-else class="repo-about__item-value">{{ item.value }}</span>
+              </div>
+            </div>
+          </div>
+
+          <hr class="mr-4" />
+
+          <RepoFileTree
+            :owner="owner"
+            :repo="repo"
+            :items="directoryContents"
+            :loading="loadingFiles"
+            :error="filesError"
+            :current-branch="repoCurrentBranch"
+            :default-branch="repoDefaultBranch"
+          />
+
+          <div class="repo-readme">
+            <h2 class="title is-5 repo-readme__title">
+              <BookmarkIcon :size="18" />
+              <span>{{ copy.readme }}</span>
+            </h2>
+            <div v-if="loadingReadme" class="repo-readme__loading">
+              <Loader2Icon :size="20" class="spin-animation" />
+            </div>
+            <div v-else-if="readmeContent" class="repo-readme__content content">
+              <MarkdownRenderer
+                :value="readmeContent"
+                :repo-owner="owner"
+                :repo-name="repo"
+                :base-path="readmePath ?? undefined"
+                :branch="repoCurrentBranch || undefined"
+              />
+            </div>
+            <div v-else class="repo-readme__empty">
+              {{ copy.noDescription }}
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="column detail-sidebar-column">
+        <div class="sidebar-scroll">
+          <div class="sidebar-card mb-4">
+            <div class="sidebar-card__header">
+              <div class="sidebar-card__header-left">
+                <StarIcon :size="14" class="sidebar-card__icon" />
+                <span class="sidebar-card__title">{{ copy.stats }}</span>
+              </div>
+            </div>
+            <div class="sidebar-card__content">
+              <div class="info-stats">
+                <div v-for="stat in stats" :key="stat.label" class="info-stat">
+                  <component
+                    :is="stat.icon"
+                    :size="20"
+                    class="info-stat__icon"
+                    :style="{ color: stat.color }"
+                  />
+                  <span class="info-stat__value">{{ stat.value }}</span>
+                  <span class="info-stat__label">{{ stat.label }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <LocalRepositoryPanel
+            :owner="owner"
+            :repo="repo"
+            :fallback-branch="repoCurrentBranch"
+            :copy="copy"
+            :format-date="formatDate"
+          />
+
+          <div class="sidebar-card">
+            <div class="sidebar-card__header">
+              <div class="sidebar-card__header-left">
+                <ExternalLinkIcon :size="14" class="sidebar-card__icon" />
+                <span class="sidebar-card__title">{{ copy.source }}</span>
+              </div>
+            </div>
+            <div class="sidebar-card__content">
+              <a
+                :href="repository.html_url"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-nekogit-external
+                class="sidebar-link"
+              >
+                <ExternalLinkIcon :size="14" />
+                <span>{{ copy.openGitHub }}</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped lang="scss">
+@use '~/assets/scss/_variables' as *;
+
+.repo-detail-layout {
+  height: 100%;
+  min-height: 0;
+}
+
+.repo-detail-layout :deep(.columns) {
+  height: 100%;
+  min-height: 0;
+  align-items: stretch;
+  margin-bottom: 0;
+}
+
+.repo-detail-layout :deep(.detail-main-column) {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  flex: none;
+  width: 72%;
+}
+
+.repo-detail-layout :deep(.detail-sidebar-column) {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  flex: none;
+  width: 28%;
+  padding-right: 1rem;
+}
+
+.repo-detail-header {
+  max-width: 68rem;
+  padding: 0.75rem 1rem 5rem 0;
+}
+
+.repo-detail-header__title-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.repo-detail-header__icon {
+  flex: 0 0 auto;
+  color: var(--nekogit-success);
+}
+
+.repo-detail-header__title {
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+
+.repo-detail-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.repo-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--nekogit-border);
+  border-radius: 6px;
+  background: var(--nekogit-surface);
+  color: var(--nekogit-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s ease;
+
+  &:hover:not(:disabled) {
+    background: var(--nekogit-surface-hover);
+    border-color: var(--nekogit-border-strong);
+    color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--active {
+    background: var(--nekogit-surface-active);
+    border-color: var(--nekogit-accent);
+    color: var(--nekogit-accent);
+
+    &:hover:not(:disabled) {
+      background: var(--nekogit-surface-active);
+    }
+  }
+}
+
+.watch-dropdown-wrapper {
+  position: relative;
+}
+
+.watch-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 100;
+  min-width: 200px;
+  margin-top: 4px;
+  border: 1px solid var(--nekogit-border);
+  border-radius: 8px;
+  background: var(--nekogit-surface);
+  box-shadow: var(--nekogit-shadow-raised);
+}
+
+.watch-dropdown__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--nekogit-text-muted);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s ease;
+
+  &:hover {
+    background: var(--nekogit-surface-hover);
+  }
+
+  &--active {
+    background: var(--nekogit-surface-active);
+    color: var(--nekogit-accent);
+  }
+
+  &:first-child {
+    border-radius: 8px 8px 0 0;
+  }
+
+  &:last-child {
+    border-radius: 0 0 8px 8px;
+  }
+}
+
+.watch-dropdown__item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.watch-dropdown__item-label {
+  font-weight: 600;
+}
+
+.watch-dropdown__item-desc {
+  color: var(--nekogit-text-muted);
+  font-size: 11px;
+}
+
+.repo-detail-header__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.repo-detail-header__type {
+  background-color: var(--nekogit-surface-muted);
+  color: var(--nekogit-text-strong);
+}
+
+.repo-detail-header__language,
+.repo-detail-header__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.repo-detail-header__language-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+}
+
+.repo-detail-description {
+  max-width: 54rem;
+}
+
+.repo-detail-description__body {
+  margin-bottom: 0;
+  color: var(--bulma-text-strong);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.repo-about {
+  margin-bottom: 1rem;
+}
+
+.repo-about__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+.repo-about__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.repo-about__item-icon {
+  color: var(--nekogit-text-muted);
+  flex-shrink: 0;
+}
+
+.repo-about__item-label {
+  color: var(--nekogit-text-muted);
+  font-weight: 500;
+}
+
+.repo-about__item-value {
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+}
+
+.repo-about__item-value--link {
+  color: var(--nekogit-link);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.repo-readme {
+  margin-top: 1.5rem;
+}
+
+.repo-readme__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 1rem;
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  font-size: 1.125rem;
+}
+
+.repo-readme__loading {
+  display: flex;
+  justify-content: center;
+  padding: 3rem;
+  color: var(--nekogit-text-muted);
+}
+
+.repo-readme__content {
+  // Let MarkdownRenderer handle its own styles
+}
+
+.repo-readme__empty {
+  padding: 2rem;
+  color: var(--nekogit-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.sidebar-scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 0.75rem;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+
+  &:hover {
+    scrollbar-color: var(--nekogit-scrollbar-thumb) transparent;
+  }
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 3px;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: var(--nekogit-scrollbar-thumb);
+  }
+}
+
+.sidebar-card {
+  overflow: hidden;
+  border: 1px solid var(--nekogit-border);
+  border-radius: 8px;
+  background: var(--nekogit-surface-muted);
+}
+
+.sidebar-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--nekogit-border);
+  background: var(--nekogit-surface);
+}
+
+.sidebar-card__header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-card__icon {
+  color: $brand-primary;
+}
+
+.sidebar-card__title {
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sidebar-card__content {
+  padding: 12px 16px;
+}
+
+.info-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.info-stat {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 5.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--nekogit-border);
+  border-radius: 8px;
+  background: var(--nekogit-surface);
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--nekogit-border-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.info-stat__icon {
+  margin-bottom: 0.5rem;
+  transition: transform 0.2s ease;
+
+  .info-stat:hover & {
+    transform: scale(1.1);
+  }
+}
+
+.info-stat__value {
+  margin-bottom: 0.25rem;
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.info-stat__label {
+  color: var(--nekogit-text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--nekogit-border);
+  border-radius: 8px;
+  background: var(--nekogit-surface);
+  color: var(--nekogit-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.12s ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--nekogit-border-strong);
+    background: var(--nekogit-surface-hover);
+    color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  .repo-detail-layout :deep(.columns) {
+    display: block;
+    height: auto;
+  }
+
+  .repo-detail-layout :deep(.detail-main-column),
+  .repo-detail-layout :deep(.detail-sidebar-column) {
+    height: auto;
+    overflow: visible;
+  }
+
+  .repo-detail-header {
+    padding-right: 0;
+    padding-bottom: 2rem;
+  }
+
+  .repo-detail-header__title-row {
+    flex-wrap: wrap;
+  }
+
+  .repo-detail-header__actions {
+    width: 100%;
+    margin-top: 0.5rem;
+    margin-left: 0;
+  }
+}
+</style>

@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-server-status"
+description = "Enables the desktop_server_status command without any pre-configured scope."
+commands.allow = ["desktop_server_status"]
+
+[[permission]]
+identifier = "deny-desktop-server-status"
+description = "Denies the desktop_server_status command without any pre-configured scope."
+commands.deny = ["desktop_server_status"]

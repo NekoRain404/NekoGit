@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-open-server-log"
+description = "Enables the desktop_open_server_log command without any pre-configured scope."
+commands.allow = ["desktop_open_server_log"]
+
+[[permission]]
+identifier = "deny-desktop-open-server-log"
+description = "Denies the desktop_open_server_log command without any pre-configured scope."
+commands.deny = ["desktop_open_server_log"]

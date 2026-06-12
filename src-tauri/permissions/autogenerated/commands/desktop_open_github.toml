@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-open-github"
+description = "Enables the desktop_open_github command without any pre-configured scope."
+commands.allow = ["desktop_open_github"]
+
+[[permission]]
+identifier = "deny-desktop-open-github"
+description = "Denies the desktop_open_github command without any pre-configured scope."
+commands.deny = ["desktop_open_github"]

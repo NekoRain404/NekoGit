@@ -1,0 +1,38 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "NekoGit",
+  "version": "0.1.0",
+  "identifier": "ink.euphony.nekogit.client",
+  "build": {
+    "beforeBuildCommand": "node scripts/run-tauri-nuxt.mjs build",
+    "beforeDevCommand": "node scripts/run-tauri-nuxt.mjs dev",
+    "devUrl": "http://127.0.0.1:3000",
+    "frontendDist": "../public"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb"],
+    "category": "DeveloperTool",
+    "icon": ["icons/icon.png"],
+    "resources": {
+      "../.node-runtime/": ".node-runtime",
+      "../.output/": ".output"
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libatomic1", "libc6", "libgcc-s1", "libstdc++6"],
+        "recommends": ["desktop-file-utils"],
+        "desktopTemplate": "linux/nekogit.desktop.template",
+        "postInstallScript": "linux/deb/postinst",
+        "postRemoveScript": "linux/deb/postrm"
+      }
+    }
+  }
+}

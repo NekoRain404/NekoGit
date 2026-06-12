@@ -1,0 +1,70 @@
+#!/bin/sh
+set -e
+
+DESKTOP_FILE="NekoGit.desktop"
+MIME_TYPE="x-scheme-handler/nekogit"
+: "${SYSTEM_MIMEAPPS:=/usr/share/applications/mimeapps.list}"
+
+remove_default_scheme_handler() {
+  [ -f "$SYSTEM_MIMEAPPS" ] || return 0
+  grep -Eq "^${MIME_TYPE}=${DESKTOP_FILE}(;|$)" "$SYSTEM_MIMEAPPS" || return 0
+
+  tmp="$(mktemp)"
+  awk -v mime="$MIME_TYPE" -v desktop="$DESKTOP_FILE" '
+    $0 ~ "^" mime "=" desktop "(;|$)" { next }
+    { print }
+  ' "$SYSTEM_MIMEAPPS" >"$tmp"
+
+  awk '
+    BEGIN { in_default = 0; count = 0 }
+    function flush_default() {
+      if (in_default && count > 0) {
+        print "[Default Applications]"
+        for (i = 1; i <= count; i += 1) {
+          print default_lines[i]
+        }
+      }
+      in_default = 0
+      count = 0
+      delete default_lines
+    }
+    /^\[Default Applications\]$/ {
+      flush_default()
+      in_default = 1
+      next
+    }
+    /^\[/ {
+      flush_default()
+      print
+      next
+    }
+    {
+      if (in_default) {
+        if ($0 != "") {
+          count += 1
+          default_lines[count] = $0
+        }
+      } else {
+        print
+      }
+    }
+    END { flush_default() }
+  ' "$tmp" >"${tmp}.clean"
+  cat "${tmp}.clean" >"$tmp"
+  rm -f "${tmp}.clean"
+
+  cat "$tmp" >"$SYSTEM_MIMEAPPS"
+  rm -f "$tmp"
+}
+
+case "$1" in
+  remove|purge|disappear)
+    remove_default_scheme_handler || true
+    ;;
+esac
+
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database -q /usr/share/applications || true
+fi
+
+exit 0

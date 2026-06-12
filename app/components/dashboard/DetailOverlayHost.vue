@@ -1,0 +1,324 @@
+<!-- Detail Overlay Host — NekoGit dashboard component. -->
+<script setup lang="ts">
+import { Loader2Icon } from 'lucide-vue-next';
+import { computed, defineAsyncComponent, shallowRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+import type { DiscussionDetailPayload } from '#shared/types/discussions';
+import DetailOverlay from '~/components/dashboard/DetailOverlay.vue';
+
+const DiscussionDetail = defineAsyncComponent(
+  () => import('~/components/dashboard/DiscussionDetail.vue')
+);
+const IssueDetail = defineAsyncComponent(() => import('~/components/dashboard/IssueDetail.vue'));
+const PrDetail = defineAsyncComponent(() => import('~/components/dashboard/PRDetail.vue'));
+const RepoDetail = defineAsyncComponent(() => import('~/components/dashboard/RepoDetail.vue'));
+
+/** Detail Pane Type. */
+type DetailPaneType = 'issue' | 'pull-request' | 'discussion' | 'repository';
+
+/** Active Detail Pane. */
+interface ActiveDetailPane {
+  type: DetailPaneType;
+  key: string;
+  loading: boolean;
+  hasData: boolean;
+  error: string;
+  loadingTitle: string;
+}
+
+const props = defineProps<{
+  issue: Record<string, unknown> | null;
+  pullRequest: Record<string, unknown> | null;
+  discussion: DiscussionDetailPayload | null;
+  repository: Record<string, unknown> | null;
+  issueError: string;
+  discussionError: string;
+  repoError: string;
+  isIssueVisible: boolean;
+  isPullRequestVisible: boolean;
+  isDiscussionVisible: boolean;
+  isRepositoryVisible: boolean;
+  isPullRequestReviewRoute: boolean;
+  issueDetailKey: string;
+  pullRequestDetailKey: string;
+  discussionDetailKey: string;
+  repositoryDetailKey: string;
+  loadingIssue: boolean;
+  loadingPullRequest: boolean;
+  loadingDiscussion: boolean;
+  loadingRepository: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: 'back'): void;
+  (e: 'home'): void;
+  (e: 'switch-issue', owner: string, repo: string, issueNumber: number): void;
+  (e: 'switch-pull-request', owner: string, repo: string, pullNumber: number): void;
+  (e: 'switch-discussion', owner: string, repo: string, discussionNumber: number): void;
+  (e: 'open-pull-request-review'): void;
+  (e: 'close-pull-request-review'): void;
+}>();
+
+const { t } = useI18n();
+const { shouldShowHomeButton } = useNavigationHistory();
+const isIssueHeaderNonSticky = shallowRef(false);
+const isPullRequestReviewActive = shallowRef(false);
+
+const activeDetailPane = computed<ActiveDetailPane | null>(() => {
+  if (props.isIssueVisible) {
+    return {
+      type: 'issue',
+      key: props.issueDetailKey,
+      loading: props.loadingIssue,
+      hasData: Boolean(props.issue),
+      error: props.issueError,
+      loadingTitle: t('issueDetail.loading'),
+    };
+  }
+
+  if (props.isPullRequestVisible) {
+    return {
+      type: 'pull-request',
+      key: props.pullRequestDetailKey,
+      loading: props.loadingPullRequest,
+      hasData: Boolean(props.pullRequest),
+      error: '',
+      loadingTitle: t('issueDetail.loadingPullRequest'),
+    };
+  }
+
+  if (props.isDiscussionVisible) {
+    return {
+      type: 'discussion',
+      key: props.discussionDetailKey,
+      loading: props.loadingDiscussion,
+      hasData: Boolean(props.discussion),
+      error: props.discussionError,
+      loadingTitle: t('discussionDetail.loading'),
+    };
+  }
+
+  if (props.isRepositoryVisible) {
+    return {
+      type: 'repository',
+      key: props.repositoryDetailKey,
+      loading: props.loadingRepository,
+      hasData: Boolean(props.repository),
+      error: props.repoError,
+      loadingTitle: t('issueDetail.loadingRepository'),
+    };
+  }
+
+  return null;
+});
+
+const activeDetailKey = computed(() => activeDetailPane.value?.key ?? 'empty');
+
+const isOverlayVisible = computed(() => Boolean(activeDetailPane.value));
+
+const repositoryOwner = computed(() => {
+  const owner = props.repository?.owner;
+  return owner && typeof owner === 'object' && 'login' in owner ? String(owner.login || '') : '';
+});
+
+const repositoryName = computed(() => {
+  return typeof props.repository?.name === 'string' ? props.repository.name : '';
+});
+
+const isContentLoading = computed(() => {
+  const pane = activeDetailPane.value;
+  return !pane || pane.loading || (!pane.hasData && !pane.error);
+});
+
+const isHeaderNonSticky = computed(() => {
+  return activeDetailPane.value?.type === 'issue' && isIssueHeaderNonSticky.value;
+});
+
+const handleSwitchIssue = (owner: string, repo: string, issueNumber: number) => {
+  emit('switch-issue', owner, repo, issueNumber);
+};
+
+const handleSwitchPullRequest = (owner: string, repo: string, pullNumber: number) => {
+  emit('switch-pull-request', owner, repo, pullNumber);
+};
+
+const handleSwitchDiscussion = (owner: string, repo: string, discussionNumber: number) => {
+  emit('switch-discussion', owner, repo, discussionNumber);
+};
+
+watch(activeDetailKey, () => {
+  isIssueHeaderNonSticky.value = false;
+  isPullRequestReviewActive.value = false;
+});
+</script>
+
+<template>
+  <Transition name="detail-overlay-fade">
+    <DetailOverlay
+      v-if="isOverlayVisible"
+      :loading="false"
+      :loading-title="activeDetailPane?.loadingTitle || t('issueDetail.loading')"
+      :loading-subtitle="t('issueDetail.syncing')"
+      :back-label="t('issueDetail.back')"
+      :home-label="t('issueDetail.home')"
+      :show-home-button="shouldShowHomeButton"
+      :non-sticky-header="isHeaderNonSticky"
+      :hide-header="isPullRequestReviewActive"
+      content-class="detail-host-content p-0 is-clipped"
+      @back="emit('back')"
+      @home="emit('home')"
+    >
+      <div class="detail-pane-stage is-clipped">
+        <Transition name="detail-pane-slide">
+          <div :key="activeDetailKey" class="detail-pane">
+            <div
+              v-if="isContentLoading"
+              class="detail-loading-pane is-flex is-flex-direction-column is-justify-content-center is-align-items-center"
+            >
+              <div class="box has-text-centered py-5 px-6 shadow-md detail-loading-box">
+                <Loader2Icon
+                  class="spin-animation has-text-link mb-3"
+                  :size="40"
+                  :stroke-width="2.5"
+                />
+
+                <p class="is-size-6 has-text-weight-semibold has-text-grey-dark">
+                  {{ activeDetailPane?.loadingTitle || t('issueDetail.loading') }}
+                </p>
+                <p class="is-size-7 has-text-grey-light mt-1">{{ t('issueDetail.syncing') }}</p>
+              </div>
+            </div>
+
+            <div v-else-if="activeDetailPane?.error" class="detail-feedback-pane">
+              <div class="notification is-danger is-light mb-0 detail-feedback-box">
+                <p class="is-size-6 has-text-weight-semibold mb-2">
+                  {{ activeDetailPane.loadingTitle }}
+                </p>
+                <p class="is-size-7">{{ activeDetailPane.error }}</p>
+              </div>
+            </div>
+
+            <IssueDetail
+              v-else-if="activeDetailPane?.type === 'issue' && issue"
+              :issue="issue"
+              @update:non-sticky-header="isIssueHeaderNonSticky = $event"
+              @switch-issue="handleSwitchIssue"
+              @switch-pull-request="handleSwitchPullRequest"
+            />
+
+            <PrDetail
+              v-else-if="activeDetailPane?.type === 'pull-request' && pullRequest"
+              :pull-request="pullRequest"
+              :review-active="isPullRequestReviewRoute"
+              @update:review-active="isPullRequestReviewActive = $event"
+              @open-review="emit('open-pull-request-review')"
+              @close-review="emit('close-pull-request-review')"
+              @switch-issue="handleSwitchIssue"
+              @switch-pull-request="handleSwitchPullRequest"
+            />
+
+            <DiscussionDetail
+              v-else-if="activeDetailPane?.type === 'discussion' && discussion"
+              :discussion="discussion"
+              @switch-issue="handleSwitchIssue"
+              @switch-pull-request="handleSwitchPullRequest"
+              @switch-discussion="handleSwitchDiscussion"
+            />
+
+            <RepoDetail
+              v-else-if="activeDetailPane?.type === 'repository' && repository"
+              :repository="repository"
+              :owner="repositoryOwner"
+              :repo="repositoryName"
+            />
+          </div>
+        </Transition>
+      </div>
+    </DetailOverlay>
+  </Transition>
+</template>
+
+<style scoped lang="scss">
+.detail-pane-stage {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  background: var(--nekogit-surface);
+}
+
+.detail-pane {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  min-height: 0;
+  padding: 2rem 4rem;
+  overflow: hidden;
+  background: var(--nekogit-surface);
+}
+
+.detail-loading-pane {
+  height: 100%;
+  margin: -2rem -4rem;
+  background: var(--nekogit-surface-muted);
+}
+
+.detail-feedback-pane {
+  height: 100%;
+  margin: -2rem -4rem;
+  padding: 2rem;
+  background: var(--nekogit-surface-muted);
+}
+
+.detail-loading-box {
+  min-width: 200px;
+}
+
+.detail-feedback-box {
+  max-width: 420px;
+}
+
+.detail-overlay-fade-enter-active,
+.detail-overlay-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.detail-overlay-fade-enter-from,
+.detail-overlay-fade-leave-to {
+  opacity: 0;
+}
+
+.detail-pane-slide-enter-active,
+.detail-pane-slide-leave-active {
+  transition:
+    transform 0.45s ease,
+    opacity 0.45s ease;
+}
+
+.detail-pane-slide-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.detail-pane-slide-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.shadow-md {
+  box-shadow: var(--nekogit-shadow-raised);
+}
+</style>

@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-local-repository-git-status"
+description = "Enables the desktop_local_repository_git_status command without any pre-configured scope."
+commands.allow = ["desktop_local_repository_git_status"]
+
+[[permission]]
+identifier = "deny-desktop-local-repository-git-status"
+description = "Denies the desktop_local_repository_git_status command without any pre-configured scope."
+commands.deny = ["desktop_local_repository_git_status"]

@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-read-github-cli-token"
+description = "Enables the desktop_read_github_cli_token command without any pre-configured scope."
+commands.allow = ["desktop_read_github_cli_token"]
+
+[[permission]]
+identifier = "deny-desktop-read-github-cli-token"
+description = "Denies the desktop_read_github_cli_token command without any pre-configured scope."
+commands.deny = ["desktop_read_github_cli_token"]

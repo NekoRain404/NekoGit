@@ -1,0 +1,650 @@
+@use 'variables' as *;
+@use 'components/local-repository-panel';
+
+:root {
+  color-scheme: light;
+
+  /* ── Border radius scale ── */
+  --nekogit-radius-sm: 4px;
+  --nekogit-radius-md: 6px;
+  --nekogit-radius-lg: 8px;
+  --nekogit-radius-xl: 12px;
+
+  --nekogit-page-bg: #f8fafc;
+  --nekogit-shell-bg: #f1f5f9;
+  --nekogit-surface: #ffffff;
+  --nekogit-surface-muted: #f8fafc;
+  --nekogit-surface-raised: #ffffff;
+  --nekogit-surface-hover: #fbfdff;
+  --nekogit-surface-active: #eef2ff;
+  --nekogit-overlay-bg: rgba(15, 23, 42, 0.68);
+  --nekogit-border: rgba(15, 23, 42, 0.1);
+  --nekogit-border-strong: rgba(15, 23, 42, 0.16);
+  --nekogit-text: #334155;
+  --nekogit-text-strong: #0f172a;
+  --nekogit-text-muted: #64748b;
+  --nekogit-text-subtle: #94a3b8;
+  --nekogit-accent: #4f46e5;
+  --nekogit-accent-hover: #4338ca;
+  --nekogit-accent-soft: rgba(79, 70, 229, 0.1);
+  --nekogit-primary-solid: #4f46e5;
+  --nekogit-primary-solid-hover: #4338ca;
+  --nekogit-link: #1f6feb;
+  --nekogit-link-solid: #1f6feb;
+  --nekogit-link-solid-hover: #1a5fd0;
+  --nekogit-success: #1a7f37;
+  --nekogit-success-solid: #1a7f37;
+  --nekogit-success-solid-hover: #16642d;
+  --nekogit-success-soft: rgba(34, 197, 94, 0.12);
+  --nekogit-danger: #cf222e;
+  --nekogit-danger-solid: #cf222e;
+  --nekogit-danger-solid-hover: #ad1a24;
+  --nekogit-danger-soft: rgba(248, 81, 73, 0.1);
+  --nekogit-warning: #bf8700;
+  --nekogit-warning-solid: #bf8700;
+  --nekogit-warning-solid-hover: #a77200;
+  --nekogit-warning-soft: rgba(245, 158, 11, 0.14);
+  --nekogit-info: #0969da;
+  --nekogit-info-solid: #0969da;
+  --nekogit-info-solid-hover: #0857b3;
+  --nekogit-info-soft: rgba(9, 105, 218, 0.1);
+  --nekogit-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --nekogit-shadow-card-hover:
+    0 0.45rem 1rem -0.35rem rgba(15, 23, 42, 0.2), 0 0 0 1px rgba(79, 70, 229, 0.2);
+  --nekogit-shadow-raised: 0 18px 48px rgba(15, 23, 42, 0.08), 0 4px 14px rgba(15, 23, 42, 0.06);
+  --nekogit-input-bg: #ffffff;
+  --nekogit-input-border: rgba(15, 23, 42, 0.16);
+  --nekogit-scrollbar-thumb: #cbd5e1;
+  --nekogit-markdown-bg: #ffffff;
+  --nekogit-code-bg: #f6f8fa;
+  --nekogit-focus-ring: #0969da;
+  --nekogit-unread-bg: rgba(9, 105, 218, 0.08);
+  --nekogit-skeleton-bg: #f1f5f9;
+  --nekogit-skeleton-shimmer: linear-gradient(90deg, #f6f8fa, #eaeef2, #f6f8fa);
+  --nekogit-grid-line: rgba(208, 215, 222, 0.35);
+  --nekogit-diff-add-bg: #e6ffec;
+  --nekogit-diff-delete-bg: #ffebe9;
+  --nekogit-diff-hunk-bg: #ddf4ff;
+  --nekogit-diff-empty-bg: #f6f8fa;
+  --nekogit-draft-bg: #fff8c5;
+  --nekogit-draft-border: rgba(154, 103, 0, 0.25);
+  --nekogit-purple: #8250df;
+  --nekogit-purple-soft: #f5f0ff;
+  --nekogit-app-font-family:
+    'HarmonyOS Sans', 'Mona Sans VF', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans',
+    Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --nekogit-code-font-family:
+    'Maple Mono', ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+
+  --bulma-primary-h: 243deg;
+  --bulma-primary-s: 75%;
+  --bulma-primary-l: 59%;
+  --bulma-primary-invert-l: 100%;
+  --bulma-link-h: 215deg;
+  --bulma-link-s: 84%;
+  --bulma-link-l: 52%;
+  --bulma-link-invert-l: 100%;
+  --bulma-scheme-main: var(--nekogit-surface);
+  --bulma-scheme-main-bis: var(--nekogit-surface-muted);
+  --bulma-scheme-main-ter: var(--nekogit-shell-bg);
+  --bulma-background: var(--nekogit-shell-bg);
+  --bulma-border: var(--nekogit-border);
+  --bulma-border-weak: var(--nekogit-border);
+  --bulma-text: var(--nekogit-text);
+  --bulma-text-strong: var(--nekogit-text-strong);
+  --bulma-text-light: var(--nekogit-text-muted);
+  --bulma-text-weak: var(--nekogit-text-subtle);
+  --bulma-primary: var(--nekogit-accent);
+  --bulma-primary-invert: #ffffff;
+  --bulma-primary-light: var(--nekogit-accent-soft);
+  --bulma-primary-light-invert: var(--nekogit-accent);
+  --bulma-link: var(--nekogit-link);
+  --bulma-link-invert: #ffffff;
+  --bulma-link-light: var(--nekogit-info-soft);
+  --bulma-link-light-invert: var(--nekogit-info);
+  --bulma-info: var(--nekogit-info);
+  --bulma-info-light: var(--nekogit-info-soft);
+  --bulma-info-light-invert: var(--nekogit-info);
+  --bulma-success: var(--nekogit-success);
+  --bulma-success-light: var(--nekogit-success-soft);
+  --bulma-success-light-invert: var(--nekogit-success);
+  --bulma-warning: var(--nekogit-warning);
+  --bulma-warning-light: var(--nekogit-warning-soft);
+  --bulma-warning-light-invert: var(--nekogit-warning);
+  --bulma-danger: var(--nekogit-danger);
+  --bulma-danger-light: var(--nekogit-danger-soft);
+  --bulma-danger-light-invert: var(--nekogit-danger);
+  --bulma-light: var(--nekogit-surface-muted);
+  --bulma-light-invert: var(--nekogit-text-strong);
+  --bulma-dark: #1f2937;
+  --bulma-dark-invert: #ffffff;
+  --bulma-background-hover: rgba(15, 23, 42, 0.045);
+  --bulma-border-hover: rgba(15, 23, 42, 0.22);
+  --bulma-link-soft: rgba(79, 70, 229, 0.08);
+}
+
+html.dark {
+  color-scheme: dark;
+
+  /* ── Border radius scale (same as light) ── */
+  --nekogit-radius-sm: 4px;
+  --nekogit-radius-md: 6px;
+  --nekogit-radius-lg: 8px;
+  --nekogit-radius-xl: 12px;
+
+  --nekogit-page-bg: #111318;
+  --nekogit-shell-bg: #171a21;
+  --nekogit-surface: #1b1f27;
+  --nekogit-surface-muted: #20252f;
+  --nekogit-surface-raised: #222832;
+  --nekogit-surface-hover: #252c37;
+  --nekogit-surface-active: rgba(129, 140, 248, 0.16);
+  --nekogit-overlay-bg: rgba(5, 7, 12, 0.78);
+  --nekogit-border: rgba(230, 237, 243, 0.12);
+  --nekogit-border-strong: rgba(230, 237, 243, 0.2);
+  --nekogit-text: #cbd5e1;
+  --nekogit-text-strong: #f1f5f9;
+  --nekogit-text-muted: #9aa4b2;
+  --nekogit-text-subtle: #7f8a9a;
+  --nekogit-accent: #a5b4fc;
+  --nekogit-accent-hover: #c4b5fd;
+  --nekogit-accent-soft: rgba(165, 180, 252, 0.16);
+  --nekogit-primary-solid: #5048e5;
+  --nekogit-primary-solid-hover: #4338ca;
+  --nekogit-link: #79c0ff;
+  --nekogit-link-solid: #2563eb;
+  --nekogit-link-solid-hover: #1d4ed8;
+  --nekogit-success: #7ee787;
+  --nekogit-success-solid: #238636;
+  --nekogit-success-solid-hover: #1f7a31;
+  --nekogit-success-soft: rgba(126, 231, 135, 0.14);
+  --nekogit-danger: #ff7b72;
+  --nekogit-danger-solid: #da3633;
+  --nekogit-danger-solid-hover: #b62324;
+  --nekogit-danger-soft: rgba(255, 123, 114, 0.14);
+  --nekogit-warning: #f2cc60;
+  --nekogit-warning-solid: #9a6700;
+  --nekogit-warning-solid-hover: #845900;
+  --nekogit-warning-soft: rgba(242, 204, 96, 0.16);
+  --nekogit-info: #79c0ff;
+  --nekogit-info-solid: #0969da;
+  --nekogit-info-solid-hover: #0857b3;
+  --nekogit-info-soft: rgba(121, 192, 255, 0.14);
+  --nekogit-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.34);
+  --nekogit-shadow-card-hover:
+    0 0.65rem 1.2rem -0.45rem rgba(0, 0, 0, 0.52), 0 0 0 1px rgba(165, 180, 252, 0.24);
+  --nekogit-shadow-raised: 0 22px 58px rgba(0, 0, 0, 0.36), 0 5px 18px rgba(0, 0, 0, 0.24);
+  --nekogit-input-bg: #151922;
+  --nekogit-input-border: rgba(230, 237, 243, 0.16);
+  --nekogit-scrollbar-thumb: #4b5563;
+  --nekogit-markdown-bg: #0d1117;
+  --nekogit-code-bg: #161b22;
+  --nekogit-focus-ring: #79c0ff;
+  --nekogit-unread-bg: rgba(121, 192, 255, 0.12);
+  --nekogit-skeleton-bg: #20252f;
+  --nekogit-skeleton-shimmer: linear-gradient(90deg, #20252f, #2a3140, #20252f);
+  --nekogit-grid-line: rgba(230, 237, 243, 0.1);
+  --nekogit-diff-add-bg: rgba(46, 160, 67, 0.18);
+  --nekogit-diff-delete-bg: rgba(248, 81, 73, 0.18);
+  --nekogit-diff-hunk-bg: rgba(121, 192, 255, 0.14);
+  --nekogit-diff-empty-bg: #151922;
+  --nekogit-draft-bg: rgba(242, 204, 96, 0.14);
+  --nekogit-draft-border: rgba(242, 204, 96, 0.28);
+  --nekogit-purple: #d2a8ff;
+  --nekogit-purple-soft: rgba(210, 168, 255, 0.14);
+
+  --bulma-primary-l: 72%;
+  --bulma-primary-invert-l: 9%;
+  --bulma-link-l: 74%;
+  --bulma-link-invert-l: 9%;
+  --bulma-scheme-main: var(--nekogit-surface);
+  --bulma-scheme-main-bis: var(--nekogit-surface-muted);
+  --bulma-scheme-main-ter: var(--nekogit-surface-raised);
+  --bulma-background: var(--nekogit-shell-bg);
+  --bulma-border: var(--nekogit-border);
+  --bulma-border-weak: rgba(230, 237, 243, 0.08);
+  --bulma-text: var(--nekogit-text);
+  --bulma-text-strong: var(--nekogit-text-strong);
+  --bulma-text-light: var(--nekogit-text-muted);
+  --bulma-text-weak: var(--nekogit-text-subtle);
+  --bulma-primary: var(--nekogit-accent);
+  --bulma-primary-invert: #ffffff;
+  --bulma-primary-light: var(--nekogit-accent-soft);
+  --bulma-primary-light-invert: var(--nekogit-accent-hover);
+  --bulma-link: var(--nekogit-link);
+  --bulma-link-invert: #ffffff;
+  --bulma-link-light: var(--nekogit-info-soft);
+  --bulma-link-light-invert: var(--nekogit-info);
+  --bulma-info: var(--nekogit-info);
+  --bulma-info-light: var(--nekogit-info-soft);
+  --bulma-info-light-invert: var(--nekogit-info);
+  --bulma-success: var(--nekogit-success);
+  --bulma-success-light: var(--nekogit-success-soft);
+  --bulma-success-light-invert: var(--nekogit-success);
+  --bulma-warning: var(--nekogit-warning);
+  --bulma-warning-light: var(--nekogit-warning-soft);
+  --bulma-warning-light-invert: var(--nekogit-warning);
+  --bulma-danger: var(--nekogit-danger);
+  --bulma-danger-light: var(--nekogit-danger-soft);
+  --bulma-danger-light-invert: var(--nekogit-danger);
+  --bulma-light: var(--nekogit-surface-muted);
+  --bulma-light-invert: var(--nekogit-text-strong);
+  --bulma-dark: #111318;
+  --bulma-dark-invert: var(--nekogit-text-strong);
+  --bulma-background-hover: rgba(255, 255, 255, 0.065);
+  --bulma-border-hover: rgba(255, 255, 255, 0.22);
+  --bulma-link-soft: rgba(165, 180, 252, 0.14);
+}
+
+body {
+  font-family: var(--nekogit-app-font-family);
+  background-color: var(--nekogit-page-bg);
+  color: var(--bulma-text, var(--nekogit-text));
+}
+
+code,
+pre,
+kbd,
+samp,
+.markdown-body code,
+.markdown-body pre,
+.shiki {
+  font-family: var(--nekogit-code-font-family);
+}
+
+html,
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+.hero-body {
+  padding: 0;
+}
+
+.hero,
+.section,
+.dashboard-shell {
+  background: var(--nekogit-page-bg);
+  color: var(--bulma-text, var(--nekogit-text));
+}
+
+.navbar {
+  border-bottom: 1px solid var(--nekogit-border);
+  background-color: var(--nekogit-surface);
+  box-shadow: none;
+  transition: $theme-transition;
+}
+
+.navbar .title,
+.title,
+.label,
+.content strong,
+.has-text-weight-semibold,
+.has-text-weight-bold {
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+}
+
+.subtitle,
+.help,
+.has-text-grey,
+.has-text-grey-dark,
+.has-text-grey-light {
+  color: var(--nekogit-text-muted) !important;
+}
+
+a {
+  color: var(--bulma-link, var(--nekogit-link));
+}
+
+a:hover,
+a:focus {
+  color: var(--nekogit-accent-hover);
+}
+
+hr {
+  background-color: var(--nekogit-border);
+}
+
+.card,
+.box,
+.modal-card,
+.dropdown-content,
+.panel {
+  border-color: var(--nekogit-border);
+  background-color: var(--nekogit-surface);
+  color: var(--bulma-text, var(--nekogit-text));
+}
+
+.dropdown-content,
+.box,
+.modal-card {
+  box-shadow: var(--nekogit-shadow-raised);
+}
+
+.dropdown-item {
+  color: var(--bulma-text, var(--nekogit-text));
+
+  &:hover,
+  &:focus {
+    background-color: var(--nekogit-surface-hover);
+    color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  }
+
+  &.is-active {
+    background-color: var(--nekogit-accent);
+    color: #fff;
+  }
+}
+
+.navbar-item,
+.navbar-link {
+  color: var(--bulma-text, var(--nekogit-text));
+
+  &:hover,
+  &:focus {
+    background-color: var(--nekogit-surface-hover);
+    color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  }
+}
+
+.input,
+.textarea,
+.select select {
+  border-color: var(--nekogit-input-border);
+  background-color: var(--nekogit-input-bg);
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+
+  &::placeholder {
+    color: var(--nekogit-text-subtle);
+  }
+}
+
+.checkbox,
+.radio {
+  color: var(--bulma-text, var(--nekogit-text));
+}
+
+.button {
+  transition: $theme-transition;
+}
+
+.button.is-primary,
+.button.is-link,
+.button.is-info,
+.button.is-success,
+.button.is-warning,
+.button.is-danger {
+  color: var(--bulma-primary-invert, #fff);
+}
+
+.button.is-primary {
+  background-color: var(--nekogit-primary-solid);
+  border-color: var(--nekogit-primary-solid);
+
+  &:hover,
+  &:focus {
+    background-color: var(--nekogit-primary-solid-hover);
+    border-color: var(--nekogit-primary-solid-hover);
+    color: var(--bulma-primary-invert, #fff);
+  }
+
+  &:disabled {
+    background-color: var(--nekogit-primary-solid);
+    border-color: var(--nekogit-primary-solid);
+    color: var(--bulma-primary-invert, #fff);
+  }
+}
+
+.button.is-link {
+  background-color: var(--nekogit-link-solid);
+  border-color: var(--nekogit-link-solid);
+
+  &:hover,
+  &:focus {
+    background-color: var(--nekogit-link-solid-hover);
+    border-color: var(--nekogit-link-solid-hover);
+  }
+}
+
+.button.is-info {
+  background-color: var(--nekogit-info-solid);
+  border-color: var(--nekogit-info-solid);
+
+  &:hover,
+  &:focus {
+    background-color: var(--nekogit-info-solid-hover);
+    border-color: var(--nekogit-info-solid-hover);
+  }
+}
+
+.button.is-success {
+  background-color: var(--nekogit-success-solid);
+  border-color: var(--nekogit-success-solid);
+
+  &:hover,
+  &:focus {
+    background-color: var(--nekogit-success-solid-hover);
+    border-color: var(--nekogit-success-solid-hover);
+  }
+}
+
+.button.is-warning {
+  background-color: var(--nekogit-warning-solid);
+  border-color: var(--nekogit-warning-solid);
+
+  &:hover,
+  &:focus {
+    background-color: var(--nekogit-warning-solid-hover);
+    border-color: var(--nekogit-warning-solid-hover);
+  }
+}
+
+.button.is-danger {
+  background-color: var(--nekogit-danger-solid);
+  border-color: var(--nekogit-danger-solid);
+
+  &:hover,
+  &:focus {
+    background-color: var(--nekogit-danger-solid-hover);
+    border-color: var(--nekogit-danger-solid-hover);
+  }
+}
+
+.button.is-ghost {
+  color: var(--bulma-text, var(--nekogit-text));
+
+  &:hover,
+  &:focus {
+    background-color: var(--nekogit-surface-hover);
+    color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  }
+}
+
+.button.is-light {
+  border-color: var(--nekogit-border);
+  background-color: var(--nekogit-surface-muted);
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+
+  &:hover,
+  &:focus {
+    border-color: var(--nekogit-border-strong);
+    background-color: var(--nekogit-surface-hover);
+    color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  }
+}
+
+.tag.is-light,
+.tag:not([class*='is-']) {
+  border: 1px solid var(--nekogit-border);
+  background-color: var(--nekogit-surface-muted);
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+}
+
+.tag.is-activity {
+  margin-bottom: 0.3rem;
+}
+
+.tag.is-info.is-light {
+  border: 1px solid color-mix(in srgb, var(--nekogit-info) 22%, transparent);
+  background-color: var(--nekogit-info-soft);
+  color: var(--nekogit-info);
+}
+
+.tag.is-link.is-light {
+  border: 1px solid color-mix(in srgb, var(--nekogit-link) 24%, transparent);
+  background-color: var(--bulma-link-soft);
+  color: var(--nekogit-link);
+}
+
+.tag.is-primary.is-light {
+  border: 1px solid color-mix(in srgb, var(--nekogit-primary-solid) 24%, transparent);
+  background-color: var(--nekogit-accent-soft);
+  color: var(--nekogit-accent);
+}
+
+.tag.is-black.is-light {
+  border: 1px solid var(--nekogit-border);
+  background-color: var(--nekogit-surface-raised);
+  color: var(--nekogit-text-strong);
+}
+
+.tag.is-success.is-light {
+  border: 1px solid color-mix(in srgb, var(--nekogit-success) 24%, transparent);
+  background-color: var(--nekogit-success-soft);
+  color: var(--nekogit-success);
+}
+
+.tag.is-danger.is-light,
+.notification.is-danger.is-light {
+  border: 1px solid color-mix(in srgb, var(--nekogit-danger) 24%, transparent);
+  background-color: var(--nekogit-danger-soft);
+  color: var(--nekogit-danger);
+}
+
+.tag.is-warning.is-light,
+.notification.is-warning.is-light {
+  border: 1px solid color-mix(in srgb, var(--nekogit-warning) 28%, transparent);
+  background-color: var(--nekogit-warning-soft);
+  color: var(--nekogit-warning);
+}
+
+.tag.is-dark {
+  background-color: var(--nekogit-surface-raised);
+  color: var(--nekogit-text-strong);
+}
+
+.notification.is-light,
+.notification:not([class*='is-']) {
+  border: 1px solid var(--nekogit-border);
+  background-color: var(--nekogit-surface-muted);
+  color: var(--bulma-text, var(--nekogit-text));
+}
+
+.tabs.is-boxed li.is-active a {
+  border-color: var(--nekogit-border);
+  background-color: var(--nekogit-surface);
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+}
+
+.tabs a {
+  color: var(--nekogit-text-muted);
+
+  &:hover {
+    border-bottom-color: var(--nekogit-border-strong);
+    color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  }
+}
+
+.table {
+  background-color: var(--nekogit-surface);
+  color: var(--bulma-text, var(--nekogit-text));
+}
+
+.table th,
+.table td {
+  border-color: var(--nekogit-border);
+  color: var(--bulma-text, var(--nekogit-text));
+}
+
+.table th {
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+}
+
+.modal-card-head,
+.modal-card-body,
+.modal-card-foot {
+  border-color: var(--nekogit-border);
+  background-color: var(--nekogit-surface);
+  color: var(--bulma-text, var(--nekogit-text));
+}
+
+.modal-card-foot {
+  background-color: var(--nekogit-surface-muted);
+}
+
+.modal-card-title {
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+}
+
+.delete {
+  background-color: color-mix(in srgb, var(--nekogit-text-muted) 34%, transparent);
+
+  &:hover,
+  &:focus {
+    background-color: color-mix(in srgb, var(--nekogit-text-strong) 42%, transparent);
+  }
+}
+
+.has-background-grey-lighter {
+  background-color: var(--nekogit-surface-muted) !important;
+}
+
+.has-text-primary {
+  color: var(--nekogit-accent) !important;
+}
+
+.has-text-link {
+  color: var(--nekogit-link) !important;
+}
+
+.has-text-info {
+  color: var(--nekogit-info) !important;
+}
+
+.has-text-success {
+  color: var(--nekogit-success) !important;
+}
+
+.has-text-warning {
+  color: var(--nekogit-warning) !important;
+}
+
+.has-text-danger {
+  color: var(--nekogit-danger) !important;
+}
+
+.markdown-body {
+  background-color: transparent;
+  color: var(--fgColor-default, var(--bulma-text, var(--nekogit-text)));
+}
+
+::selection {
+  background: var(--nekogit-accent-soft);
+  color: var(--nekogit-text-strong);
+}
+
+// Global spin animation
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

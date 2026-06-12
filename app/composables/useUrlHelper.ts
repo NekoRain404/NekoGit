@@ -1,0 +1,75 @@
+import parseGitHubNotificationSubjectTarget from '~/utils/parseGitHubNotificationSubjectTarget';
+
+interface NotificationSubject {
+  type?: string;
+  url?: string;
+}
+
+interface NotificationLike {
+  subject?: NotificationSubject;
+  html_url?: string;
+}
+
+interface NotificationDetails {
+  owner: string;
+  repo: string;
+  type: 'issues' | 'pulls' | 'discussions';
+  number: number;
+  isIssue: boolean;
+  isPR: boolean;
+  isDiscussion: boolean;
+}
+
+/** Whether a notification subject refers to an issue, PR, or discussion. */
+function isInternalDetailSubject(notification: NotificationLike) {
+  return (
+    notification.subject?.type === 'Issue' ||
+    notification.subject?.type === 'PullRequest' ||
+    notification.subject?.type === 'Discussion'
+  );
+}
+
+/** Extract structured detail info from GitHub notification subjects and open them externally. */
+export function useUrlHelper() {
+  const getNotificationDetails = (notification: NotificationLike): NotificationDetails | null => {
+    if (isInternalDetailSubject(notification)) {
+      const target = parseGitHubNotificationSubjectTarget(notification.subject);
+      if (!target) return null;
+
+      return {
+        owner: target.owner,
+        repo: target.repo,
+        type: target.type,
+        number: target.number,
+        isIssue: target.type === 'issues',
+        isPR: target.type === 'pulls',
+        isDiscussion: target.type === 'discussions',
+      };
+    }
+
+    return null;
+  };
+
+  const openExternalNotification = (notification: NotificationLike) => {
+    if (isInternalDetailSubject(notification)) {
+      const details = getNotificationDetails(notification);
+      if (!details) return;
+
+      window.open(
+        `https://github.com/${details.owner}/${details.repo}/${details.type}/${details.number}`,
+        '_blank',
+        'noopener'
+      );
+      return;
+    }
+
+    if (notification.html_url) {
+      window.open(notification.html_url, '_blank', 'noopener');
+    }
+  };
+
+  return {
+    getNotificationDetails,
+    openExternalNotification,
+  };
+}

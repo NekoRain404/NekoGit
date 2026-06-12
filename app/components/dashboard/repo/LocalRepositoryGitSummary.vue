@@ -1,0 +1,283 @@
+<!-- Local Repository Git Summary — NekoGit dashboard component. -->
+<script setup lang="ts">
+import {
+  AlertCircleIcon,
+  CheckCircle2Icon,
+  GitBranchIcon,
+  GitCommitIcon,
+  Loader2Icon,
+} from 'lucide-vue-next';
+
+import { useLocalRepositoryPanelContext } from './localRepositoryPanelContext';
+
+const { copy, state } = useLocalRepositoryPanelContext();
+</script>
+
+<template>
+  <div
+    v-if="state.desktopGitStatusVisible.value"
+    class="local-repo-git"
+    :class="`local-repo-git--${state.desktopGitStatusTone.value}`"
+  >
+    <div class="local-repo-git__summary">
+      <span
+        class="local-repo-git__branch"
+        :title="
+          state.desktopLocalRepositoryGitStatus.value?.upstream || state.desktopGitBranchLabel.value
+        "
+      >
+        <GitBranchIcon :size="13" />
+        <span class="local-repo-git__branch-label">
+          {{ state.desktopGitBranchLabel.value }}
+        </span>
+      </span>
+      <span class="local-repo-git__state">
+        <Loader2Icon v-if="state.desktopGitStatusLoading.value" :size="12" class="spin-animation" />
+        <CheckCircle2Icon
+          v-else-if="state.desktopLocalRepositoryGitStatus.value?.clean"
+          :size="12"
+        />
+        <AlertCircleIcon v-else :size="12" />
+        <span>{{ state.desktopGitStatusLabel.value }}</span>
+      </span>
+    </div>
+    <p v-if="state.desktopGitStatusError.value" class="local-repo-git__error">
+      {{ state.desktopGitStatusError.value }}
+    </p>
+    <template v-else-if="state.desktopLocalRepositoryGitStatus.value">
+      <div
+        v-if="state.desktopGitLastCommit.value"
+        class="local-repo-git__commit"
+        :title="`${state.desktopGitLastCommit.value.shortOid} ${state.desktopGitLastCommit.value.summary}`"
+      >
+        <span class="local-repo-git__commit-label">
+          {{ copy.gitLastCommit }}
+        </span>
+        <span class="local-repo-git__commit-main">
+          <code>{{ state.desktopGitLastCommit.value.shortOid }}</code>
+          <span>{{ state.desktopGitLastCommit.value.summary }}</span>
+        </span>
+        <span class="local-repo-git__commit-meta">
+          <span>{{ state.desktopGitLastCommit.value.authorName }}</span>
+          <span v-if="state.desktopGitLastCommitTime.value">
+            {{ state.desktopGitLastCommitTime.value }}
+          </span>
+        </span>
+      </div>
+
+      <div v-if="state.desktopGitSyncBadges.value.length" class="local-repo-git__sync">
+        <span
+          v-for="badge in state.desktopGitSyncBadges.value"
+          :key="badge.label"
+          class="local-repo-git__sync-badge"
+        >
+          <span>{{ badge.label }}</span>
+          <strong>{{ badge.value }}</strong>
+        </span>
+      </div>
+
+      <div
+        v-if="
+          state.desktopBranchesLoading.value ||
+          state.desktopLocalBranches.value.length ||
+          state.desktopBranchesError.value
+        "
+        class="local-repo-branches"
+      >
+        <div class="local-repo-branches__label">
+          <span>{{ copy.gitSwitchBranch }}</span>
+          <Loader2Icon
+            v-if="state.desktopBranchesLoading.value || state.desktopBranchAction.value"
+            :size="11"
+            class="spin-animation"
+          />
+        </div>
+        <p v-if="state.desktopBranchesError.value" class="local-repo-git__error">
+          {{ state.desktopBranchesError.value }}
+        </p>
+        <select
+          v-else
+          class="local-repo-branches__select"
+          :value="state.desktopLocalRepositoryGitStatus.value.branch ?? ''"
+          :disabled="
+            state.desktopBranchAction.value ||
+            state.desktopGitStatusLoading.value ||
+            !state.desktopLocalRepositoryGitStatus.value.clean ||
+            state.desktopLocalBranches.value.length <= 1
+          "
+          :title="
+            state.desktopLocalRepositoryGitStatus.value.clean
+              ? copy.gitSwitchBranch
+              : copy.gitChanged
+          "
+          @change="state.switchDesktopLocalRepositoryBranch"
+        >
+          <option
+            v-for="branch in state.desktopLocalBranches.value"
+            :key="branch.name"
+            :value="branch.name"
+          >
+            {{ branch.upstream ? `${branch.name} -> ${branch.upstream}` : branch.name }}
+          </option>
+        </select>
+        <div class="local-repo-branches__create">
+          <input
+            v-model="state.desktopNewBranchName.value"
+            class="local-repo-branches__input"
+            type="text"
+            :placeholder="copy.gitCreateBranch"
+            :disabled="
+              state.desktopBranchAction.value ||
+              state.desktopCreateBranchLoading.value ||
+              state.desktopGitStatusLoading.value ||
+              !state.desktopLocalRepositoryGitStatus.value.clean
+            "
+            @keyup.enter="state.createDesktopLocalRepositoryBranch"
+          />
+          <button
+            type="button"
+            class="local-repo-branches__create-button"
+            :disabled="
+              !state.desktopNewBranchName.value.trim() ||
+              state.desktopBranchAction.value ||
+              state.desktopCreateBranchLoading.value ||
+              state.desktopGitStatusLoading.value ||
+              !state.desktopLocalRepositoryGitStatus.value.clean
+            "
+            :title="copy.gitCreateBranch"
+            @click="state.createDesktopLocalRepositoryBranch"
+          >
+            <Loader2Icon
+              v-if="state.desktopCreateBranchLoading.value"
+              :size="12"
+              class="spin-animation"
+            />
+            <GitBranchIcon v-else :size="12" />
+            <span>
+              {{
+                state.desktopCreateBranchLoading.value
+                  ? copy.gitCreatingBranch
+                  : copy.gitCreateBranch
+              }}
+            </span>
+          </button>
+        </div>
+        <div v-if="state.desktopRemoteBranches.value.length" class="local-repo-branches__remote">
+          <select
+            v-model="state.desktopRemoteBranchName.value"
+            class="local-repo-branches__select"
+            :disabled="
+              state.desktopBranchAction.value ||
+              state.desktopCheckoutRemoteBranchLoading.value ||
+              state.desktopGitStatusLoading.value ||
+              !state.desktopLocalRepositoryGitStatus.value.clean
+            "
+            :title="
+              state.desktopLocalRepositoryGitStatus.value.clean
+                ? copy.gitCheckoutRemoteBranch
+                : copy.gitChanged
+            "
+          >
+            <option value="">
+              {{ copy.gitCheckoutRemoteBranch }}
+            </option>
+            <option
+              v-for="branch in state.desktopRemoteBranches.value"
+              :key="branch.name"
+              :value="branch.name"
+              :disabled="!branch.checkoutable"
+            >
+              {{ branch.checkoutable ? branch.name : `${branch.name} -> ${branch.localName}` }}
+            </option>
+          </select>
+          <button
+            type="button"
+            class="local-repo-branches__create-button"
+            :disabled="
+              !state.desktopRemoteBranchName.value ||
+              state.desktopBranchAction.value ||
+              state.desktopCheckoutRemoteBranchLoading.value ||
+              state.desktopGitStatusLoading.value ||
+              !state.desktopLocalRepositoryGitStatus.value.clean
+            "
+            :title="copy.gitCheckoutRemoteBranch"
+            @click="state.checkoutDesktopRemoteLocalRepositoryBranch"
+          >
+            <Loader2Icon
+              v-if="state.desktopCheckoutRemoteBranchLoading.value"
+              :size="12"
+              class="spin-animation"
+            />
+            <GitBranchIcon v-else :size="12" />
+            <span>
+              {{
+                state.desktopCheckoutRemoteBranchLoading.value
+                  ? copy.gitCheckingOutRemoteBranch
+                  : copy.gitCheckoutRemoteBranch
+              }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div class="local-repo-git__changes">
+        <span
+          v-for="item in state.desktopGitChangeItems.value"
+          :key="item.label"
+          class="local-repo-git__change"
+          :class="{
+            'local-repo-git__change--active': item.value > 0,
+            'local-repo-git__change--danger': item.tone === 'danger' && item.value > 0,
+          }"
+        >
+          <strong>{{ item.value }}</strong>
+          <span>{{ item.label }}</span>
+        </span>
+      </div>
+
+      <form
+        v-if="!state.desktopLocalRepositoryGitStatus.value.clean"
+        class="local-repo-commit"
+        @submit.prevent="state.commitDesktopLocalRepositoryChanges"
+      >
+        <div class="local-repo-commit__label">
+          <span>{{ copy.gitCommitChanges }}</span>
+          <Loader2Icon
+            v-if="state.desktopAction.value === 'commit'"
+            :size="11"
+            class="spin-animation"
+          />
+        </div>
+        <div class="local-repo-commit__controls">
+          <input
+            v-model="state.desktopCommitMessage.value"
+            class="local-repo-commit__input"
+            type="text"
+            :placeholder="copy.gitCommitMessage"
+            :disabled="
+              Boolean(state.desktopAction.value) ||
+              state.desktopGitStatusLoading.value ||
+              state.desktopLocalRepositoryGitStatus.value.conflicted > 0
+            "
+          />
+          <button
+            type="submit"
+            class="local-repo-commit__button"
+            :disabled="!state.desktopCanCommitChanges.value"
+            :title="copy.gitCommitChanges"
+          >
+            <Loader2Icon
+              v-if="state.desktopAction.value === 'commit'"
+              :size="12"
+              class="spin-animation"
+            />
+            <GitCommitIcon v-else :size="12" />
+            <span>
+              {{ state.desktopAction.value === 'commit' ? copy.gitCommitting : copy.gitCommit }}
+            </span>
+          </button>
+        </div>
+      </form>
+    </template>
+  </div>
+</template>

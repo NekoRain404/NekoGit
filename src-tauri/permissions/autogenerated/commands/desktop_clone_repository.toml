@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-clone-repository"
+description = "Enables the desktop_clone_repository command without any pre-configured scope."
+commands.allow = ["desktop_clone_repository"]
+
+[[permission]]
+identifier = "deny-desktop-clone-repository"
+description = "Denies the desktop_clone_repository command without any pre-configured scope."
+commands.deny = ["desktop_clone_repository"]

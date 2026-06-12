@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-open-app-data"
+description = "Enables the desktop_open_app_data command without any pre-configured scope."
+commands.allow = ["desktop_open_app_data"]
+
+[[permission]]
+identifier = "deny-desktop-open-app-data"
+description = "Denies the desktop_open_app_data command without any pre-configured scope."
+commands.deny = ["desktop_open_app_data"]

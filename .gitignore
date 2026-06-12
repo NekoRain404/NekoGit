@@ -1,0 +1,50 @@
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+.node-runtime
+dist
+release
+src-tauri/target
+
+# Node dependencies
+node_modules
+
+# Logs
+logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Ide Files
+.trae/
+.agents/
+.claude/
+.codex/
+
+.codegraph/
+
+skills-lock.json
+
+.editorconfig
+AGENTS.md
+
+.playwright-mcp/
+
+/tmp/
+
+opencode.jsonc
+reasonix.toml
+
+/.sisyphus/
+/.omc/

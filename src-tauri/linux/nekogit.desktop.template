@@ -1,0 +1,12 @@
+[Desktop Entry]
+Categories={{categories}}
+Comment={{comment}}
+Exec={{exec}} %u
+StartupNotify=true
+StartupWMClass=nekogit-client
+Icon={{icon}}
+Name={{name}}
+Terminal=false
+Type=Application
+MimeType=x-scheme-handler/nekogit;
+Keywords=GitHub;Git;Pull Request;Issue;Code Review;

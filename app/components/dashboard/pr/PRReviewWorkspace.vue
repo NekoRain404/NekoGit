@@ -1,0 +1,954 @@
+<!-- PRReview Workspace — NekoGit dashboard component. -->
+<script setup lang="ts">
+import {
+  ArrowLeftIcon,
+  CheckIcon,
+  GitPullRequestIcon,
+  HomeIcon,
+  MessageSquareIcon,
+} from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue';
+
+import PRReviewDiffViewer from '~/components/dashboard/pr/PRReviewDiffViewer.vue';
+import PRReviewFileSidebar from '~/components/dashboard/pr/PRReviewFileSidebar.vue';
+import PRReviewSubmitBar from '~/components/dashboard/pr/PRReviewSubmitBar.vue';
+import { buildDashboardQueryFromNavigationEntry } from '~/utils/dashboard-url-navigation-utils';
+import {
+  isModifiedShortcut,
+  shouldIgnoreKeyboardShortcutTarget,
+} from '~/utils/keyboard-shortcut-utils';
+import {
+  buildPRReviewWorkspaceStateStorageKey,
+  readPRReviewWorkspaceState,
+  writePRReviewWorkspaceState,
+} from '~/utils/pr-review-workspace-state-utils';
+
+const inactiveDesktopReviewState = {
+  active: false,
+  canSelectPreviousFile: false,
+  canSelectNextFile: false,
+  canSelectNextUnviewedFile: false,
+  canToggleCurrentFileViewed: false,
+  canToggleFileSidebar: false,
+  canToggleReviewPanel: false,
+} as const;
+
+const props = defineProps<{
+  owner: string;
+  repo: string;
+  pullNumber: number;
+  commitId: string;
+  title?: string;
+}>();
+
+const emit = defineEmits<{
+  (e: 'close'): void;
+}>();
+
+const { t } = useI18n();
+const localePath = useLocalePath();
+const route = useRoute();
+const router = useRouter();
+const { setReviewState } = useDesktopRuntime();
+const {
+  goBack: goNavigationBack,
+  goToHome,
+  previousEntry,
+  replaceWithEntry,
+} = useNavigationHistory();
+
+const review = usePRReview({
+  owner: () => props.owner,
+  repo: () => props.repo,
+  pullNumber: () => props.pullNumber,
+  commitId: () => props.commitId,
+  messages: {
+    loadFailed: t('prReview.loadFailed'),
+    submitFailed: t('prReview.submitFailed'),
+    resolveThreadFailed: t('prReview.resolveThreadFailed'),
+    unresolveThreadFailed: t('prReview.unresolveThreadFailed'),
+  },
+  onSubmitted: () => emit('close'),
+});
+
+const hasFiles = computed(() => review.files.value.length > 0);
+const hasMoreFiles = computed(() => review.pagination.value.hasNext);
+const workspaceTitle = computed(() => props.title || t('prReview.untitledPullRequest'));
+const fileViewMode = shallowRef<'list' | 'tree'>('tree');
+const sidebarCollapsed = shallowRef(false);
+const reviewPanelCollapsed = shallowRef(true);
+const viewedFilenames = shallowRef(new Set<string>());
+const showUnviewedOnly = shallowRef(false);
+const workspaceStateHydrated = shallowRef(false);
+const workspaceStateStorageKey = computed(() =>
+  buildPRReviewWorkspaceStateStorageKey({
+    owner: props.owner,
+    repo: props.repo,
+    pullNumber: props.pullNumber,
+    commitId: props.commitId,
+  })
+);
+const reviewOrderedFiles = computed(() =>
+  review.allDiffSections.value.map((section) => section.file)
+);
+const activeFileIndex = computed(() =>
+  reviewOrderedFiles.value.findIndex((file) => file.filename === review.activeFilename.value)
+);
+const canSelectPreviousFile = computed(() => activeFileIndex.value > 0);
+const canSelectNextFile = computed(
+  () => activeFileIndex.value >= 0 && activeFileIndex.value < reviewOrderedFiles.value.length - 1
+);
+const loadedFilenames = computed(() => new Set(review.files.value.map((file) => file.filename)));
+const viewedCount = computed(
+  () => review.files.value.filter((file) => viewedFilenames.value.has(file.filename)).length
+);
+const unviewedCount = computed(() => Math.max(0, review.files.value.length - viewedCount.value));
+const currentFileViewed = computed(
+  () =>
+    Boolean(review.activeFilename.value) && viewedFilenames.value.has(review.activeFilename.value)
+);
+const canToggleCurrentFileViewed = computed(
+  () =>
+    Boolean(review.activeFilename.value) && loadedFilenames.value.has(review.activeFilename.value)
+);
+const totalAdditions = computed(() =>
+  review.files.value.reduce((total, file) => total + file.additions, 0)
+);
+const totalDeletions = computed(() =>
+  review.files.value.reduce((total, file) => total + file.deletions, 0)
+);
+const currentRouteTab = computed(() => {
+  const tab = route.query.tab;
+  if (Array.isArray(tab)) {
+    return tab.find((value): value is string => typeof value === 'string');
+  }
+
+  return typeof tab === 'string' ? tab : undefined;
+});
+const isPreviousEntryCurrentPullRequest = computed(() => {
+  const entry = previousEntry.value;
+  const data = entry?.data;
+
+  return (
+    entry?.type === 'pull-request' &&
+    data?.owner === props.owner &&
+    data.repo === props.repo &&
+    data.number === props.pullNumber
+  );
+});
+const shouldShowPullRequestDetailsButton = computed(() => !isPreviousEntryCurrentPullRequest.value);
+const desktopReviewStateUnavailable = shallowRef(false);
+const desktopReviewRuntimeAvailable = shallowRef<boolean | null>(null);
+const findNextUnviewedFile = () => {
+  const files = reviewOrderedFiles.value;
+  if (!files.length) {
+    return null;
+  }
+
+  if (activeFileIndex.value < 0) {
+    return files.find((file) => !viewedFilenames.value.has(file.filename)) ?? null;
+  }
+
+  for (let offset = 1; offset < files.length; offset += 1) {
+    const file = files[(activeFileIndex.value + offset) % files.length];
+    if (file && !viewedFilenames.value.has(file.filename)) {
+      return file;
+    }
+  }
+
+  return null;
+};
+const canSelectNextUnviewedFile = computed(() => Boolean(findNextUnviewedFile()));
+const desktopReviewState = computed(() => ({
+  active: true,
+  canSelectPreviousFile: canSelectPreviousFile.value,
+  canSelectNextFile: canSelectNextFile.value,
+  canSelectNextUnviewedFile: canSelectNextUnviewedFile.value,
+  canToggleCurrentFileViewed: canToggleCurrentFileViewed.value,
+  canToggleFileSidebar: hasFiles.value,
+  canToggleReviewPanel: hasFiles.value,
+}));
+
+const isDesktopReviewRuntimeAvailable = async () => {
+  if (!import.meta.client) return false;
+  if (desktopReviewRuntimeAvailable.value !== null) {
+    return desktopReviewRuntimeAvailable.value;
+  }
+
+  const { isTauri } = await import('@tauri-apps/api/core');
+  desktopReviewRuntimeAvailable.value = isTauri();
+  return desktopReviewRuntimeAvailable.value;
+};
+
+const navigateToEntryRoute = async (entry: typeof previousEntry.value) => {
+  if (!entry || entry.type === 'dashboard' || entry.type === 'notification') {
+    await router.push(localePath('/dashboard'));
+    return;
+  }
+
+  const query = buildDashboardQueryFromNavigationEntry(entry, {
+    repositoryTab: 'repos',
+  });
+
+  if (query) {
+    await router.push({ path: localePath('/dashboard'), query });
+    return;
+  }
+
+  await router.push(localePath('/dashboard'));
+};
+
+const goBack = async () => {
+  await navigateToEntryRoute(goNavigationBack());
+};
+
+const goHome = async () => {
+  goToHome();
+  await router.push(localePath('/dashboard'));
+};
+
+const goToPullRequestDetails = () => {
+  replaceWithEntry({
+    type: 'pull-request',
+    data: {
+      owner: props.owner,
+      repo: props.repo,
+      number: props.pullNumber,
+      tab: currentRouteTab.value,
+    },
+  });
+  emit('close');
+};
+
+const selectFileByOffset = (offset: number) => {
+  const files = reviewOrderedFiles.value;
+  if (!files.length) {
+    return;
+  }
+
+  const currentIndex = activeFileIndex.value >= 0 ? activeFileIndex.value : 0;
+  const nextIndex = Math.min(Math.max(currentIndex + offset, 0), files.length - 1);
+  const nextFile = files[nextIndex];
+
+  if (nextFile) {
+    review.selectFile(nextFile.filename);
+  }
+};
+
+const selectPreviousFile = () => {
+  selectFileByOffset(-1);
+};
+
+const selectNextFile = () => {
+  selectFileByOffset(1);
+};
+
+const toggleFileViewed = (filename: string) => {
+  if (!loadedFilenames.value.has(filename)) {
+    return;
+  }
+
+  const nextViewedFilenames = new Set(viewedFilenames.value);
+  if (nextViewedFilenames.has(filename)) {
+    nextViewedFilenames.delete(filename);
+  } else {
+    nextViewedFilenames.add(filename);
+  }
+
+  viewedFilenames.value = nextViewedFilenames;
+};
+
+const toggleCurrentFileViewed = () => {
+  if (!review.activeFilename.value) {
+    return;
+  }
+
+  toggleFileViewed(review.activeFilename.value);
+};
+
+const selectNextUnviewedFile = () => {
+  const nextFile = findNextUnviewedFile();
+  if (nextFile) {
+    review.selectFile(nextFile.filename);
+  }
+};
+
+const handleReviewShortcut = (event: KeyboardEvent) => {
+  if (event.defaultPrevented || shouldIgnoreKeyboardShortcutTarget(event.target)) {
+    return;
+  }
+
+  if (isModifiedShortcut(event, 'k', 'alt')) {
+    event.preventDefault();
+    selectPreviousFile();
+    return;
+  }
+
+  if (isModifiedShortcut(event, 'j', 'alt', { shift: true })) {
+    event.preventDefault();
+    selectNextUnviewedFile();
+    return;
+  }
+
+  if (isModifiedShortcut(event, 'j', 'alt')) {
+    event.preventDefault();
+    selectNextFile();
+    return;
+  }
+
+  if (isModifiedShortcut(event, 'm', 'alt', { shift: true })) {
+    event.preventDefault();
+    toggleCurrentFileViewed();
+    return;
+  }
+
+  if (isModifiedShortcut(event, '[', 'alt')) {
+    event.preventDefault();
+    sidebarCollapsed.value = !sidebarCollapsed.value;
+    return;
+  }
+
+  if (isModifiedShortcut(event, ']', 'alt')) {
+    event.preventDefault();
+    reviewPanelCollapsed.value = !reviewPanelCollapsed.value;
+  }
+};
+
+const handleReviewPreviousFileCommand = () => {
+  selectPreviousFile();
+};
+
+const handleReviewNextFileCommand = () => {
+  selectNextFile();
+};
+
+const handleReviewNextUnviewedFileCommand = () => {
+  selectNextUnviewedFile();
+};
+
+const handleReviewToggleCurrentFileViewedCommand = () => {
+  toggleCurrentFileViewed();
+};
+
+const handleReviewToggleFileSidebarCommand = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value;
+};
+
+const handleReviewToggleReviewPanelCommand = () => {
+  reviewPanelCollapsed.value = !reviewPanelCollapsed.value;
+};
+
+const syncDesktopReviewState = (state: typeof desktopReviewState.value) => {
+  if (desktopReviewStateUnavailable.value) {
+    return;
+  }
+
+  void (async () => {
+    if (!(await isDesktopReviewRuntimeAvailable())) {
+      return;
+    }
+
+    await setReviewState(state);
+  })().catch((error: unknown) => {
+    desktopReviewStateUnavailable.value = true;
+    console.warn('Failed to sync NekoGit desktop review menu state.', error);
+  });
+};
+
+onMounted(() => {
+  window.addEventListener('keydown', handleReviewShortcut);
+  window.addEventListener('nekogit:review-previous-file', handleReviewPreviousFileCommand);
+  window.addEventListener('nekogit:review-next-file', handleReviewNextFileCommand);
+  window.addEventListener('nekogit:review-next-unviewed-file', handleReviewNextUnviewedFileCommand);
+  window.addEventListener(
+    'nekogit:review-toggle-current-file-viewed',
+    handleReviewToggleCurrentFileViewedCommand
+  );
+  window.addEventListener(
+    'nekogit:review-toggle-file-sidebar',
+    handleReviewToggleFileSidebarCommand
+  );
+  window.addEventListener(
+    'nekogit:review-toggle-review-panel',
+    handleReviewToggleReviewPanelCommand
+  );
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleReviewShortcut);
+  window.removeEventListener('nekogit:review-previous-file', handleReviewPreviousFileCommand);
+  window.removeEventListener('nekogit:review-next-file', handleReviewNextFileCommand);
+  window.removeEventListener(
+    'nekogit:review-next-unviewed-file',
+    handleReviewNextUnviewedFileCommand
+  );
+  window.removeEventListener(
+    'nekogit:review-toggle-current-file-viewed',
+    handleReviewToggleCurrentFileViewedCommand
+  );
+  window.removeEventListener(
+    'nekogit:review-toggle-file-sidebar',
+    handleReviewToggleFileSidebarCommand
+  );
+  window.removeEventListener(
+    'nekogit:review-toggle-review-panel',
+    handleReviewToggleReviewPanelCommand
+  );
+
+  if (!desktopReviewStateUnavailable.value) {
+    void (async () => {
+      if (await isDesktopReviewRuntimeAvailable()) {
+        await setReviewState(inactiveDesktopReviewState);
+      }
+    })().catch(() => {
+      desktopReviewStateUnavailable.value = true;
+    });
+  }
+});
+
+watch(desktopReviewState, syncDesktopReviewState, { immediate: true });
+watch(
+  workspaceStateStorageKey,
+  (key) => {
+    workspaceStateHydrated.value = false;
+    viewedFilenames.value = new Set();
+    fileViewMode.value = 'tree';
+    sidebarCollapsed.value = false;
+    reviewPanelCollapsed.value = true;
+    showUnviewedOnly.value = false;
+
+    if (!import.meta.client || !key) {
+      workspaceStateHydrated.value = true;
+      return;
+    }
+
+    const state = readPRReviewWorkspaceState(window.localStorage, key);
+    if (state) {
+      viewedFilenames.value = new Set(state.viewedFilenames);
+      fileViewMode.value = state.fileViewMode;
+      sidebarCollapsed.value = state.sidebarCollapsed;
+      reviewPanelCollapsed.value = state.reviewPanelCollapsed;
+      showUnviewedOnly.value = state.showUnviewedOnly;
+    }
+
+    workspaceStateHydrated.value = true;
+  },
+  { immediate: true }
+);
+watch(
+  () => review.files.value.map((file) => file.filename),
+  (filenames) => {
+    const loaded = new Set(filenames);
+    const nextViewedFilenames = new Set(
+      [...viewedFilenames.value].filter((filename) => loaded.has(filename))
+    );
+
+    if (nextViewedFilenames.size !== viewedFilenames.value.size) {
+      viewedFilenames.value = nextViewedFilenames;
+    }
+
+    if (!filenames.length) {
+      showUnviewedOnly.value = false;
+    }
+  },
+  { immediate: true }
+);
+watch(
+  () => ({
+    viewedFilenames: [...viewedFilenames.value],
+    showUnviewedOnly: showUnviewedOnly.value,
+    fileViewMode: fileViewMode.value,
+    sidebarCollapsed: sidebarCollapsed.value,
+    reviewPanelCollapsed: reviewPanelCollapsed.value,
+    storageKey: workspaceStateStorageKey.value,
+    hydrated: workspaceStateHydrated.value,
+  }),
+  (state) => {
+    if (!import.meta.client || !state.hydrated || !state.storageKey) {
+      return;
+    }
+
+    writePRReviewWorkspaceState(
+      window.localStorage,
+      state.storageKey,
+      state,
+      loadedFilenames.value
+    );
+  },
+  { deep: true }
+);
+</script>
+
+<template>
+  <section class="pr-review-workspace">
+    <header class="pr-review-workspace__header">
+      <div class="pr-review-workspace__identity">
+        <GitPullRequestIcon
+          :size="18"
+          class="pr-review-workspace__header-icon"
+          aria-hidden="true"
+        />
+        <div class="pr-review-workspace__title-block">
+          <p class="pr-review-workspace__eyebrow mb-0">{{ owner }}/{{ repo }} #{{ pullNumber }}</p>
+          <h1 class="pr-review-workspace__title mb-0">{{ workspaceTitle }}</h1>
+        </div>
+      </div>
+
+      <div class="pr-review-workspace__summary" aria-live="polite">
+        <span class="pr-review-workspace__summary-pill">{{
+          t('prReview.filesCount', { count: review.files.value.length })
+        }}</span>
+        <span class="pr-review-workspace__summary-pill">
+          <CheckIcon :size="13" aria-hidden="true" />
+          {{
+            t('prReview.reviewedFilesProgress', {
+              viewed: viewedCount,
+              total: review.files.value.length,
+            })
+          }}
+        </span>
+        <span class="pr-review-workspace__summary-pill pr-review-workspace__summary-pill--add"
+          >+{{ totalAdditions }}</span
+        >
+        <span class="pr-review-workspace__summary-pill pr-review-workspace__summary-pill--delete"
+          >-{{ totalDeletions }}</span
+        >
+        <span
+          v-if="review.pendingCommentCount.value"
+          class="pr-review-workspace__summary-pill pr-review-workspace__summary-pill--draft"
+        >
+          <MessageSquareIcon :size="13" aria-hidden="true" />
+          {{ review.pendingCommentCount.value }}
+        </span>
+        <div class="pr-review-workspace__shortcuts" :aria-label="t('prReview.shortcutsLabel')">
+          <button
+            type="button"
+            class="pr-review-workspace__shortcut-button"
+            :disabled="!canSelectPreviousFile"
+            :aria-label="t('prReview.previousFile')"
+            :title="t('prReview.previousFileShortcut')"
+            @click="selectPreviousFile"
+          >
+            <kbd>Alt</kbd><kbd>K</kbd>
+          </button>
+          <button
+            type="button"
+            class="pr-review-workspace__shortcut-button"
+            :disabled="!canSelectNextFile"
+            :aria-label="t('prReview.nextFile')"
+            :title="t('prReview.nextFileShortcut')"
+            @click="selectNextFile"
+          >
+            <kbd>Alt</kbd><kbd>J</kbd>
+          </button>
+          <button
+            type="button"
+            class="pr-review-workspace__shortcut-button"
+            :disabled="!canSelectNextUnviewedFile"
+            :aria-label="t('prReview.nextUnviewedFile')"
+            :title="t('prReview.nextUnviewedFileShortcut')"
+            @click="selectNextUnviewedFile"
+          >
+            <kbd>Alt</kbd><kbd>Shift</kbd><kbd>J</kbd>
+          </button>
+          <button
+            type="button"
+            class="pr-review-workspace__shortcut-button"
+            :disabled="!canToggleCurrentFileViewed"
+            :aria-pressed="currentFileViewed"
+            :aria-label="
+              currentFileViewed ? t('prReview.markFileUnviewed') : t('prReview.markFileViewed')
+            "
+            :title="
+              currentFileViewed
+                ? t('prReview.markFileUnviewedShortcut')
+                : t('prReview.markFileViewedShortcut')
+            "
+            @click="toggleCurrentFileViewed"
+          >
+            <CheckIcon :size="13" aria-hidden="true" /><kbd>Alt</kbd><kbd>Shift</kbd><kbd>M</kbd>
+          </button>
+        </div>
+        <div class="pr-review-workspace__nav-buttons">
+          <button
+            type="button"
+            class="pr-review-workspace__nav-button"
+            :aria-label="t('repoFileView.back')"
+            :title="t('repoFileView.back')"
+            @click="goBack"
+          >
+            <ArrowLeftIcon :size="15" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            class="pr-review-workspace__nav-button"
+            :aria-label="t('repoFileView.home')"
+            :title="t('repoFileView.home')"
+            @click="goHome"
+          >
+            <HomeIcon :size="15" aria-hidden="true" />
+          </button>
+          <template v-if="shouldShowPullRequestDetailsButton">
+            <span class="pr-review-workspace__nav-divider" aria-hidden="true" />
+            <button
+              type="button"
+              class="pr-review-workspace__nav-button pr-review-workspace__nav-button--pr-details"
+              :aria-label="t('prReview.backToDetails')"
+              :title="t('prReview.backToDetails')"
+              @click="goToPullRequestDetails"
+            >
+              <GitPullRequestIcon :size="14" aria-hidden="true" />
+              <span class="pr-review-workspace__nav-button-label" aria-hidden="true">PR</span>
+            </button>
+          </template>
+        </div>
+      </div>
+    </header>
+
+    <div v-if="review.errorMessage.value && !hasFiles" class="pr-review-workspace__notice">
+      <div class="notification is-danger is-light">
+        <p class="mb-3">{{ review.errorMessage.value }}</p>
+        <button class="button is-small is-danger" type="button" @click="review.retryLoad">
+          {{ t('prReview.retry') }}
+        </button>
+      </div>
+    </div>
+
+    <div v-else-if="review.loading.value" class="pr-review-workspace__notice">
+      <div class="is-flex is-align-items-center is-justify-content-center">
+        <span class="button is-loading is-light pr-review-workspace__loading-btn mr-2"></span>
+        <span>{{ t('prReview.loadingFiles') }}</span>
+      </div>
+    </div>
+
+    <div v-else-if="!hasFiles" class="pr-review-workspace__notice">
+      <p class="has-text-grey">{{ t('prReview.noFiles') }}</p>
+    </div>
+
+    <div
+      v-else
+      :class="[
+        'pr-review-workspace__grid',
+        {
+          'pr-review-workspace__grid--sidebar-collapsed': sidebarCollapsed,
+          'pr-review-workspace__grid--review-collapsed': reviewPanelCollapsed,
+        },
+      ]"
+    >
+      <PRReviewFileSidebar
+        :files="review.files.value"
+        :active-filename="review.activeFilename.value"
+        :draft-comments="review.draftComments.value"
+        :viewed-filenames="viewedFilenames"
+        :show-unviewed-only="showUnviewedOnly"
+        :viewed-count="viewedCount"
+        :loading-more="review.loadingMore.value"
+        :has-more-files="hasMoreFiles"
+        :view-mode="fileViewMode"
+        :collapsed="sidebarCollapsed"
+        @toggle-file-viewed="toggleFileViewed"
+        @update:show-unviewed-only="showUnviewedOnly = $event"
+        @update:view-mode="fileViewMode = $event"
+        @update:collapsed="sidebarCollapsed = $event"
+        @select-file="review.selectFile"
+        @load-more="review.loadMoreFiles"
+      />
+
+      <PRReviewDiffViewer
+        :repo-owner="owner"
+        :repo-name="repo"
+        :sections="review.allDiffSections.value"
+        :active-filename="review.activeFilename.value"
+        :draft-comments="review.draftComments.value"
+        :review-comment-threads="review.reviewCommentThreads.value"
+        :active-draft-target="review.activeDraftTarget.value"
+        :submitting="review.submitting.value"
+        :resolving-review-thread-id="review.resolvingReviewThreadId.value"
+        @visible-file-changed="review.syncVisibleFile"
+        @open-draft-editor="review.openDraftEditor"
+        @close-draft-editor="review.closeDraftEditor"
+        @save-draft-comment="review.saveDraftComment"
+        @remove-draft-comment="review.removeDraftComment"
+        @toggle-review-thread="review.toggleReviewThreadResolved"
+      />
+
+      <PRReviewSubmitBar
+        :event="review.selectedEvent.value"
+        :body="review.draftBody.value"
+        :pending-comment-count="review.pendingCommentCount.value"
+        :draft-comments="review.draftComments.value"
+        :can-submit="review.canSubmit.value"
+        :submitting="review.submitting.value"
+        :error-message="review.submitError.value"
+        :collapsed="reviewPanelCollapsed"
+        @update:event="review.selectedEvent.value = $event"
+        @update:body="review.draftBody.value = $event"
+        @update:collapsed="reviewPanelCollapsed = $event"
+        @submit="review.submitReview"
+        @remove-draft-comment="review.removeDraftComment"
+      />
+    </div>
+  </section>
+</template>
+
+<style scoped lang="scss">
+.pr-review-workspace {
+  height: 100%;
+  min-height: 0;
+  background: var(--nekogit-surface);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pr-review-workspace__header {
+  min-height: 3.25rem;
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--nekogit-border);
+  background: var(--nekogit-surface-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex: none;
+}
+
+.pr-review-workspace__identity,
+.pr-review-workspace__summary {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.pr-review-workspace__header-icon {
+  flex: none;
+  color: var(--nekogit-text-muted);
+}
+
+.pr-review-workspace__title-block {
+  min-width: 0;
+}
+
+.pr-review-workspace__eyebrow {
+  color: var(--nekogit-text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.pr-review-workspace__title {
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  font-size: 0.9rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pr-review-workspace__summary {
+  flex: none;
+  justify-content: flex-end;
+}
+
+.pr-review-workspace__shortcuts {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pr-review-workspace__shortcut-button {
+  min-height: 1.65rem;
+  border: 1px solid var(--nekogit-border);
+  border-radius: 999px;
+  padding: 0.15rem 0.45rem;
+  background: var(--nekogit-surface);
+  color: var(--nekogit-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
+  cursor: pointer;
+}
+
+.pr-review-workspace__shortcut-button:hover:not(:disabled),
+.pr-review-workspace__shortcut-button:focus-visible {
+  border-color: rgba(31, 111, 235, 0.32);
+  background: var(--nekogit-info-soft);
+  color: var(--nekogit-info);
+}
+
+.pr-review-workspace__shortcut-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.pr-review-workspace__shortcut-button kbd {
+  min-width: 1.05rem;
+  border: 1px solid var(--nekogit-border);
+  border-radius: 4px;
+  padding: 0.02rem 0.22rem;
+  background: var(--nekogit-surface-muted);
+  color: inherit;
+  font-family: var(--nekogit-code-font-family);
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.pr-review-workspace__summary-pill {
+  min-height: 1.65rem;
+  padding: 0.18rem 0.5rem;
+  border: 1px solid var(--nekogit-border);
+  border-radius: 999px;
+  background: var(--nekogit-surface);
+  color: var(--nekogit-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.pr-review-workspace__summary-pill--add {
+  color: var(--nekogit-success);
+}
+
+.pr-review-workspace__summary-pill--delete {
+  color: var(--nekogit-danger);
+}
+
+.pr-review-workspace__summary-pill--draft {
+  border-color: var(--nekogit-draft-border);
+  background: var(--nekogit-draft-bg);
+  color: var(--nekogit-warning);
+}
+
+.pr-review-workspace__nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  margin-left: 0.35rem;
+  padding: 3px;
+  border: 1px solid var(--nekogit-border);
+  border-radius: 8px;
+  background: var(--nekogit-surface);
+}
+
+.pr-review-workspace__nav-divider {
+  width: 1px;
+  height: 0.875rem;
+  margin: 0 2px;
+  background: var(--nekogit-border);
+  flex-shrink: 0;
+}
+
+.pr-review-workspace__nav-button {
+  height: 1.625rem;
+  min-width: 1.625rem;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--nekogit-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+
+  &:hover {
+    background: var(--nekogit-surface-hover);
+    color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--nekogit-info);
+    outline-offset: 1px;
+  }
+}
+
+.pr-review-workspace__nav-button--pr-details {
+  padding: 0 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: var(--nekogit-text-muted);
+
+  &:hover {
+    color: var(--nekogit-info);
+    background: var(--nekogit-info-soft, var(--nekogit-surface-hover));
+  }
+
+  &:focus-visible {
+    color: var(--nekogit-info);
+  }
+}
+
+.pr-review-workspace__nav-button-label {
+  line-height: 1;
+}
+
+.pr-review-workspace__grid {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns:
+    var(--pr-review-sidebar-width, minmax(14rem, 17rem))
+    minmax(0, 1fr)
+    var(--pr-review-panel-width, minmax(19rem, 22rem));
+  transition: grid-template-columns 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pr-review-workspace__grid > * {
+  min-width: 0;
+  min-height: 0;
+}
+
+.pr-review-workspace__grid--sidebar-collapsed {
+  --pr-review-sidebar-width: 2.75rem;
+}
+
+.pr-review-workspace__grid--review-collapsed {
+  --pr-review-panel-width: 2.75rem;
+}
+
+.pr-review-workspace__notice {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+html.dark .pr-review-workspace__loading-btn {
+  color: var(--nekogit-text-strong);
+  background-color: var(--nekogit-surface);
+  border-color: var(--nekogit-border);
+}
+
+html.dark .pr-review-workspace__loading-btn::after {
+  border-color: var(--nekogit-text-strong);
+  border-right-color: transparent;
+}
+
+@media (max-width: 1100px) {
+  .pr-review-workspace__grid {
+    grid-template-columns:
+      var(--pr-review-sidebar-width, minmax(12rem, 14rem))
+      minmax(0, 1fr)
+      var(--pr-review-panel-width, minmax(16rem, 18rem));
+  }
+
+  .pr-review-workspace__summary-pill:not(.pr-review-workspace__summary-pill--draft) {
+    display: none;
+  }
+
+  .pr-review-workspace__shortcuts {
+    display: none;
+  }
+}
+</style>

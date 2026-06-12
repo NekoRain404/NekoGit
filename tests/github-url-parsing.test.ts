@@ -1,0 +1,417 @@
+import { describe, expect, test } from 'vitest';
+
+import {
+  MAX_DASHBOARD_QUICK_OPEN_RECENTS,
+  buildDashboardQuickOpenPreview,
+  createDashboardQuickOpenRecent,
+  normalizeDashboardQuickOpenRecents,
+  upsertDashboardQuickOpenRecent,
+} from '../app/utils/dashboard-quick-open-utils';
+import { parseDashboardUrlTarget } from '../app/utils/dashboard-url-navigation-utils';
+import {
+  buildRepoRawFileUrl,
+  parseMarkdownRepoResource,
+} from '../app/utils/markdown-repo-path-utils';
+import parseGitHubMarkdownTarget from '../app/utils/parseGitHubMarkdownTarget';
+import parseGitHubNotificationSubjectTarget, {
+  toNotificationSubjectStateTarget,
+} from '../app/utils/parseGitHubNotificationSubjectTarget';
+import parseGitHubRepoPath from '../app/utils/parseGitHubRepoPath';
+
+describe('parseGitHubRepoPath', () => {
+  test('parses GitHub web and API repository URLs', () => {
+    expect(parseGitHubRepoPath('https://github.com/vuejs/core')).toEqual({
+      owner: 'vuejs',
+      repo: 'core',
+      fullName: 'vuejs/core',
+    });
+
+    expect(parseGitHubRepoPath('https://api.github.com/repos/nuxt/nuxt')).toEqual({
+      owner: 'nuxt',
+      repo: 'nuxt',
+      fullName: 'nuxt/nuxt',
+    });
+  });
+
+  test('parses relative repository paths and rejects non-repo targets', () => {
+    expect(parseGitHubRepoPath('owner/repo')).toEqual({
+      owner: 'owner',
+      repo: 'repo',
+      fullName: 'owner/repo',
+    });
+    expect(parseGitHubRepoPath('/repos/owner/repo')).toEqual({
+      owner: 'owner',
+      repo: 'repo',
+      fullName: 'owner/repo',
+    });
+
+    expect(parseGitHubRepoPath('https://github.com/owner/repo/issues/1')).toBeNull();
+    expect(parseGitHubRepoPath('https://github.com/settings/tokens')).toBeNull();
+    expect(parseGitHubRepoPath('https://github.com/apps/desktop')).toBeNull();
+    expect(parseGitHubRepoPath('https://github.com/orgs/github')).toBeNull();
+    expect(parseGitHubRepoPath('https://example.com/owner/repo')).toBeNull();
+    expect(parseGitHubRepoPath(null)).toBeNull();
+  });
+});
+
+describe('parseGitHubMarkdownTarget', () => {
+  test('parses GitHub issue, pull request, and discussion targets', () => {
+    expect(parseGitHubMarkdownTarget('https://github.com/owner/repo/issues/42')).toEqual({
+      owner: 'owner',
+      repo: 'repo',
+      number: 42,
+      type: 'issue',
+    });
+
+    expect(parseGitHubMarkdownTarget('https://api.github.com/repos/owner/repo/pulls/7')).toEqual({
+      owner: 'owner',
+      repo: 'repo',
+      number: 7,
+      type: 'pull-request',
+    });
+
+    expect(parseGitHubMarkdownTarget('https://github.com/owner/repo/discussions/9')).toEqual({
+      owner: 'owner',
+      repo: 'repo',
+      number: 9,
+      type: 'discussion',
+    });
+  });
+
+  test('rejects unsupported hosts and invalid target numbers', () => {
+    expect(parseGitHubMarkdownTarget('https://example.com/owner/repo/issues/42')).toBeNull();
+    expect(parseGitHubMarkdownTarget('https://github.com/owner/repo/issues/0')).toBeNull();
+    expect(parseGitHubMarkdownTarget('/owner/repo/issues/42')).toBeNull();
+  });
+});
+
+describe('parseGitHubNotificationSubjectTarget', () => {
+  test('keeps discussion notifications navigable but outside subject-state enrichment', () => {
+    const target = parseGitHubNotificationSubjectTarget({
+      type: 'Discussion',
+      url: 'https://github.com/owner/repo/discussions/9',
+    });
+
+    expect(target).toEqual({
+      owner: 'owner',
+      repo: 'repo',
+      number: 9,
+      type: 'discussions',
+    });
+    expect(target && toNotificationSubjectStateTarget(target)).toBeNull();
+  });
+
+  test('converts issue and pull request notification targets for state enrichment', () => {
+    const issueTarget = parseGitHubNotificationSubjectTarget({
+      type: 'Issue',
+      url: 'https://github.com/owner/repo/issues/42',
+    });
+    const pullTarget = parseGitHubNotificationSubjectTarget({
+      type: 'PullRequest',
+      url: 'https://github.com/owner/repo/pull/7',
+    });
+
+    expect(issueTarget && toNotificationSubjectStateTarget(issueTarget)).toEqual({
+      key: 'owner/repo/issues/42',
+      owner: 'owner',
+      repo: 'repo',
+      number: 42,
+      type: 'issues',
+    });
+    expect(pullTarget && toNotificationSubjectStateTarget(pullTarget)).toEqual({
+      key: 'owner/repo/pulls/7',
+      owner: 'owner',
+      repo: 'repo',
+      number: 7,
+      type: 'pulls',
+    });
+  });
+});
+
+describe('markdown repository resources', () => {
+  test('parses GitHub web and raw file URLs', () => {
+    expect(
+      parseMarkdownRepoResource('https://github.com/owner/repo/blob/main/docs/readme.md#intro')
+    ).toEqual({
+      owner: 'owner',
+      repo: 'repo',
+      branch: 'main',
+      path: 'docs/readme.md',
+      hash: '#intro',
+    });
+
+    expect(
+      parseMarkdownRepoResource('https://raw.githubusercontent.com/owner/repo/main/assets/logo.png')
+    ).toEqual({
+      owner: 'owner',
+      repo: 'repo',
+      branch: 'main',
+      path: 'assets/logo.png',
+      hash: undefined,
+    });
+  });
+
+  test('resolves repository-local paths from context', () => {
+    expect(
+      parseMarkdownRepoResource('./images/diagram.png', {
+        owner: 'owner',
+        repo: 'repo',
+        branch: 'main',
+        basePath: 'docs/guide.md',
+      })
+    ).toEqual({
+      owner: 'owner',
+      repo: 'repo',
+      branch: 'main',
+      path: 'docs/images/diagram.png',
+      hash: undefined,
+    });
+  });
+
+  test('builds raw API URLs for parsed resources', () => {
+    expect(
+      buildRepoRawFileUrl({
+        owner: 'owner',
+        repo: 'repo',
+        branch: 'feature/docs',
+        path: 'docs/readme.md',
+      })
+    ).toBe('/api/repos/owner/repo/raw/docs/readme.md?ref=feature%2Fdocs');
+  });
+});
+
+describe('parseDashboardUrlTarget', () => {
+  test('parses pull request files URLs as PR diff targets', () => {
+    expect(parseDashboardUrlTarget('https://github.com/owner/repo/pull/7/files#diff-abc')).toEqual({
+      type: 'pull-request',
+      owner: 'owner',
+      repo: 'repo',
+      number: 7,
+      view: 'diff',
+      query: {
+        pr: 'owner/repo/7',
+        prView: 'diff',
+      },
+      hash: '#diff-abc',
+    });
+  });
+
+  test('parses pull request changes URLs as PR diff targets', () => {
+    expect(
+      parseDashboardUrlTarget('https://github.com/PCL-Community/PCL-CE/pull/3056/changes')
+    ).toEqual({
+      type: 'pull-request',
+      owner: 'PCL-Community',
+      repo: 'PCL-CE',
+      number: 3056,
+      view: 'diff',
+      query: {
+        pr: 'PCL-Community/PCL-CE/3056',
+        prView: 'diff',
+      },
+      hash: undefined,
+    });
+  });
+
+  test('parses repository file URLs as dashboard file targets', () => {
+    expect(parseDashboardUrlTarget('https://github.com/owner/repo/blob/main/src/app.vue')).toEqual({
+      type: 'file',
+      owner: 'owner',
+      repo: 'repo',
+      path: 'src/app.vue',
+      branch: 'main',
+      query: {
+        repo: 'owner/repo',
+        path: 'src/app.vue',
+        branch: 'main',
+      },
+      hash: undefined,
+    });
+  });
+
+  test('preserves markdown context branch for same-repo dashboard repo links', () => {
+    expect(
+      parseDashboardUrlTarget('https://github.com/owner/repo', {
+        owner: 'owner',
+        repo: 'repo',
+        branch: 'feature/docs',
+      })
+    ).toEqual({
+      type: 'repository',
+      owner: 'owner',
+      repo: 'repo',
+      branch: 'feature/docs',
+      query: {
+        repo: 'owner/repo',
+        branch: 'feature/docs',
+      },
+      hash: undefined,
+    });
+  });
+
+  test('parses repository branch root URLs as dashboard repository branch targets', () => {
+    expect(parseDashboardUrlTarget('https://github.com/owner/repo/tree/main')).toEqual({
+      type: 'repository',
+      owner: 'owner',
+      repo: 'repo',
+      branch: 'main',
+      query: {
+        repo: 'owner/repo',
+        branch: 'main',
+      },
+      hash: undefined,
+    });
+  });
+
+  test('does not rewrite site-relative repo-shaped links without repo context', () => {
+    expect(parseDashboardUrlTarget('/owner/repo')).toBeNull();
+  });
+
+  test('does not rewrite GitHub reserved application URLs as repositories', () => {
+    expect(parseDashboardUrlTarget('https://github.com/settings/tokens')).toBeNull();
+    expect(parseDashboardUrlTarget('https://github.com/apps/desktop')).toBeNull();
+    expect(parseDashboardUrlTarget('https://github.com/orgs/github')).toBeNull();
+  });
+});
+
+describe('buildDashboardQuickOpenPreview', () => {
+  test('formats quick-open previews for detail and file targets', () => {
+    expect(
+      buildDashboardQuickOpenPreview(
+        parseDashboardUrlTarget('https://github.com/owner/repo/pull/7/files')
+      )
+    ).toEqual({
+      kind: 'pull-request-diff',
+      title: '#7 owner/repo',
+      subtitle: 'owner/repo',
+    });
+
+    expect(
+      buildDashboardQuickOpenPreview(
+        parseDashboardUrlTarget('https://github.com/owner/repo/blob/main/src/app.vue')
+      )
+    ).toEqual({
+      kind: 'file',
+      title: 'src/app.vue',
+      subtitle: 'owner/repo @ main',
+    });
+  });
+
+  test('formats repository branch previews', () => {
+    expect(
+      buildDashboardQuickOpenPreview(
+        parseDashboardUrlTarget('https://github.com/owner/repo/tree/main')
+      )
+    ).toEqual({
+      kind: 'repository',
+      title: 'owner/repo @ main',
+      subtitle: 'main',
+    });
+  });
+});
+
+describe('dashboard quick-open recents', () => {
+  test('creates a recent target from a parsed dashboard target', () => {
+    const target = parseDashboardUrlTarget('https://github.com/owner/repo/issues/42');
+    expect(target).not.toBeNull();
+
+    expect(
+      createDashboardQuickOpenRecent(' https://github.com/owner/repo/issues/42 ', target!, 10)
+    ).toEqual({
+      value: 'https://github.com/owner/repo/issues/42',
+      preview: {
+        kind: 'issue',
+        title: '#42 owner/repo',
+        subtitle: 'owner/repo',
+      },
+      openedAt: 10,
+    });
+  });
+
+  test('normalizes, sorts, deduplicates, and caps recent targets', () => {
+    const value = Array.from({ length: MAX_DASHBOARD_QUICK_OPEN_RECENTS + 3 }, (_, index) => ({
+      value: `https://github.com/owner/repo/issues/${index + 1}`,
+      preview: {
+        kind: 'issue',
+        title: `#${index + 1} owner/repo`,
+        subtitle: 'owner/repo',
+      },
+      openedAt: index + 1,
+    }));
+
+    value.push({
+      value: 'HTTPS://GITHUB.COM/OWNER/REPO/ISSUES/3',
+      preview: {
+        kind: 'issue',
+        title: '#3 owner/repo',
+        subtitle: 'owner/repo',
+      },
+      openedAt: 99,
+    });
+    value.push({
+      value: 'https://example.com/not-supported',
+      preview: {
+        kind: 'unsupported',
+        title: 'bad',
+        subtitle: 'bad',
+      },
+      openedAt: 100,
+    } as never);
+
+    const recents = normalizeDashboardQuickOpenRecents(value);
+
+    expect(recents).toHaveLength(MAX_DASHBOARD_QUICK_OPEN_RECENTS);
+    expect(recents[0]?.value).toBe('HTTPS://GITHUB.COM/OWNER/REPO/ISSUES/3');
+    expect(recents.some((recent) => recent.preview.kind === 'unsupported')).toBe(false);
+  });
+
+  test('upserts recent targets by normalized value', () => {
+    const existing = normalizeDashboardQuickOpenRecents([
+      {
+        value: 'https://github.com/owner/repo/issues/42',
+        preview: {
+          kind: 'issue',
+          title: '#42 owner/repo',
+          subtitle: 'owner/repo',
+        },
+        openedAt: 10,
+      },
+      {
+        value: 'https://github.com/owner/repo/pull/7',
+        preview: {
+          kind: 'pull-request',
+          title: '#7 owner/repo',
+          subtitle: 'owner/repo',
+        },
+        openedAt: 9,
+      },
+    ]);
+    const target = parseDashboardUrlTarget('https://github.com/owner/repo/issues/42');
+    const nextRecent = createDashboardQuickOpenRecent(
+      'https://github.com/OWNER/repo/issues/42',
+      target!,
+      20
+    );
+
+    expect(upsertDashboardQuickOpenRecent(existing, nextRecent!)).toEqual([
+      {
+        value: 'https://github.com/OWNER/repo/issues/42',
+        preview: {
+          kind: 'issue',
+          title: '#42 owner/repo',
+          subtitle: 'owner/repo',
+        },
+        openedAt: 20,
+      },
+      {
+        value: 'https://github.com/owner/repo/pull/7',
+        preview: {
+          kind: 'pull-request',
+          title: '#7 owner/repo',
+          subtitle: 'owner/repo',
+        },
+        openedAt: 9,
+      },
+    ]);
+  });
+});

@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-local-repository-branches"
+description = "Enables the desktop_local_repository_branches command without any pre-configured scope."
+commands.allow = ["desktop_local_repository_branches"]
+
+[[permission]]
+identifier = "deny-desktop-local-repository-branches"
+description = "Denies the desktop_local_repository_branches command without any pre-configured scope."
+commands.deny = ["desktop_local_repository_branches"]

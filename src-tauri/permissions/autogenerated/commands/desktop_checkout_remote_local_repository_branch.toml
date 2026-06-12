@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-checkout-remote-local-repository-branch"
+description = "Enables the desktop_checkout_remote_local_repository_branch command without any pre-configured scope."
+commands.allow = ["desktop_checkout_remote_local_repository_branch"]
+
+[[permission]]
+identifier = "deny-desktop-checkout-remote-local-repository-branch"
+description = "Denies the desktop_checkout_remote_local_repository_branch command without any pre-configured scope."
+commands.deny = ["desktop_checkout_remote_local_repository_branch"]

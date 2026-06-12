@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-switch-local-repository-branch"
+description = "Enables the desktop_switch_local_repository_branch command without any pre-configured scope."
+commands.allow = ["desktop_switch_local_repository_branch"]
+
+[[permission]]
+identifier = "deny-desktop-switch-local-repository-branch"
+description = "Denies the desktop_switch_local_repository_branch command without any pre-configured scope."
+commands.deny = ["desktop_switch_local_repository_branch"]

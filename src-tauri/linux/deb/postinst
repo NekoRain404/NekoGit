@@ -1,0 +1,55 @@
+#!/bin/sh
+set -e
+
+DESKTOP_FILE="NekoGit.desktop"
+MIME_TYPE="x-scheme-handler/nekogit"
+: "${SYSTEM_MIMEAPPS:=/usr/share/applications/mimeapps.list}"
+
+set_default_scheme_handler() {
+  # Only set the system fallback when the scheme has no existing default.
+  # User-level defaults in ~/.config/mimeapps.list still take precedence.
+  if grep -Eq "^${MIME_TYPE}=" "$SYSTEM_MIMEAPPS" 2>/dev/null; then
+    return 0
+  fi
+
+  if [ ! -f "$SYSTEM_MIMEAPPS" ]; then
+    {
+      printf '%s\n' '[Default Applications]'
+      printf '%s=%s\n' "$MIME_TYPE" "$DESKTOP_FILE"
+    } >"$SYSTEM_MIMEAPPS"
+    return 0
+  fi
+
+  if grep -q '^\[Default Applications\]$' "$SYSTEM_MIMEAPPS"; then
+    tmp="$(mktemp)"
+    awk -v mime="$MIME_TYPE" -v desktop="$DESKTOP_FILE" '
+      BEGIN { inserted = 0 }
+      /^\[Default Applications\]$/ {
+        print
+        if (!inserted) {
+          print mime "=" desktop
+          inserted = 1
+        }
+        next
+      }
+      { print }
+    ' "$SYSTEM_MIMEAPPS" >"$tmp"
+    cat "$tmp" >"$SYSTEM_MIMEAPPS"
+    rm -f "$tmp"
+  else
+    {
+      printf '\n%s\n' '[Default Applications]'
+      printf '%s=%s\n' "$MIME_TYPE" "$DESKTOP_FILE"
+    } >>"$SYSTEM_MIMEAPPS"
+  fi
+}
+
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database -q /usr/share/applications || true
+fi
+
+if [ "$1" = "configure" ]; then
+  set_default_scheme_handler || true
+fi
+
+exit 0

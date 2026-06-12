@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-show-window"
+description = "Enables the desktop_show_window command without any pre-configured scope."
+commands.allow = ["desktop_show_window"]
+
+[[permission]]
+identifier = "deny-desktop-show-window"
+description = "Denies the desktop_show_window command without any pre-configured scope."
+commands.deny = ["desktop_show_window"]

@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-stash-local-repository-changes"
+description = "Enables the desktop_stash_local_repository_changes command without any pre-configured scope."
+commands.allow = ["desktop_stash_local_repository_changes"]
+
+[[permission]]
+identifier = "deny-desktop-stash-local-repository-changes"
+description = "Denies the desktop_stash_local_repository_changes command without any pre-configured scope."
+commands.deny = ["desktop_stash_local_repository_changes"]

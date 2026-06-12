@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-push-local-repository"
+description = "Enables the desktop_push_local_repository command without any pre-configured scope."
+commands.allow = ["desktop_push_local_repository"]
+
+[[permission]]
+identifier = "deny-desktop-push-local-repository"
+description = "Denies the desktop_push_local_repository command without any pre-configured scope."
+commands.deny = ["desktop_push_local_repository"]

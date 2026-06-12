@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-create-local-repository-branch"
+description = "Enables the desktop_create_local_repository_branch command without any pre-configured scope."
+commands.allow = ["desktop_create_local_repository_branch"]
+
+[[permission]]
+identifier = "deny-desktop-create-local-repository-branch"
+description = "Denies the desktop_create_local_repository_branch command without any pre-configured scope."
+commands.deny = ["desktop_create_local_repository_branch"]
