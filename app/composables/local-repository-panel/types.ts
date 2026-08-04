@@ -5,6 +5,7 @@ export type DesktopRepositoryAction =
   | 'clone'
   | 'commit'
   | 'copy'
+  | 'createPR'
   | 'fetch'
   | 'open'
   | 'pull'

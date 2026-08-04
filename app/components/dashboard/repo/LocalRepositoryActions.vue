@@ -7,15 +7,25 @@ import {
   DownloadIcon,
   FolderOpenIcon,
   GitPullRequestArrowIcon,
+  GitPullRequestIcon,
   Loader2Icon,
   RefreshCwIcon,
   TerminalIcon,
   UploadIcon,
 } from 'lucide-vue-next';
+import { ref } from 'vue';
 
+import CreatePullRequestForm from './CreatePullRequestForm.vue';
 import { useLocalRepositoryPanelContext } from './localRepositoryPanelContext';
 
 const { copy, state } = useLocalRepositoryPanelContext();
+
+const showCreatePRForm = ref(false);
+
+const handlePRCreated = async (pull: any) => {
+  showCreatePRForm.value = false;
+  await state.refreshAssociatedPullRequest();
+};
 </script>
 
 <template>
@@ -121,5 +131,31 @@ const { copy, state } = useLocalRepositoryPanelContext();
         {{ state.desktopCloneCopied.value ? copy.copied : copy.copyCloneUrl }}
       </span>
     </button>
+    <template
+      v-if="state.desktopLocalRepositoryGitStatus.value?.upstream && state.desktopLocalRepositoryGitStatus.value?.clean"
+    >
+      <button
+        v-if="!state.associatedPullRequest.value"
+        class="local-repo-link local-repo-panel__action local-repo-panel__action--wide"
+        :disabled="Boolean(state.desktopAction.value)"
+        @click="showCreatePRForm = true"
+      >
+        <GitPullRequestIcon v-if="state.desktopAction.value !== 'createPR'" :size="14" />
+        <Loader2Icon v-else :size="14" class="spin-animation" />
+        <span>{{ copy.createPullRequest }}</span>
+      </button>
+      <span
+        v-else
+        class="local-repo-link local-repo-panel__action local-repo-panel__action--wide local-repo-panel__action--pr-exists"
+      >
+        <GitPullRequestIcon :size="14" />
+        <span>{{ copy.prAlreadyExists }}</span>
+      </span>
+    </template>
   </div>
+  <CreatePullRequestForm
+    v-if="showCreatePRForm"
+    @close="showCreatePRForm = false"
+    @created="handlePRCreated"
+  />
 </template>
