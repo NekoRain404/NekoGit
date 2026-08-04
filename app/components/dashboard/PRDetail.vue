@@ -104,6 +104,24 @@
               </button>
             </div>
           </div>
+
+          <div v-if="desktopAvailable" class="sidebar-card mt-4">
+            <div class="sidebar-card__content">
+              <button
+                class="sidebar-review-btn"
+                type="button"
+                :disabled="checkoutPRLoading"
+                @click="checkoutPullRequestLocally"
+              >
+                <Loader2Icon v-if="checkoutPRLoading" :size="14" class="spin-animation" />
+                <GitBranchIcon v-else :size="14" />
+                <span>{{ checkoutPRLoading ? t('prReview.checkingOut') : t('prReview.checkoutLocally') }}</span>
+              </button>
+              <p v-if="checkoutPRError" class="sidebar-card__error mt-2">
+                {{ checkoutPRError }}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -111,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { EyeIcon } from 'lucide-vue-next';
+import { EyeIcon, GitBranchIcon, Loader2Icon } from 'lucide-vue-next';
 import { computed, ref, shallowRef, watch } from 'vue';
 
 import PRActions from '~/components/dashboard/pr/PRActions.vue';
@@ -120,6 +138,7 @@ import PRLabels from '~/components/dashboard/pr/PRLabels.vue';
 import PRReviewerRequestModal from '~/components/dashboard/pr/PRReviewerRequestModal.vue';
 import PRReviewWorkspace from '~/components/dashboard/pr/PRReviewWorkspace.vue';
 import PRTimelineEvents from '~/components/dashboard/pr/PRTimelineEvents.vue';
+import { useDesktopRuntime } from '~/composables/useDesktopRuntime';
 import { createEmptyPRReviewersSummary } from '~/composables/usePRReviewers';
 import type {
   PRReviewerCandidate,
@@ -185,6 +204,14 @@ const apiFetch = useNekoGitApiFetch();
 const { fetchReviewerSummary, fetchReviewerCandidates, requestReviewers, removeReviewers } =
   usePRReviewers();
 
+const {
+  available: desktopAvailable,
+  checkoutRemoteLocalRepositoryBranch,
+  getLocalRepositoryStatus,
+} = useDesktopRuntime();
+const checkoutPRLoading = shallowRef(false);
+const checkoutPRError = shallowRef('');
+
 const { isScrolling: isSidebarScrolling, onScroll: onSidebarScroll } = useAutoHideScrollState();
 
 const repoPermissions = ref(createEmptyRepoPermissions());
@@ -233,6 +260,33 @@ const openReviewWindow = () => {
 const closeReviewWindow = () => {
   isReviewWindowOpen.value = false;
   emit('close-review');
+};
+
+const checkoutPullRequestLocally = async () => {
+  const headRef = currentPullRequest.value?.head?.ref;
+  if (!headRef || !repoOwner.value || !repoName.value) return;
+
+  checkoutPRLoading.value = true;
+  checkoutPRError.value = '';
+
+  try {
+    // Build the clone URL to check if local repo exists
+    const cloneUrl = `https://github.com/${repoOwner.value}/${repoName.value}.git`;
+    const status = await getLocalRepositoryStatus(cloneUrl);
+
+    if (!status.exists) {
+      checkoutPRError.value = t('prReview.cloneFirst');
+      return;
+    }
+
+    // The remote branch name is "origin/headRef" or just "headRef"
+    // The checkout command accepts "origin/branch-name" or "branch-name"
+    await checkoutRemoteLocalRepositoryBranch(cloneUrl, `origin/${headRef}`);
+  } catch (error) {
+    checkoutPRError.value = error instanceof Error ? error.message : 'Failed to checkout PR branch';
+  } finally {
+    checkoutPRLoading.value = false;
+  }
 };
 
 const switchToIssue = (owner: string, repo: string, issueNumber: number) => {
@@ -828,6 +882,12 @@ watch(
 
 .pr-detail__timeline {
   padding-bottom: 5rem;
+}
+
+.sidebar-card__error {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--bulma-danger, #cc0f35);
 }
 
 .sidebar-review-btn {
