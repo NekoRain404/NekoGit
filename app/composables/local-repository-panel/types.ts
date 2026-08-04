@@ -69,6 +69,15 @@ export type LocalRepositoryCopy = {
   openFile: string;
   openLocal: string;
   openTerminal: string;
+  createPullRequest: string;
+  creatingPullRequest: string;
+  pullRequestCreated: string;
+  noPullRequest: string;
+  pullRequestN: string;
+  checkoutPR: string;
+  checkingOutPR: string;
+  cloneFirst: string;
+  prAlreadyExists: string;
 };
 
 /** Options accepted by the main `useLocalRepositoryPanel` composable. */

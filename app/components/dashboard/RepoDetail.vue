@@ -148,6 +148,15 @@ const copy = computed(() => {
       watchNone: '仅被@时',
       watching: '关注',
       watchers: '关注者',
+      createPullRequest: '创建 Pull Request',
+      creatingPullRequest: '创建中',
+      pullRequestCreated: 'Pull Request 已创建',
+      noPullRequest: '无关联 PR',
+      pullRequestN: 'PR #{number}',
+      checkoutPR: '检出到本地',
+      checkingOutPR: '检出中',
+      cloneFirst: '请先克隆仓库',
+      prAlreadyExists: '已有关联 PR',
     };
   }
 
@@ -235,6 +244,15 @@ const copy = computed(() => {
     watchNone: 'Default',
     watching: 'Watching',
     watchers: 'Watchers',
+    createPullRequest: 'Create Pull Request',
+    creatingPullRequest: 'Creating',
+    pullRequestCreated: 'Pull Request created',
+    noPullRequest: 'No PR',
+    pullRequestN: 'PR #{number}',
+    checkoutPR: 'Checkout locally',
+    checkingOutPR: 'Checking out',
+    cloneFirst: 'Clone the repository first',
+    prAlreadyExists: 'PR exists',
   };
 });
 
