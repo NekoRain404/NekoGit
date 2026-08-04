@@ -736,7 +736,10 @@
     "nextFileShortcut": "Next file (Alt+J)",
     "nextUnviewedFileShortcut": "Next unviewed file (Alt+Shift+J)",
     "markFileViewedShortcut": "Mark file viewed (Alt+Shift+M)",
-    "markFileUnviewedShortcut": "Mark file unviewed (Alt+Shift+M)"
+    "markFileUnviewedShortcut": "Mark file unviewed (Alt+Shift+M)",
+    "checkoutLocally": "Checkout locally",
+    "checkingOut": "Checking out",
+    "cloneFirst": "Clone the repository first"
   },
   "markdown": {
     "copyCode": "Copy",

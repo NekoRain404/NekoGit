@@ -736,7 +736,10 @@
     "nextFileShortcut": "下一个文件 (Alt+J)",
     "nextUnviewedFileShortcut": "下一个未查看文件 (Alt+Shift+J)",
     "markFileViewedShortcut": "标记文件为已查看 (Alt+Shift+M)",
-    "markFileUnviewedShortcut": "标记文件为未查看 (Alt+Shift+M)"
+    "markFileUnviewedShortcut": "标记文件为未查看 (Alt+Shift+M)",
+    "checkoutLocally": "检出到本地",
+    "checkingOut": "检出中",
+    "cloneFirst": "请先克隆仓库"
   },
   "markdown": {
     "copyCode": "复制",
