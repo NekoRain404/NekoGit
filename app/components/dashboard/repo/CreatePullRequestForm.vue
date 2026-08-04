@@ -96,12 +96,12 @@ const handleSubmit = async () => {
             type="button"
             @click="emit('close')"
           >
-            {{ copy.gitCopied }}
+            {{ copy.cancel }}
           </button>
           <button
             class="button is-primary"
             type="button"
-            :disabled="!state.createPullRequestTitle.value.trim() || state.desktopAction.value === 'createPR'"
+            :disabled="!state.createPullRequestTitle.value.trim() || !state.createPullRequestBaseBranch.value.trim() || state.desktopAction.value === 'createPR'"
             @click="handleSubmit"
           >
             <Loader2Icon v-if="state.desktopAction.value === 'createPR'" :size="14" class="spin-animation" />

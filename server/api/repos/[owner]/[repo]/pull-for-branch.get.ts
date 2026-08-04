@@ -2,14 +2,15 @@
 import { extractRepoParams } from '#server/utils/repo-route-utils';
 
 export default definePrivateApiCoalescedEventHandler(async (event) => {
-  try {
-    const { owner, repo } = extractRepoParams(event);
-    const { octokit } = await getGitHubSessionContext(event);
-    const head = getQuery(event).head;
+  const { owner, repo } = extractRepoParams(event);
+  const head = getQuery(event).head;
 
-    if (!head || typeof head !== 'string') {
-      throw createError({ statusCode: 400, statusMessage: 'head query parameter is required' });
-    }
+  if (!head || typeof head !== 'string') {
+    throw createError({ statusCode: 400, statusMessage: 'head query parameter is required' });
+  }
+
+  try {
+    const { octokit } = await getGitHubSessionContext(event);
 
     const { data } = await octokit.request('GET /search/issues', {
       q: `repo:${owner}/${repo} is:pr is:open head:${head}`,

@@ -71,6 +71,7 @@ export type LocalRepositoryCopy = {
   openFile: string;
   openLocal: string;
   openTerminal: string;
+  cancel: string;
   createPullRequest: string;
   creatingPullRequest: string;
   pullRequestCreated: string;
