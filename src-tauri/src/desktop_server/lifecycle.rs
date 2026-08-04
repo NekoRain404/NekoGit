@@ -52,7 +52,7 @@ pub(crate) fn spawn_desktop_server(
         session_password,
     )?;
     let mut child = spawn_desktop_server_child(&config, port, true)?;
-    wait_for_desktop_server_startup(&mut child, port, &server_log_path)?;
+    wait_for_desktop_server_startup(&mut child, port, &config.readiness_token, &server_log_path)?;
 
     let server = Arc::new(DesktopServer {
         config,

@@ -4,6 +4,12 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { H3Event } from 'h3';
 import { deleteCookie, getCookie, setCookie } from 'h3';
 
+import { resolveAuthSessionCookieSecure } from '../../shared/utils/auth-session-env';
+import {
+  assertPersonalPasswordStrength,
+  resolvePersonalModeSecrets,
+} from '../../shared/utils/personal-mode-env';
+
 /** Cached identity for the single-user personal mode. */
 export interface PersonalIdentity {
   login: string;
@@ -30,29 +36,45 @@ function normalizeSecret(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-/** Read personal-mode auth credentials from Nuxt runtime config. */
+/**
+ * Read personal-mode auth credentials.
+ * Prefer live process env (`NUXT_GIT_PULSE_AUTH_*`) so production self-host works
+ * when secrets are only set at process start; fall back to runtimeConfig.
+ */
 function getPersonalAuthConfig() {
+  const fromEnv = resolvePersonalModeSecrets(process.env);
   const runtimeConfig = useRuntimeConfig() as {
     nekoGitAuth?: {
       personalPassword?: string;
       personalCookieSecret?: string;
+      githubToken?: string;
     };
   };
 
   return {
-    personalPassword: normalizeSecret(runtimeConfig.nekoGitAuth?.personalPassword),
-    personalCookieSecret: normalizeSecret(runtimeConfig.nekoGitAuth?.personalCookieSecret),
+    githubToken:
+      fromEnv.githubToken || normalizeSecret(runtimeConfig.nekoGitAuth?.githubToken),
+    personalPassword:
+      fromEnv.personalPassword || normalizeSecret(runtimeConfig.nekoGitAuth?.personalPassword),
+    personalCookieSecret:
+      fromEnv.personalCookieSecret ||
+      normalizeSecret(runtimeConfig.nekoGitAuth?.personalCookieSecret),
   };
 }
 
-/** Return standard cookie security options, enabling `Secure` only in production. */
+/** Public accessor for the personal-mode GitHub PAT (env preferred). */
+export function getPersonalModeGithubToken(): string {
+  return getPersonalAuthConfig().githubToken;
+}
+
+/** Return standard cookie security options; Secure follows the session cookie policy. */
 function getCookieSecurityOptions() {
   return {
     httpOnly: true,
     sameSite: 'lax' as const,
     path: REMEMBER_COOKIE_PATH,
     maxAge: REMEMBER_COOKIE_MAX_AGE_SECONDS,
-    secure: process.env.NODE_ENV === 'production',
+    secure: resolveAuthSessionCookieSecure(process.env),
   };
 }
 
@@ -101,6 +123,15 @@ export function assertPersonalCookieSecretStrength(): void {
   }
 
   console.warn(message);
+}
+
+/**
+ * Assert personal lock password minimum strength when personal mode is enabled.
+ * Uses the same production hard-fail / development warn policy as the cookie secret.
+ */
+export function assertPersonalPasswordConfigStrength(): void {
+  const { personalPassword } = getPersonalAuthConfig();
+  assertPersonalPasswordStrength(personalPassword, { nodeEnv: process.env.NODE_ENV });
 }
 
 /** HMAC-sign a remember-device payload and return the encoded `payload.signature` string. */

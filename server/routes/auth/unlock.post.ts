@@ -1,9 +1,15 @@
 /// POST Auth / Unlock Post
+import {
+  assertUnlockAttemptAllowed,
+  clearUnlockFailures,
+  recordUnlockFailure,
+} from '../../utils/auth-rate-limit-utils';
 import { establishGitHubSession } from '../../utils/auth-session-utils';
 import { assertCsrfToken } from '../../utils/csrf-utils';
 import {
   clearRememberDeviceCookie,
   createRememberDeviceCookie,
+  getPersonalModeGithubToken,
   getPersonalModeIdentity,
   verifyPersonalPassword,
   verifyRememberDeviceCookie,
@@ -12,18 +18,6 @@ import {
 interface UnlockRequestBody {
   password?: unknown;
   remember?: unknown;
-}
-
-function getGithubTokenFromRuntimeConfig(): string {
-  const runtimeConfig = useRuntimeConfig() as {
-    nekoGitAuth?: {
-      githubToken?: string;
-    };
-  };
-
-  return typeof runtimeConfig.nekoGitAuth?.githubToken === 'string'
-    ? runtimeConfig.nekoGitAuth.githubToken.trim()
-    : '';
 }
 
 function normalizeUnlockBody(body: unknown): { password: string; remember: boolean } {
@@ -78,9 +72,10 @@ function getSessionUserResponse(user: {
 /** Unlock personal mode via password or a valid remember-device cookie. */
 export default defineEventHandler(async (event) => {
   assertCsrfToken(event, '/auth/unlock');
+  assertUnlockAttemptAllowed(event);
 
   const body = normalizeUnlockBody(await readBody(event));
-  const githubToken = getGithubTokenFromRuntimeConfig();
+  const githubToken = getPersonalModeGithubToken();
   const identity = getPersonalModeIdentity();
 
   if (!githubToken || !identity) {
@@ -94,6 +89,7 @@ export default defineEventHandler(async (event) => {
   const hasActiveSession = Boolean(session.secure?.access_token && session.user?.login);
 
   if (!hasActiveSession && verifyRememberDeviceCookie(event)) {
+    clearUnlockFailures(event);
     await establishGitHubSession(event, 'pat', githubToken, identity);
 
     return {
@@ -110,12 +106,14 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!verifyPersonalPassword(body.password)) {
+    recordUnlockFailure(event);
     throw createError({
       statusCode: 401,
       statusMessage: 'Invalid password',
     });
   }
 
+  clearUnlockFailures(event);
   await establishGitHubSession(event, 'pat', githubToken, identity);
 
   if (body.remember) {

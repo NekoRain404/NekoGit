@@ -20,11 +20,11 @@ pub(super) struct DesktopServerConfig {
     pub(super) node_binary: PathBuf,
     pub(super) server_log_path: PathBuf,
     pub(super) session_password: String,
+    /// Shared secret for the desktop readiness HTTP probe (never logged).
+    pub(super) readiness_token: String,
     pub(super) personal_mode_enabled: String,
     pub(super) token_enabled: String,
     pub(super) oauth_requested: bool,
-    pub(super) oauth_env_ready: bool,
-    pub(super) oauth_enabled: bool,
     pub(super) user_settings_storage_driver: String,
     pub(super) user_settings_storage_base: String,
 }

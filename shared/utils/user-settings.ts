@@ -24,6 +24,7 @@ import type {
   CodeFontId,
   UserDesktopNotificationSettings,
   UserFontSettings,
+  UserNetworkSettings,
   UserSettings,
 } from '../types/user-settings';
 
@@ -52,6 +53,12 @@ export const DEFAULT_DESKTOP_NOTIFICATION_SETTINGS: UserDesktopNotificationSetti
   enabled: true,
   batchNewNotifications: true,
   quietWhenFocused: true,
+};
+
+/** DEFAULT NETWORK / PROXY SETTINGS. */
+export const DEFAULT_USER_NETWORK_SETTINGS: UserNetworkSettings = {
+  proxyEnabled: false,
+  proxyUrl: '',
 };
 
 /** has Own. */
@@ -114,9 +121,50 @@ export function createDefaultUserSettings(): UserSettings {
     version: 1,
     fonts: { ...DEFAULT_USER_FONT_SETTINGS },
     desktopNotifications: { ...DEFAULT_DESKTOP_NOTIFICATION_SETTINGS },
+    network: { ...DEFAULT_USER_NETWORK_SETTINGS },
     tabGroups: createDefaultTabGroups(),
     customTabs: [],
   };
+}
+
+/**
+ * Normalize a proxy URL for outbound GitHub requests.
+ * Accepts only http/https URLs; strips path/query/hash; allows optional userinfo.
+ */
+export function normalizeProxyUrl(value: unknown): string {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 512) {
+    return '';
+  }
+
+  if ([...trimmed].some((ch) => ch.charCodeAt(0) < 32)) {
+    return '';
+  }
+
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return '';
+    }
+    if (!url.hostname) {
+      return '';
+    }
+    // Rebuild without path/query/hash.
+    const port = url.port ? `:${url.port}` : '';
+    const auth =
+      url.username || url.password
+        ? `${encodeURIComponent(decodeURIComponent(url.username))}${
+            url.password ? `:${encodeURIComponent(decodeURIComponent(url.password))}` : ''
+          }@`
+        : '';
+    return `${url.protocol}//${auth}${url.hostname}${port}`;
+  } catch {
+    return '';
+  }
 }
 
 /** clone Tab Group. */
@@ -436,6 +484,30 @@ export function normalizeDesktopNotificationSettings(
   };
 }
 
+/** normalize Network / Proxy Settings. */
+export function normalizeUserNetworkSettings(
+  value: unknown,
+  fallback: UserNetworkSettings = DEFAULT_USER_NETWORK_SETTINGS
+): UserNetworkSettings {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { ...fallback };
+  }
+
+  const candidate = value as Partial<UserNetworkSettings>;
+  const proxyUrl =
+    candidate.proxyUrl !== undefined
+      ? normalizeProxyUrl(candidate.proxyUrl)
+      : fallback.proxyUrl;
+  const proxyEnabled =
+    typeof candidate.proxyEnabled === 'boolean' ? candidate.proxyEnabled : fallback.proxyEnabled;
+
+  // Enabling without a valid URL is treated as disabled.
+  return {
+    proxyEnabled: proxyEnabled && Boolean(proxyUrl),
+    proxyUrl,
+  };
+}
+
 /** normalize User Settings. */
 export function normalizeUserSettings(value: unknown, fallback = createDefaultUserSettings()) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -443,6 +515,7 @@ export function normalizeUserSettings(value: unknown, fallback = createDefaultUs
       ...fallback,
       fonts: { ...fallback.fonts },
       desktopNotifications: { ...fallback.desktopNotifications },
+      network: { ...fallback.network },
       tabGroups: cloneTabGroups(fallback.tabGroups),
       customTabs: cloneCustomTabs(fallback.customTabs),
     };
@@ -458,6 +531,7 @@ export function normalizeUserSettings(value: unknown, fallback = createDefaultUs
       candidate.desktopNotifications,
       fallback.desktopNotifications
     ),
+    network: normalizeUserNetworkSettings(candidate.network, fallback.network),
     tabGroups: normalizeTabGroups(candidate.tabGroups, fallback.tabGroups),
     customTabs: normalizeCustomTabs(candidate.customTabs, fallback.customTabs),
     updatedAt: normalizeString(candidate.updatedAt),
@@ -486,6 +560,9 @@ export function mergeUserSettingsPatch(current: UserSettings, patch: unknown) {
           base.desktopNotifications
         )
       : { ...base.desktopNotifications },
+    network: hasOwn(candidate, 'network')
+      ? normalizeUserNetworkSettings({ ...base.network, ...candidate.network }, base.network)
+      : { ...base.network },
     tabGroups: hasOwn(candidate, 'tabGroups')
       ? normalizeTabGroups(candidate.tabGroups, base.tabGroups)
       : cloneTabGroups(base.tabGroups),

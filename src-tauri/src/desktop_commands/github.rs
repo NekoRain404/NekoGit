@@ -1,7 +1,10 @@
-use tauri::Url;
+use tauri::{AppHandle, Runtime, Url};
 
 use crate::{
-    desktop_github_cli::read_github_cli_token, desktop_open::open_external_url,
+    desktop_github_cli::{
+        allow_github_cli_token_read, confirm_github_cli_token_read, read_github_cli_token,
+    },
+    desktop_open::open_external_url,
     desktop_url::normalize_supported_github_url,
 };
 
@@ -28,7 +31,13 @@ pub(crate) fn desktop_open_github_url(url: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-/// Reads the current GitHub CLI authentication token.
-pub(crate) fn desktop_read_github_cli_token() -> Result<String, String> {
+/// Reads the current GitHub CLI authentication token after a native confirm dialog.
+pub(crate) fn desktop_read_github_cli_token<R: Runtime>(
+    app: AppHandle<R>,
+) -> Result<String, String> {
+    let confirmed = confirm_github_cli_token_read(&app)?;
+    if !allow_github_cli_token_read(confirmed) {
+        return Err("GitHub CLI token access was denied".to_owned());
+    }
     read_github_cli_token()
 }

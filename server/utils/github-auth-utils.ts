@@ -2,22 +2,38 @@
 import { Octokit } from '@octokit/core';
 import type { H3Event } from 'h3';
 
+import { resolveEnvProxyUrl } from '../../shared/utils/proxy-url';
+
+import { createProxiedFetch, resolveGitHubProxyUrl } from './github-proxy-utils';
+
 const GITHUB_API_VERSION = '2026-03-10';
 const GITHUB_ACCEPT_HEADER = 'application/vnd.github+json';
 
+export type CreateGitHubClientOptions = {
+  /** Optional explicit proxy URL; when omitted, process env proxy is used if set. */
+  proxyUrl?: string;
+};
+
 /**
  * Create an authenticated Octokit client with NekoGit-specific headers
- * (API version, accept type, user agent).
+ * (API version, accept type, user agent). Optionally routes through a proxy.
  */
-export function createGitHubClient(accessToken: string): Octokit {
+export function createGitHubClient(
+  accessToken: string,
+  options: CreateGitHubClientOptions = {}
+): Octokit {
+  const proxyUrl = options.proxyUrl !== undefined ? options.proxyUrl : resolveEnvProxyUrl();
+  const proxiedFetch = createProxiedFetch(proxyUrl);
+
   const octokit = new Octokit({
     auth: accessToken,
     userAgent: 'nekogit',
+    ...(proxiedFetch ? { request: { fetch: proxiedFetch } } : {}),
   });
 
-  octokit.hook.before('request', (options) => {
-    options.headers = {
-      ...options.headers,
+  octokit.hook.before('request', (requestOptions) => {
+    requestOptions.headers = {
+      ...requestOptions.headers,
       accept: GITHUB_ACCEPT_HEADER,
       'x-github-api-version': GITHUB_API_VERSION,
     };
@@ -45,12 +61,14 @@ export async function getAccessToken(event: H3Event): Promise<string> {
 }
 
 /**
- * Create and return an authenticated Octokit client from the current session.
+ * Create and return an authenticated Octokit client from the current session,
+ * applying the user's proxy settings when configured.
  */
 export async function getGitHubClient(event: H3Event): Promise<Octokit> {
   const accessToken = await getAccessToken(event);
+  const proxyUrl = await resolveGitHubProxyUrl(event);
 
-  return createGitHubClient(accessToken);
+  return createGitHubClient(accessToken, { proxyUrl });
 }
 
 /**
@@ -79,8 +97,10 @@ export async function getGitHubSessionContext(event: H3Event): Promise<{
     });
   }
 
+  const proxyUrl = await resolveGitHubProxyUrl(event);
+
   return {
-    octokit: createGitHubClient(accessToken),
+    octokit: createGitHubClient(accessToken, { proxyUrl }),
     userLogin,
   };
 }

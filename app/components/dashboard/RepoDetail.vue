@@ -40,7 +40,9 @@ const {
   loading: loadingFiles,
   error: filesError,
   navigateToBranch,
-} = useRepoFiles({ explicitTarget: { owner: props.owner, repo: props.repo } });
+} = useRepoFiles({
+  explicitTarget: () => ({ owner: props.owner, repo: props.repo }),
+});
 
 /** License Info. */
 interface LicenseInfo {
@@ -253,6 +255,7 @@ const watchCount = ref(props.repository.watchers_count ?? 0);
 const readmeContent = ref<string | null>(null);
 const readmePath = ref<string | null>(null);
 const loadingReadme = ref(false);
+const readmeError = ref('');
 const readmeRequestId = ref(0);
 
 const licenseInfo = ref<LicenseInfo | null>(null);
@@ -491,6 +494,7 @@ const fetchReadme = async () => {
   const requestId = readmeRequestId.value + 1;
   readmeRequestId.value = requestId;
   loadingReadme.value = true;
+  readmeError.value = '';
   try {
     const data = await apiFetch<{ content: string | null; path?: string | null }>(
       `/api/repos/${props.owner}/${props.repo}/readme${buildRefQuery()}`
@@ -499,10 +503,17 @@ const fetchReadme = async () => {
 
     readmeContent.value = data.content;
     readmePath.value = data.path ?? null;
-  } catch {
+    if (!data.content) {
+      readmeError.value = t('repoDetail.readmeMissing');
+    }
+  } catch (error: unknown) {
     if (requestId === readmeRequestId.value) {
       readmeContent.value = null;
       readmePath.value = null;
+      readmeError.value =
+        error instanceof Error && error.message
+          ? error.message
+          : t('repoDetail.readmeLoadFailed');
     }
   } finally {
     if (requestId === readmeRequestId.value) {
@@ -726,6 +737,9 @@ onUnmounted(() => {
             <div v-if="loadingReadme" class="repo-readme__loading">
               <Loader2Icon :size="20" class="spin-animation" />
             </div>
+            <div v-else-if="readmeError" class="repo-readme__error">
+              {{ readmeError }}
+            </div>
             <div v-else-if="readmeContent" class="repo-readme__content content">
               <MarkdownRenderer
                 :value="readmeContent"
@@ -736,7 +750,7 @@ onUnmounted(() => {
               />
             </div>
             <div v-else class="repo-readme__empty">
-              {{ copy.noDescription }}
+              {{ t('repoDetail.readmeMissing') }}
             </div>
           </div>
         </section>
@@ -1063,6 +1077,15 @@ onUnmounted(() => {
 
 .repo-readme__content {
   // Let MarkdownRenderer handle its own styles
+}
+
+.repo-readme__error {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: var(--nekogit-danger-soft);
+  color: var(--nekogit-danger);
+  font-size: 0.85rem;
 }
 
 .repo-readme__empty {

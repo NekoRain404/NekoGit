@@ -1,6 +1,9 @@
 ///  Plugins / Personal Mode Validate Secret
 import { resolveAuthProviderState } from '../utils/auth-providers';
-import { assertPersonalCookieSecretStrength } from '../utils/personal-mode-utils';
+import {
+  assertPersonalCookieSecretStrength,
+  assertPersonalPasswordConfigStrength,
+} from '../utils/personal-mode-utils';
 
 /** Validate personal-mode secret strength at startup and warn on deprecated env vars. */
 export default defineNitroPlugin(() => {
@@ -25,4 +28,5 @@ export default defineNitroPlugin(() => {
   }
 
   assertPersonalCookieSecretStrength();
+  assertPersonalPasswordConfigStrength();
 });

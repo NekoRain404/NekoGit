@@ -176,7 +176,7 @@ Use the read/write token variable ending in `_KV_REST_API_TOKEN`; the `_KV_REST_
 
 ### Does NekoGit store my token?
 
-No. Your token is kept in an encrypted server session cookie — it never touches a database. When you close the browser, the session ends.
+No. Your token is kept in an encrypted server session cookie — it never touches a database. Persistent PAT and OAuth logins last up to 30 days (or until you log out or the cookie is cleared), not only until the browser closes.
 
 ### How do I log out?
 

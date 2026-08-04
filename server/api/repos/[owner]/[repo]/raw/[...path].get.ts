@@ -4,6 +4,7 @@ import { Buffer } from 'node:buffer';
 import { getGitHubClient, throwGitHubRouteError } from '#server/utils/github-auth-utils';
 import { getContentPath } from '#server/utils/repo-contents-utils';
 import { extractRepoParams } from '#server/utils/repo-route-utils';
+import { resolveRawRepoContentHeaders } from '#shared/utils/raw-content-type';
 
 type RawRepoContentResponse = {
   type?: string;
@@ -14,58 +15,6 @@ type RawRepoContentResponse = {
 function getStringQueryParam(value: unknown) {
   const rawValue = Array.isArray(value) ? value[0] : value;
   return typeof rawValue === 'string' && rawValue ? rawValue : undefined;
-}
-
-/** Map a file extension to its MIME type for streaming raw content. Falls back to `application/octet-stream`. */
-function getContentType(path: string) {
-  const extension = path.split('.').pop()?.toLowerCase();
-
-  switch (extension) {
-    case 'apng':
-      return 'image/apng';
-    case 'avif':
-      return 'image/avif';
-    case 'gif':
-      return 'image/gif';
-    case 'ico':
-      return 'image/x-icon';
-    case 'jpg':
-    case 'jpeg':
-      return 'image/jpeg';
-    case 'png':
-      return 'image/png';
-    case 'svg':
-      return 'image/svg+xml';
-    case 'webp':
-      return 'image/webp';
-    case 'aac':
-      return 'audio/aac';
-    case 'flac':
-      return 'audio/flac';
-    case 'm4a':
-      return 'audio/mp4';
-    case 'mp3':
-      return 'audio/mpeg';
-    case 'oga':
-      return 'audio/ogg';
-    case 'wav':
-      return 'audio/wav';
-    case '3gp':
-      return 'video/3gpp';
-    case 'm4v':
-    case 'mp4':
-      return 'video/mp4';
-    case 'ogv':
-      return 'video/ogg';
-    case 'mov':
-      return 'video/quicktime';
-    case 'webm':
-      return 'video/webm';
-    case 'vtt':
-      return 'text/vtt; charset=utf-8';
-    default:
-      return 'application/octet-stream';
-  }
 }
 
 /** Stream raw file content from a repository with content-type detection and base64 decoding. */
@@ -100,9 +49,16 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    setHeader(event, 'content-type', getContentType(contentPath));
+    const headers = resolveRawRepoContentHeaders(contentPath);
+    setHeader(event, 'content-type', headers.contentType);
     setHeader(event, 'cache-control', 'private, max-age=300');
-    setHeader(event, 'x-content-type-options', 'nosniff');
+    setHeader(event, 'x-content-type-options', headers.xContentTypeOptions);
+    if (headers.contentDisposition) {
+      setHeader(event, 'content-disposition', headers.contentDisposition);
+    }
+    if (headers.contentSecurityPolicy) {
+      setHeader(event, 'content-security-policy', headers.contentSecurityPolicy);
+    }
 
     return Buffer.from(fileContent.content || '', 'base64');
   } catch (error: unknown) {

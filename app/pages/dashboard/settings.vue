@@ -5,6 +5,7 @@ import {
   FolderOpenIcon,
   GithubIcon,
   ClipboardPasteIcon,
+  NetworkIcon,
   PaletteIcon,
   PowerIcon,
   RefreshCwIcon,
@@ -12,10 +13,10 @@ import {
   ServerIcon,
   TypeIcon,
 } from 'lucide-vue-next';
-import { computed, nextTick, onMounted, shallowRef, useTemplateRef } from 'vue';
+import { computed, nextTick, onMounted, shallowRef, useTemplateRef, watch } from 'vue';
 
 import type { AppFontId, CodeFontId } from '#shared/types/user-settings';
-import { normalizeSystemFontFamily } from '#shared/utils/user-settings';
+import { normalizeProxyUrl, normalizeSystemFontFamily } from '#shared/utils/user-settings';
 import DetailOverlay from '~/components/dashboard/DetailOverlay.vue';
 import FontPickerModal from '~/components/ui/FontPickerModal.vue';
 import { useDesktopRuntime } from '~/composables/useDesktopRuntime';
@@ -28,8 +29,16 @@ import {
 const { t } = useI18n();
 const localePath = useLocalePath();
 const router = useRouter();
-const { settings, loading, saving, error, loadSettings, updateFonts, updateDesktopNotifications } =
-  useUserSettings();
+const {
+  settings,
+  loading,
+  saving,
+  error,
+  loadSettings,
+  updateFonts,
+  updateDesktopNotifications,
+  updateNetwork,
+} = useUserSettings();
 const {
   runtimeInfo,
   serverStatus,
@@ -67,6 +76,8 @@ const appFontInputInitial = shallowRef('');
 const codeFontInputInitial = shallowRef('');
 const appFontInputRef = useTemplateRef<HTMLInputElement>('appFontInput');
 const codeFontInputRef = useTemplateRef<HTMLInputElement>('codeFontInput');
+const proxyUrlDraft = shallowRef('');
+const proxyUrlError = shallowRef('');
 
 // Bundled-only options passed to the modal; the modal loads system fonts on demand
 const bundledAppFontOptions = builtinAppFontOptions.map((f) => ({
@@ -296,6 +307,47 @@ const handleToggleDesktopNotificationFocusQuiet = () => {
   void updateDesktopNotifications({
     quietWhenFocused: !settings.value.desktopNotifications.quietWhenFocused,
   });
+};
+
+const syncProxyUrlDraftFromSettings = () => {
+  proxyUrlDraft.value = settings.value.network.proxyUrl || '';
+  proxyUrlError.value = '';
+};
+
+watch(
+  () => settings.value.network.proxyUrl,
+  () => {
+    syncProxyUrlDraftFromSettings();
+  },
+  { immediate: true }
+);
+
+const handleToggleNetworkProxy = () => {
+  const nextEnabled = !settings.value.network.proxyEnabled;
+  const proxyUrl = normalizeProxyUrl(proxyUrlDraft.value || settings.value.network.proxyUrl);
+  if (nextEnabled && !proxyUrl) {
+    proxyUrlError.value = t('dashboard.settings.networkProxyUrlRequired');
+    return;
+  }
+  proxyUrlError.value = '';
+  void updateNetwork({
+    proxyEnabled: nextEnabled,
+    proxyUrl,
+  });
+};
+
+const handleSaveNetworkProxyUrl = () => {
+  const proxyUrl = normalizeProxyUrl(proxyUrlDraft.value);
+  if (proxyUrlDraft.value.trim() && !proxyUrl) {
+    proxyUrlError.value = t('dashboard.settings.networkProxyUrlInvalid');
+    return;
+  }
+  proxyUrlError.value = '';
+  void updateNetwork({
+    proxyUrl,
+    proxyEnabled: settings.value.network.proxyEnabled ? Boolean(proxyUrl) : false,
+  });
+  proxyUrlDraft.value = proxyUrl;
 };
 
 // Apply font from modal selection
@@ -664,6 +716,68 @@ onMounted(() => {
                 >
                   <span class="settings__desktop-switch-knob"></span>
                 </button>
+              </div>
+
+              <div class="settings__section-divider" role="separator"></div>
+
+              <div class="settings__section-heading">
+                <NetworkIcon :size="16" />
+                <span>{{ t('dashboard.settings.networkTitle') }}</span>
+              </div>
+              <p class="settings__section-desc">
+                {{ t('dashboard.settings.networkDescription') }}
+              </p>
+
+              <div class="settings__desktop-toggle-row">
+                <div>
+                  <div class="settings__desktop-toggle-title">
+                    {{ t('dashboard.settings.networkProxyEnabled') }}
+                  </div>
+                  <div class="settings__desktop-toggle-desc">
+                    {{ t('dashboard.settings.networkProxyEnabledDescription') }}
+                  </div>
+                </div>
+                <button
+                  class="settings__desktop-switch"
+                  type="button"
+                  role="switch"
+                  :aria-checked="settings.network.proxyEnabled"
+                  :disabled="saving"
+                  @click="handleToggleNetworkProxy"
+                >
+                  <span class="settings__desktop-switch-knob"></span>
+                </button>
+              </div>
+
+              <div class="settings__network-proxy-field">
+                <label class="settings__network-proxy-label" for="settings-proxy-url">
+                  {{ t('dashboard.settings.networkProxyUrl') }}
+                </label>
+                <div class="settings__network-proxy-row">
+                  <input
+                    id="settings-proxy-url"
+                    v-model="proxyUrlDraft"
+                    class="input settings__network-proxy-input"
+                    type="text"
+                    autocomplete="off"
+                    spellcheck="false"
+                    :placeholder="t('dashboard.settings.networkProxyUrlPlaceholder')"
+                    :disabled="saving"
+                    @keydown.enter.prevent="handleSaveNetworkProxyUrl"
+                  />
+                  <button
+                    class="button is-primary is-small"
+                    type="button"
+                    :disabled="saving"
+                    @click="handleSaveNetworkProxyUrl"
+                  >
+                    {{ t('dashboard.settings.networkProxySave') }}
+                  </button>
+                </div>
+                <p v-if="proxyUrlError" class="help is-danger">{{ proxyUrlError }}</p>
+                <p v-else class="help has-text-grey">
+                  {{ t('dashboard.settings.networkProxyUrlHelp') }}
+                </p>
               </div>
 
               <div v-if="runtimeInfo" class="settings__desktop-actions">
@@ -1267,6 +1381,52 @@ onMounted(() => {
     background: var(--nekogit-surface);
     color: var(--nekogit-text);
   }
+}
+
+.settings__section-divider {
+  height: 1px;
+  margin: 1.25rem 0 1rem;
+  background: var(--nekogit-border);
+}
+
+.settings__section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.35rem;
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.settings__section-desc {
+  margin: 0 0 0.85rem;
+  color: var(--nekogit-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.settings__network-proxy-field {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.settings__network-proxy-label {
+  color: var(--bulma-text-strong, var(--nekogit-text-strong));
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.settings__network-proxy-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.settings__network-proxy-input {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ── Transitions ── */

@@ -1,11 +1,13 @@
 import type {
   UserDesktopNotificationSettings,
   UserFontSettings,
+  UserNetworkSettings,
   UserSettings,
 } from '#shared/types/user-settings';
 import {
   createDefaultUserSettings,
   mergeUserSettingsPatch,
+  normalizeProxyUrl,
   normalizeSystemFontFamily,
   normalizeUserSettings,
 } from '#shared/utils/user-settings';
@@ -282,6 +284,16 @@ export function useUserSettings() {
     return updateSettings({ desktopNotifications });
   };
 
+  const updateNetwork = (network: Partial<UserNetworkSettings>) => {
+    const nextNetwork: Partial<UserNetworkSettings> = {
+      ...network,
+    };
+    if (network.proxyUrl !== undefined) {
+      nextNetwork.proxyUrl = normalizeProxyUrl(network.proxyUrl);
+    }
+    return updateSettings({ network: nextNetwork });
+  };
+
   if (import.meta.client) {
     watch(activeLogin, (nextLogin, previousLogin) => {
       if (nextLogin === previousLogin) {
@@ -311,5 +323,6 @@ export function useUserSettings() {
     updateSettings,
     updateFonts,
     updateDesktopNotifications,
+    updateNetwork,
   };
 }

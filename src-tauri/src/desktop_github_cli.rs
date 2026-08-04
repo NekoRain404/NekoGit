@@ -1,12 +1,23 @@
 use std::{
     io::Read,
     process::{Command, Stdio},
+    sync::mpsc,
     thread,
     time::Duration,
 };
 
+use tauri::{AppHandle, Runtime};
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
+
 const GITHUB_CLI_TOKEN_ATTEMPTS: usize = 50;
 const GITHUB_CLI_TOKEN_INTERVAL: Duration = Duration::from_millis(100);
+const GITHUB_CLI_TOKEN_CONFIRM_TITLE: &str = "Allow GitHub CLI token access?";
+const GITHUB_CLI_TOKEN_CONFIRM_MESSAGE: &str = "NekoGit wants to read your GitHub CLI token (`gh auth token`) so it can sign you in. Only allow this if you started the request from NekoGit.";
+
+/// Pure gate used by the command and unit tests: only proceed when the user confirmed.
+pub(crate) fn allow_github_cli_token_read(user_confirmed: bool) -> bool {
+    user_confirmed
+}
 
 fn normalize_github_cli_token_output(value: &str) -> Option<String> {
     const GITHUB_TOKEN_PREFIXES: &[&str] = &["ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_"];
@@ -22,6 +33,23 @@ fn normalize_github_cli_token_output(value: &str) -> Option<String> {
                     .any(|prefix| line.starts_with(prefix))
         })
         .map(str::to_owned)
+}
+
+/// Prompt the user with a native confirmation dialog before exposing host credentials.
+pub(crate) fn confirm_github_cli_token_read<R: Runtime>(app: &AppHandle<R>) -> Result<bool, String> {
+    let (sender, receiver) = mpsc::channel();
+    app.dialog()
+        .message(GITHUB_CLI_TOKEN_CONFIRM_MESSAGE)
+        .title(GITHUB_CLI_TOKEN_CONFIRM_TITLE)
+        .kind(MessageDialogKind::Warning)
+        .buttons(MessageDialogButtons::OkCancel)
+        .show(move |result| {
+            let _ = sender.send(result);
+        });
+
+    receiver
+        .recv_timeout(Duration::from_secs(120))
+        .map_err(|_| "timed out waiting for GitHub CLI token confirmation".to_owned())
 }
 
 /// Reads a GitHub personal access token from the `gh` CLI (`gh auth token`).
@@ -101,5 +129,11 @@ mod tests {
         );
         assert_eq!(normalize_github_cli_token_output("\n\t\n"), None);
         assert_eq!(normalize_github_cli_token_output("bad\u{7}token\n"), None);
+    }
+
+    #[test]
+    fn token_read_requires_explicit_user_confirmation() {
+        assert!(allow_github_cli_token_read(true));
+        assert!(!allow_github_cli_token_read(false));
     }
 }

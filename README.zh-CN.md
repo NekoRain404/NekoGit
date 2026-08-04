@@ -174,7 +174,7 @@ NUXT_NEKOGIT_USER_SETTINGS_STORAGE_UPSTASH_ENV_PREFIX=UPSTASH_REDIS_REST
 
 ### NekoGit 会存储我的 token 吗？
 
-不会。你的 token 保存在加密的服务端会话 cookie 中——永远不会写入数据库。关闭浏览器后，会话即结束。
+不会。你的 token 保存在加密的服务端会话 cookie 中——永远不会写入数据库。持久化的 PAT / OAuth 登录最长可保留约 30 天（直到你主动退出或 cookie 被清除），并不会在关闭浏览器时立即结束。
 
 ### 如何退出登录？
 

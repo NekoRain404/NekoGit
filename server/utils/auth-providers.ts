@@ -1,6 +1,8 @@
 ///  Utils / Auth Providers
 import type { AuthProviderMode, AuthProviderState } from '#shared/types/auth-provider';
 
+import { resolvePersonalModeSecrets } from '../../shared/utils/personal-mode-env';
+
 const ENABLED_VALUES = new Set(['1', 'true', 'yes', 'on']);
 const DISABLED_VALUES = new Set(['0', 'false', 'no', 'off']);
 
@@ -30,6 +32,11 @@ function normalizeBoolean(value: unknown, defaultValue: boolean): boolean {
 /** Check whether a value is a non-blank string. */
 function hasNonBlankString(value: unknown): boolean {
   return typeof value === 'string' && value.trim().length > 0;
+}
+
+/** Normalize optional secret fields from runtimeConfig. */
+function normalizeSecretString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 /** Resolve the composite auth provider mode from individual feature flags. */
@@ -67,12 +74,22 @@ export function resolveAuthProviderState(): AuthProviderState {
   const oauthEnvReady = normalizeBoolean(runtimeConfig.nekoGitAuth?.githubOAuthEnvReady, false);
   const oauthEnabled = normalizeBoolean(runtimeConfig.nekoGitAuth?.githubOAuthEnabled, false);
   const warnings: string[] = [];
+  // Prefer live env so process-start secrets work even when runtimeConfig was baked empty.
+  const personalSecrets = resolvePersonalModeSecrets(process.env);
+  const githubToken =
+    personalSecrets.githubToken || normalizeSecretString(runtimeConfig.nekoGitAuth?.githubToken);
+  const personalPassword =
+    personalSecrets.personalPassword ||
+    normalizeSecretString(runtimeConfig.nekoGitAuth?.personalPassword);
+  const personalCookieSecret =
+    personalSecrets.personalCookieSecret ||
+    normalizeSecretString(runtimeConfig.nekoGitAuth?.personalCookieSecret);
 
   if (
     personalMode &&
-    (!hasNonBlankString(runtimeConfig.nekoGitAuth?.githubToken) ||
-      !hasNonBlankString(runtimeConfig.nekoGitAuth?.personalPassword) ||
-      !hasNonBlankString(runtimeConfig.nekoGitAuth?.personalCookieSecret))
+    (!hasNonBlankString(githubToken) ||
+      !hasNonBlankString(personalPassword) ||
+      !hasNonBlankString(personalCookieSecret))
   ) {
     throw new Error(AUTH_PERSONAL_MODE_CONFIGURATION_ERROR);
   }

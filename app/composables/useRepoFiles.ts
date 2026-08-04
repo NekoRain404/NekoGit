@@ -93,6 +93,24 @@ const getRequestErrorMessage = (error: unknown, fallback: string) => {
     return 'Repository file path was not found.';
   }
 
+  if (error && typeof error === 'object') {
+    // ofetch / h3 often put the useful text on statusMessage or data.statusMessage.
+    const statusMessage =
+      'statusMessage' in error && typeof error.statusMessage === 'string'
+        ? error.statusMessage
+        : 'data' in error &&
+            error.data &&
+            typeof error.data === 'object' &&
+            'statusMessage' in error.data &&
+            typeof (error.data as { statusMessage?: unknown }).statusMessage === 'string'
+          ? (error.data as { statusMessage: string }).statusMessage
+          : '';
+
+    if (statusMessage) {
+      return statusMessage;
+    }
+  }
+
   return error instanceof Error && error.message ? error.message : fallback;
 };
 
@@ -104,10 +122,11 @@ const getBranchNotFoundMessage = (branch: string) => {
  * Options for useRepoFiles.
  * `explicitTarget` allows the caller (e.g. RepoDetail overlay) to supply
  * owner/repo directly, bypassing the route query dependency.
+ * Prefer a getter so owner/repo updates re-trigger loads when the overlay stays mounted.
  */
 interface UseRepoFilesOptions {
-  explicitTarget?: RepoTarget | null;
-  explicitPath?: string;
+  explicitTarget?: RepoTarget | null | (() => RepoTarget | null);
+  explicitPath?: string | (() => string | undefined);
 }
 
 /** Browse a GitHub repository's file tree and load individual file contents. */
@@ -129,11 +148,20 @@ export function useRepoFiles(options?: UseRepoFilesOptions) {
   const contentRequestId = ref(0);
   const repoRequestId = ref(0);
 
+  const resolveExplicitTarget = (): RepoTarget | null | undefined => {
+    if (!options || !('explicitTarget' in options)) {
+      return undefined;
+    }
+    const value = options.explicitTarget;
+    return typeof value === 'function' ? value() : value;
+  };
+
   // When an explicit target is provided (overlay mode), use it directly
   // instead of deriving from route.query.repo.
   const activeRepoTarget = computed<RepoTarget | null>(() => {
-    if (options?.explicitTarget) {
-      return options.explicitTarget;
+    const explicit = resolveExplicitTarget();
+    if (explicit !== undefined) {
+      return explicit;
     }
 
     const rawValue = getQueryParamValue(route.query.repo);
@@ -149,8 +177,10 @@ export function useRepoFiles(options?: UseRepoFilesOptions) {
   });
 
   const activePath = computed(() => {
-    if (options?.explicitPath !== undefined) {
-      return normalizePath(options.explicitPath);
+    if (options && 'explicitPath' in options && options.explicitPath !== undefined) {
+      const value =
+        typeof options.explicitPath === 'function' ? options.explicitPath() : options.explicitPath;
+      return normalizePath(value);
     }
     return normalizePath(getQueryParamValue(route.query.path));
   });
@@ -221,13 +251,18 @@ export function useRepoFiles(options?: UseRepoFilesOptions) {
 
       defaultBranch.value = data.default_branch;
 
-      const branchesData = await apiFetch<{
-        branches: RepoBranch[];
-      }>(`/api/repos/${owner}/${repo}/branches`);
+      // API returns a bare RepoBranch[] (not { branches: [...] }).
+      const branchesData = await apiFetch<RepoBranch[] | { branches: RepoBranch[] }>(
+        `/api/repos/${owner}/${repo}/branches`
+      );
 
       if (requestId !== repoRequestId.value) return null;
 
-      branches.value = branchesData.branches;
+      branches.value = Array.isArray(branchesData)
+        ? branchesData
+        : Array.isArray(branchesData?.branches)
+          ? branchesData.branches
+          : [];
       currentBranch.value = activeBranch.value || data.default_branch;
 
       return data.default_branch;
@@ -298,7 +333,14 @@ export function useRepoFiles(options?: UseRepoFilesOptions) {
       return;
     }
 
-    if (branch && !branches.value.some((repoBranch) => repoBranch.name === branch)) {
+    // Only enforce branch membership when we actually received a non-empty branch list.
+    // An empty list usually means the branches request failed partially or returned nothing;
+    // still try to load contents with the resolved branch name.
+    if (
+      branch &&
+      branches.value.length > 0 &&
+      !branches.value.some((repoBranch) => repoBranch.name === branch)
+    ) {
       contentRequestId.value += 1;
       currentPath.value = path;
       currentBranch.value = branch;
@@ -375,16 +417,28 @@ export function useRepoFiles(options?: UseRepoFilesOptions) {
     await navigateToPath('');
   };
 
-  // Watch for target changes. When using explicitTarget, also watch that ref.
-  const watchSources = options?.explicitTarget
-    ? () => [options.explicitTarget, sessionReady.value, loggedIn.value]
-    : () => [
-        route.query.repo,
-        route.query.path,
-        route.query.branch,
+  // Watch for target changes. When using explicitTarget, re-resolve owner/repo each run.
+  const watchSources = () => {
+    const explicit = resolveExplicitTarget();
+    if (explicit !== undefined) {
+      return [
+        explicit?.owner ?? '',
+        explicit?.repo ?? '',
+        activePath.value,
+        activeBranch.value,
         sessionReady.value,
         loggedIn.value,
       ];
+    }
+
+    return [
+      route.query.repo,
+      route.query.path,
+      route.query.branch,
+      sessionReady.value,
+      loggedIn.value,
+    ];
+  };
 
   watch(
     watchSources,

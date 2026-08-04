@@ -1,5 +1,6 @@
 import { resolveAuthSessionCookieSecure } from './shared/utils/auth-session-env';
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { resolvePersonalModeSecrets } from './shared/utils/personal-mode-env';
 import {
   defaultUserSettingsStorageBase,
   normalizeOptionalString,
@@ -127,6 +128,7 @@ const oauthEnvReady = Boolean(
 const effectiveOAuthEnabled = oauthRequested && oauthEnvReady;
 const personalModeEnabled = normalizeBoolean(process.env.NUXT_AUTH_PERSONAL_MODE_ENABLED, false);
 const sessionCookieSecure = resolveAuthSessionCookieSecure(process.env);
+const personalModeSecrets = resolvePersonalModeSecrets(process.env);
 
 if (!personalModeEnabled && !tokenEnabled && !oauthRequested) {
   throw new Error(
@@ -159,9 +161,11 @@ export default defineNuxtConfig({
       githubOAuthEnabled: String(personalModeEnabled ? false : effectiveOAuthEnabled),
       githubOAuthRequested: String(personalModeEnabled ? false : oauthRequested),
       githubOAuthEnvReady: String(oauthEnvReady),
-      githubToken: '',
-      personalPassword: '',
-      personalCookieSecret: '',
+      // Populated from documented NUXT_GIT_PULSE_AUTH_* (and NUXT_NEKO_GIT_AUTH_* fallbacks).
+      // Nuxt may still override these at runtime via matching NUXT_NEKO_GIT_AUTH_* keys.
+      githubToken: personalModeSecrets.githubToken,
+      personalPassword: personalModeSecrets.personalPassword,
+      personalCookieSecret: personalModeSecrets.personalCookieSecret,
     },
   },
 

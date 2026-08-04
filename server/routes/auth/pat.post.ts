@@ -1,6 +1,11 @@
 /// POST Auth / Pat Post
 import { resolveAuthProviderState } from '../../utils/auth-providers';
 import {
+  assertPatAttemptAllowed,
+  clearPatFailures,
+  recordPatFailure,
+} from '../../utils/auth-rate-limit-utils';
+import {
   PERSISTENT_AUTH_SESSION_MAX_AGE_SECONDS,
   establishGitHubSession,
 } from '../../utils/auth-session-utils';
@@ -23,6 +28,7 @@ function normalizeTokenBody(body: unknown) {
 /** Authenticate with a GitHub personal access token, validating it against the API. */
 export default defineEventHandler(async (event) => {
   assertCsrfToken(event, '/auth/pat');
+  assertPatAttemptAllowed(event);
 
   const providerState = resolveAuthProviderState();
 
@@ -51,8 +57,25 @@ export default defineEventHandler(async (event) => {
 
   try {
     const octokit = createGitHubClient(token);
-    const { data: user } = await octokit.request('GET /user');
+    // One extra app-level retry for flaky local proxies (undici RetryAgent also retries).
+    let response: Awaited<ReturnType<typeof octokit.request>>;
+    try {
+      response = await octokit.request('GET /user');
+    } catch (firstError: unknown) {
+      if (isGitHubUnauthorizedError(firstError)) {
+        throw firstError;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      response = await octokit.request('GET /user');
+    }
 
+    const user = response.data as {
+      login: string;
+      name?: string | null;
+      avatar_url?: string | null;
+    };
+
+    clearPatFailures(event);
     await establishGitHubSession(event, 'pat', token, user, {
       maxAge: PERSISTENT_AUTH_SESSION_MAX_AGE_SECONDS,
     });
@@ -67,7 +90,16 @@ export default defineEventHandler(async (event) => {
     };
   } catch (error: unknown) {
     const isUnauthorized = isGitHubUnauthorizedError(error);
-    console.error(`[auth] Token validation failed: ${isUnauthorized ? 'unauthorized' : 'error'}`);
+    if (isUnauthorized) {
+      recordPatFailure(event);
+    }
+    const detail =
+      error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
+        ? error.message
+        : 'error';
+    console.error(
+      `[auth] Token validation failed: ${isUnauthorized ? 'unauthorized' : 'error'} (${detail})`
+    );
 
     throw createError({
       statusCode: isUnauthorized ? 401 : 500,

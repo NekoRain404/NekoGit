@@ -4,7 +4,7 @@
   "description": "Default desktop capability for NekoGit.",
   "windows": ["main"],
   "remote": {
-    "urls": ["http://127.0.0.1:*", "http://localhost:*"]
+    "urls": ["http://127.0.0.1:*"]
   },
   "permissions": [
     "core:default",

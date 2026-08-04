@@ -1,7 +1,10 @@
 ///  Plugins / Personal Mode
 import { resolveAuthProviderState } from '../utils/auth-providers';
 import { createGitHubClient } from '../utils/github-auth-utils';
-import { cachePersonalModeIdentity } from '../utils/personal-mode-utils';
+import {
+  cachePersonalModeIdentity,
+  getPersonalModeGithubToken,
+} from '../utils/personal-mode-utils';
 
 interface PersonalModeIdentity {
   login: string;
@@ -42,12 +45,7 @@ export default defineNitroPlugin(async (_nitroApp) => {
     return;
   }
 
-  const runtimeConfig = useRuntimeConfig() as {
-    nekoGitAuth?: {
-      githubToken?: string;
-    };
-  };
-  const personalPat = runtimeConfig.nekoGitAuth?.githubToken?.trim() ?? '';
+  const personalPat = getPersonalModeGithubToken();
 
   if (!personalPat) {
     console.error(
