@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, shallowRef } from 'vue';
 
 import type {
   DesktopLocalRepositoryBranches,
@@ -56,6 +56,16 @@ export const useLocalRepositoryPanelState = () => {
   const desktopCheckoutRemoteBranchLoading = ref(false);
   const desktopCommitMessage = ref('');
   const desktopCloneCopied = ref(false);
+  const associatedPullRequest = shallowRef<{
+    number: number;
+    title: string;
+    state: string;
+    html_url: string;
+  } | null>(null);
+  const prLoading = shallowRef(false);
+  const createPullRequestTitle = ref('');
+  const createPullRequestBody = ref('');
+  const createPullRequestBaseBranch = ref('');
   const requestSerials = {
     branches: createRequestSerial(),
     changedFiles: createRequestSerial(),
@@ -111,6 +121,11 @@ export const useLocalRepositoryPanelState = () => {
     desktopChangedFilesLoading,
     desktopCheckoutRemoteBranchLoading,
     desktopCloneCopied,
+    associatedPullRequest,
+    prLoading,
+    createPullRequestTitle,
+    createPullRequestBody,
+    createPullRequestBaseBranch,
     desktopCommitHistoryError,
     desktopCommitHistoryLoading,
     desktopCommitMessage,

@@ -24,6 +24,7 @@ export type LocalRepositoryCopy = {
   copyCloneUrl: string;
   gitAhead: string;
   gitBehind: string;
+  gitBranch: string;
   gitBranchesUnavailable: string;
   gitChanged: string;
   gitChangedFiles: string;

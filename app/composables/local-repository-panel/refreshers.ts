@@ -52,6 +52,7 @@ export const useLocalRepositoryPanelRefreshers = ({
   state,
 }: LocalRepositoryPanelRefreshersOptions) => {
   const {
+    associatedPullRequest,
     desktopBranchesError,
     desktopBranchesLoading,
     desktopChangedFilesError,
@@ -71,6 +72,7 @@ export const useLocalRepositoryPanelRefreshers = ({
     desktopSelectedChangedFilePath,
     desktopStatusError,
     desktopStatusLoading,
+    prLoading,
     requestSerials,
     resetDesktopLocalRepositoryBranches,
     resetDesktopLocalRepositoryChangedFiles,
@@ -102,6 +104,7 @@ export const useLocalRepositoryPanelRefreshers = ({
       if (!requestSerials.gitStatus.isCurrent(requestId)) return status;
 
       desktopLocalRepositoryGitStatus.value = status;
+      void refreshAssociatedPullRequest();
       return status;
     } catch (error) {
       if (requestSerials.gitStatus.isCurrent(requestId)) {
@@ -116,6 +119,32 @@ export const useLocalRepositoryPanelRefreshers = ({
       if (requestSerials.gitStatus.isCurrent(requestId)) {
         desktopGitStatusLoading.value = false;
       }
+    }
+  };
+
+  const refreshAssociatedPullRequest = async () => {
+    const repository = desktopRepository.value;
+    const branch = desktopLocalRepositoryGitStatus.value?.branch;
+    if (!repository || !desktopAvailable.value || !branch) {
+      associatedPullRequest.value = null;
+      return null;
+    }
+
+    prLoading.value = true;
+    try {
+      const apiFetch = useNekoGitApiFetch();
+      const { pull } = await apiFetch<{
+        pull: { number: number; title: string; state: string; html_url: string } | null;
+      }>(
+        `/api/repos/${repository.owner}/${repository.repo}/pull-for-branch?head=${encodeURIComponent(branch)}`
+      );
+      associatedPullRequest.value = pull;
+      return pull;
+    } catch {
+      associatedPullRequest.value = null;
+      return null;
+    } finally {
+      prLoading.value = false;
     }
   };
 
@@ -313,6 +342,7 @@ export const useLocalRepositoryPanelRefreshers = ({
 
   return {
     previewDesktopChangedFileDiff,
+    refreshAssociatedPullRequest,
     refreshDesktopLocalRepositoryBranches,
     refreshDesktopLocalRepositoryChangedFiles,
     refreshDesktopLocalRepositoryCommitHistory,

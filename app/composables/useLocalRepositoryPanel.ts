@@ -77,6 +77,11 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopSelectedChangedFilePath,
     desktopStatusError,
     desktopStatusLoading,
+    associatedPullRequest,
+    prLoading,
+    createPullRequestTitle,
+    createPullRequestBody,
+    createPullRequestBaseBranch,
   } = panelState;
   let desktopCloneCopiedTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -124,6 +129,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
 
   const {
     previewDesktopChangedFileDiff,
+    refreshAssociatedPullRequest,
     refreshDesktopLocalRepositoryBranches,
     refreshDesktopLocalRepositoryChangedFiles,
     refreshDesktopLocalRepositoryCommitHistory,
@@ -494,6 +500,51 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     }
   };
 
+  const submitCreatePullRequest = async () => {
+    const repository = desktopRepository.value;
+    const branch = desktopLocalRepositoryGitStatus.value?.branch;
+    const base = createPullRequestBaseBranch.value.trim();
+    const title = createPullRequestTitle.value.trim();
+    if (
+      !repository ||
+      !desktopLocalRepositoryStatus.value?.exists ||
+      !branch ||
+      !base ||
+      !title ||
+      desktopAction.value
+    ) {
+      return;
+    }
+
+    desktopAction.value = 'createPR';
+    try {
+      const apiFetch = useNekoGitApiFetch();
+      const pull = await apiFetch(
+        `/api/repos/${repository.owner}/${repository.repo}/pulls`,
+        {
+          method: 'POST',
+          body: {
+            head: branch,
+            base,
+            title,
+            body: createPullRequestBody.value.trim() || undefined,
+          },
+        }
+      );
+      createPullRequestTitle.value = '';
+      createPullRequestBody.value = '';
+      void refreshAssociatedPullRequest();
+      return pull;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to create pull request.';
+      await showDesktopMessage(message, 'error');
+      throw error;
+    } finally {
+      desktopAction.value = null;
+    }
+  };
+
   onMounted(() => {
     void loadRuntimeInfo();
   });
@@ -563,6 +614,13 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopNewBranchName,
     desktopRemoteBranchName,
     desktopRepository,
+    associatedPullRequest,
+    prLoading,
+    createPullRequestTitle,
+    createPullRequestBody,
+    createPullRequestBaseBranch,
+    refreshAssociatedPullRequest,
+    submitCreatePullRequest,
     checkoutDesktopRemoteLocalRepositoryBranch,
     cloneDesktopRepository,
     commitDesktopLocalRepositoryChanges,
