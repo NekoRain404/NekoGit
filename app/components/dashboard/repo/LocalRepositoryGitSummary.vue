@@ -5,12 +5,30 @@ import {
   CheckCircle2Icon,
   GitBranchIcon,
   GitCommitIcon,
+  GitPullRequestIcon,
   Loader2Icon,
 } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
 
 import { useLocalRepositoryPanelContext } from './localRepositoryPanelContext';
 
 const { copy, state } = useLocalRepositoryPanelContext();
+const router = useRouter();
+const localePath = useLocalePath();
+
+const openAssociatedPullRequest = () => {
+  const pr = state.associatedPullRequest.value;
+  const repo = state.desktopRepository.value;
+  if (!pr || !repo) return;
+
+  void router.push({
+    path: localePath('/dashboard'),
+    query: {
+      tab: 'repos',
+      pr: `${repo.owner}/${repo.repo}/${pr.number}`,
+    },
+  });
+};
 </script>
 
 <template>
@@ -29,6 +47,21 @@ const { copy, state } = useLocalRepositoryPanelContext();
         <GitBranchIcon :size="13" />
         <span class="local-repo-git__branch-label">
           {{ state.desktopGitBranchLabel.value }}
+        </span>
+        <span
+          v-if="state.associatedPullRequest.value"
+          class="local-repo-git__pr-badge"
+          :title="state.associatedPullRequest.value.title"
+          @click="openAssociatedPullRequest"
+        >
+          <GitPullRequestIcon :size="12" />
+          <span>#{{ state.associatedPullRequest.value.number }}</span>
+        </span>
+        <span
+          v-else-if="state.prLoading.value"
+          class="local-repo-git__pr-badge local-repo-git__pr-badge--loading"
+        >
+          <Loader2Icon :size="10" class="spin-animation" />
         </span>
       </span>
       <span class="local-repo-git__state">
@@ -281,3 +314,30 @@ const { copy, state } = useLocalRepositoryPanelContext();
     </template>
   </div>
 </template>
+
+<style scoped lang="scss">
+.local-repo-git__pr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--nekogit-border);
+  border-radius: 999px;
+  background: var(--nekogit-surface);
+  color: var(--nekogit-info);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--nekogit-info-soft);
+    border-color: var(--nekogit-info);
+  }
+}
+
+.local-repo-git__pr-badge--loading {
+  cursor: default;
+  opacity: 0.5;
+}
+</style>
