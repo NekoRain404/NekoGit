@@ -743,6 +743,7 @@
     "loadingCommits": "正在加载提交...",
     "selectCommit": "选择提交",
     "expandContext": "展开 {lines} 行",
+    "collapseContext": "折叠上下文",
     "commitSelector": "切换提交",
     "checkoutLocally": "检出到本地",
     "checkingOut": "检出中",

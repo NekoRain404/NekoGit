@@ -87,6 +87,8 @@ let measurementFrame: number | undefined;
 let scrollListenerTarget: HTMLElement | null = null;
 const pendingMeasuredHeights = new Map<string, number>();
 const codeLineTokenCache = new Map<string, CodeLineTokens>();
+const apiFetch = useNekoGitApiFetch();
+const expandedHunks = shallowRef(new Map<string, PRReviewDiffRow[]>());
 
 const threadsByLine = computed(() => {
   const threads = new Map<number, PRReviewCommentThread[]>();
@@ -100,7 +102,7 @@ const threadsByLine = computed(() => {
   return threads;
 });
 
-const shouldVirtualize = computed(() => props.rows.length > VIRTUAL_ROW_THRESHOLD);
+const shouldVirtualize = computed(() => mergedRows.value.length > VIRTUAL_ROW_THRESHOLD);
 const shouldWindowRows = computed(
   () =>
     shouldVirtualize.value ||
@@ -179,10 +181,28 @@ const getEstimatedRowHeight = (row: PRReviewDiffRow) => {
   return estimate;
 };
 
+const mergedRows = computed(() => {
+  const result: PRReviewDiffRow[] = [];
+
+  for (const row of props.rows) {
+    result.push(row);
+
+    if (row.type === 'hunk') {
+      const expanded = expandedHunks.value.get(`${props.filename}:${row.content}`);
+
+      if (expanded) {
+        result.push(...expanded);
+      }
+    }
+  }
+
+  return result;
+});
+
 const rowMetrics = computed<VirtualRow[]>(() => {
   let top = 0;
 
-  return props.rows.map((row, index) => {
+  return mergedRows.value.map((row, index) => {
     const key = getRowKey(row);
     const height = measuredRowHeights.value.get(key) ?? getEstimatedRowHeight(row);
     const virtualRow = {
@@ -211,12 +231,12 @@ const effectiveRange = computed(() => {
       return { start: 0, end: 0 };
     }
 
-    return { start: 0, end: props.rows.length };
+    return { start: 0, end: mergedRows.value.length };
   }
 
   return {
-    start: Math.min(visibleRange.value.start, props.rows.length),
-    end: Math.min(visibleRange.value.end, props.rows.length),
+    start: Math.min(visibleRange.value.start, mergedRows.value.length),
+    end: Math.min(visibleRange.value.end, mergedRows.value.length),
   };
 });
 
@@ -328,7 +348,7 @@ const syncVisibleRows = async () => {
   await nextTick();
 
   if (!shouldVirtualize.value) {
-    setVisibleRange(0, props.rows.length);
+    setVisibleRange(0, mergedRows.value.length);
     return;
   }
 
@@ -503,13 +523,84 @@ function getSideContent(row: PRReviewDiffRow, side: 'old' | 'new') {
 }
 
 const handleSaveDraft = (line: number, body: string) => {
-  const row = props.rows.find((diffRow) => diffRow.newLineNumber === line);
+  const row = mergedRows.value.find((diffRow) => diffRow.newLineNumber === line);
 
   if (!row?.position) {
     return;
   }
 
   emit('save-draft-comment', props.filename, line, row.position, body);
+};
+
+const isHunkExpanded = (hunkRow: PRReviewDiffRow) =>
+  expandedHunks.value.has(`${props.filename}:${hunkRow.content}`);
+
+const expandContext = async (hunkRow: PRReviewDiffRow, linesToAdd: number) => {
+  const hunkMatch = hunkRow.content.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+  if (!hunkMatch) {
+    return;
+  }
+
+  const hunkKey = `${props.filename}:${hunkRow.content}`;
+  if (expandedHunks.value.has(hunkKey)) {
+    return;
+  }
+
+  const oldStart = Number.parseInt(hunkMatch[1] ?? '0', 10);
+  const newStart = Number.parseInt(hunkMatch[2] ?? '0', 10);
+  const contextStart = Math.max(1, newStart - linesToAdd);
+  const contextLines = newStart - contextStart;
+
+  if (contextLines <= 0) {
+    return;
+  }
+
+  try {
+    const contents = await apiFetch<{ content?: string }>(
+      `/api/repos/${props.repoOwner}/${props.repoName}/contents/${encodeURIComponent(props.filename)}`,
+      { method: 'GET', query: { ref: 'HEAD' } }
+    );
+
+    if (!contents?.content) {
+      return;
+    }
+
+    const decoded = atob(contents.content);
+    const fileLines = decoded.split('\n');
+    const contextRows: PRReviewDiffRow[] = [];
+
+    for (let i = 0; i < contextLines; i += 1) {
+      const lineIndex = contextStart - 1 + i;
+      const lineNumber = contextStart + i;
+      const content = fileLines[lineIndex] ?? '';
+      contextRows.push({
+        key: `expanded-${lineNumber}-${hunkKey}`,
+        type: 'context',
+        content,
+        oldContent: undefined,
+        newContent: undefined,
+        oldLineNumber: oldStart - contextLines + i,
+        newLineNumber: lineNumber,
+        position: null,
+        isCommentable: false,
+      });
+    }
+
+    expandedHunks.value = new Map(expandedHunks.value).set(hunkKey, contextRows);
+  } catch {
+    // Context expansion is non-critical; fail silently
+  }
+};
+
+const collapseContext = (hunkRow: PRReviewDiffRow) => {
+  const hunkKey = `${props.filename}:${hunkRow.content}`;
+  if (!expandedHunks.value.has(hunkKey)) {
+    return;
+  }
+
+  const next = new Map(expandedHunks.value);
+  next.delete(hunkKey);
+  expandedHunks.value = next;
 };
 
 const isReviewThreadResolving = (thread: PRReviewCommentThread) =>
@@ -537,7 +628,17 @@ const toggleReviewThread = (thread: PRReviewCommentThread) => {
   });
 };
 
-watch(() => [props.filename, props.rows], resetMeasurements, { flush: 'post' });
+watch(
+  () => [props.filename, props.rows, expandedHunks.value],
+  ([filename, _rows, _expanded], [prevFilename]) => {
+    if (filename !== prevFilename) {
+      expandedHunks.value = new Map();
+    }
+
+    resetMeasurements();
+  },
+  { flush: 'post' }
+);
 
 watch(activeDraftLineForFile, clearMeasurements, { flush: 'post' });
 
@@ -645,6 +746,44 @@ onBeforeUnmount(() => {
     >
       <div v-if="virtualRow.row.type === 'hunk'" class="pr-review-diff-viewer__hunk">
         <code>{{ virtualRow.row.content }}</code>
+        <span class="pr-review-diff-viewer__expand-actions">
+          <template v-if="isHunkExpanded(virtualRow.row)">
+            <button
+              class="pr-review-diff-viewer__expand-btn"
+              type="button"
+              :title="t('prReview.collapseContext')"
+              @click.stop="collapseContext(virtualRow.row)"
+            >
+              −
+            </button>
+          </template>
+          <template v-else>
+            <button
+              class="pr-review-diff-viewer__expand-btn"
+              type="button"
+              :title="t('prReview.expandContext', { lines: 3 })"
+              @click.stop="expandContext(virtualRow.row, 3)"
+            >
+              +3
+            </button>
+            <button
+              class="pr-review-diff-viewer__expand-btn"
+              type="button"
+              :title="t('prReview.expandContext', { lines: 5 })"
+              @click.stop="expandContext(virtualRow.row, 5)"
+            >
+              +5
+            </button>
+            <button
+              class="pr-review-diff-viewer__expand-btn"
+              type="button"
+              :title="t('prReview.expandContext', { lines: 10 })"
+              @click.stop="expandContext(virtualRow.row, 10)"
+            >
+              +10
+            </button>
+          </template>
+        </span>
       </div>
 
       <div v-else class="pr-review-diff-viewer__split-row">
@@ -850,6 +989,44 @@ onBeforeUnmount(() => {
   background: var(--nekogit-diff-hunk-bg);
   color: var(--nekogit-info);
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pr-review-diff-viewer__hunk code {
+  min-width: 0;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pr-review-diff-viewer__expand-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.pr-review-diff-viewer__expand-btn {
+  min-height: 1.2rem;
+  padding: 0 4px;
+  border: 1px solid var(--nekogit-border);
+  border-radius: 3px;
+  background: var(--nekogit-surface);
+  color: var(--nekogit-text-muted);
+  font-size: 0.6rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+  flex: none;
+}
+
+.pr-review-diff-viewer__expand-btn:hover {
+  background: var(--nekogit-surface-hover);
+  color: var(--nekogit-info);
+  border-color: var(--nekogit-info);
 }
 
 .pr-review-diff-viewer__hunk code,

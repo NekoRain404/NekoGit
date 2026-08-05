@@ -743,6 +743,7 @@
     "loadingCommits": "Loading commits...",
     "selectCommit": "Select commit",
     "expandContext": "Expand {lines} lines",
+    "collapseContext": "Collapse context",
     "commitSelector": "Switch commit",
     "checkoutLocally": "Checkout locally",
     "checkingOut": "Checking out",
