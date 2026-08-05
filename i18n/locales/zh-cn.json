@@ -746,7 +746,28 @@
     "commitSelector": "切换提交",
     "checkoutLocally": "检出到本地",
     "checkingOut": "检出中",
-    "cloneFirst": "请先克隆仓库"
+    "cloneFirst": "请先克隆仓库",
+    "ciChecks": {
+      "checks": "检查",
+      "passing": "通过",
+      "failing": "失败",
+      "pending": "待处理",
+      "noChecks": "没有检查项",
+      "loading": "加载检查中...",
+      "failedToLoad": "加载检查失败",
+      "rerun": "重跑",
+      "rerunning": "重跑中...",
+      "viewLogs": "查看日志",
+      "rerunFailed": "重跑检查失败",
+      "queued": "排队中",
+      "inProgress": "进行中",
+      "passed": "通过",
+      "failed": "失败",
+      "timedOut": "超时",
+      "cancelled": "已取消",
+      "skipped": "已跳过",
+      "neutral": "中性"
+    }
   },
   "markdown": {
     "copyCode": "复制",

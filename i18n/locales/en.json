@@ -746,7 +746,28 @@
     "commitSelector": "Switch commit",
     "checkoutLocally": "Checkout locally",
     "checkingOut": "Checking out",
-    "cloneFirst": "Clone the repository first"
+    "cloneFirst": "Clone the repository first",
+    "ciChecks": {
+      "checks": "Checks",
+      "passing": "passing",
+      "failing": "failing",
+      "pending": "pending",
+      "noChecks": "No checks found",
+      "loading": "Loading checks...",
+      "failedToLoad": "Failed to load checks",
+      "rerun": "Rerun",
+      "rerunning": "Rerunning...",
+      "viewLogs": "View logs",
+      "rerunFailed": "Failed to rerun check",
+      "queued": "Queued",
+      "inProgress": "In progress",
+      "passed": "Passed",
+      "failed": "Failed",
+      "timedOut": "Timed out",
+      "cancelled": "Cancelled",
+      "skipped": "Skipped",
+      "neutral": "Neutral"
+    }
   },
   "markdown": {
     "copyCode": "Copy",
