@@ -95,6 +95,12 @@
             :pull-number="currentPullRequest?.number || 0"
           />
 
+          <PRChecksPanel
+            :owner="repoOwner"
+            :repo="repoName"
+            :pull-number="currentPullRequest?.number || 0"
+          />
+
           <PRReviewerRequestModal
             :is-visible="isReviewerPickerOpen"
             :candidates="reviewerCandidates"
@@ -153,7 +159,6 @@ import PRActions from '~/components/dashboard/pr/PRActions.vue';
 import PRHeader from '~/components/dashboard/pr/PRHeader.vue';
 import PRLabels from '~/components/dashboard/pr/PRLabels.vue';
 import PRReviewerRequestModal from '~/components/dashboard/pr/PRReviewerRequestModal.vue';
-import PRChecksPanel from '~/components/dashboard/pr/PRChecksPanel.vue';
 import PRChecksPanel from '~/components/dashboard/pr/PRChecksPanel.vue';
 import PRReviewWorkspace from '~/components/dashboard/pr/PRReviewWorkspace.vue';
 import PRTimelineEvents from '~/components/dashboard/pr/PRTimelineEvents.vue';
@@ -312,6 +317,98 @@ const openReviewWindow = () => {
 const closeReviewWindow = () => {
   isReviewWindowOpen.value = false;
   emit('close-review');
+};
+
+const handleApprove = async () => {
+  if (!repoInfo.value || !currentPullRequest.value?.number || !reviewCommitId.value) return;
+  try {
+    const { owner, repo } = repoInfo.value;
+    await apiFetch(`/api/repos/${owner}/${repo}/pulls/${currentPullRequest.value.number}/reviews`, {
+      method: 'POST',
+      body: {
+        commitId: reviewCommitId.value,
+        event: 'APPROVE',
+      },
+    });
+    await fetchTimeline();
+  } catch (err) {
+    detailError.value = getFetchErrorMessage(err, 'Failed to approve pull request.');
+  }
+};
+
+const handleRequestChanges = async () => {
+  if (!repoInfo.value || !currentPullRequest.value?.number || !reviewCommitId.value) return;
+  try {
+    const { owner, repo } = repoInfo.value;
+    await apiFetch(`/api/repos/${owner}/${repo}/pulls/${currentPullRequest.value.number}/reviews`, {
+      method: 'POST',
+      body: {
+        commitId: reviewCommitId.value,
+        event: 'REQUEST_CHANGES',
+        body: t('prReview.eventRequestChanges'),
+      },
+    });
+    await fetchTimeline();
+  } catch (err) {
+    detailError.value = getFetchErrorMessage(err, 'Failed to request changes.');
+  }
+};
+
+const handleMerge = async () => {
+  if (!repoInfo.value || !currentPullRequest.value?.number) return;
+  try {
+    const { owner, repo } = repoInfo.value;
+    const data = await apiFetch<Record<string, unknown>>(
+      `/api/repos/${owner}/${repo}/pulls/${currentPullRequest.value.number}`,
+      {
+        method: 'PATCH',
+        body: { merge: true, merge_method: 'merge' },
+      }
+    );
+    if (data) {
+      currentPullRequest.value = { ...currentPullRequest.value, ...data };
+    }
+  } catch (err) {
+    detailError.value = getFetchErrorMessage(err, 'Failed to merge pull request.');
+  }
+};
+
+const handleClosePr = async () => {
+  if (!repoInfo.value || !currentPullRequest.value?.number) return;
+  try {
+    const { owner, repo } = repoInfo.value;
+    const data = await apiFetch<Record<string, unknown>>(
+      `/api/repos/${owner}/${repo}/pulls/${currentPullRequest.value.number}`,
+      {
+        method: 'PATCH',
+        body: { state: 'closed' },
+      }
+    );
+    if (data) {
+      currentPullRequest.value = { ...currentPullRequest.value, ...data };
+    }
+  } catch (err) {
+    detailError.value = getFetchErrorMessage(err, 'Failed to close pull request.');
+  }
+};
+
+const handleReopenPr = async () => {
+  if (!repoInfo.value || !currentPullRequest.value?.number) return;
+  try {
+    const { owner, repo } = repoInfo.value;
+    const data = await apiFetch<Record<string, unknown>>(
+      `/api/repos/${owner}/${repo}/pulls/${currentPullRequest.value.number}`,
+      {
+        method: 'PATCH',
+        body: { state: 'open' },
+      }
+    );
+    if (data) {
+      currentPullRequest.value = { ...currentPullRequest.value, ...data };
+    }
+  } catch (err) {
+    detailError.value = getFetchErrorMessage(err, 'Failed to reopen pull request.');
+  }
 };
 
 const checkoutPullRequestLocally = async () => {

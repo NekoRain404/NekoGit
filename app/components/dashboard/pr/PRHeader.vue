@@ -75,6 +75,55 @@
         />
         <p v-else>{{ t('prReview.noDescription') }}</p>
       </div>
+
+      <div class="pr-header__actions mb-4">
+        <template v-if="displayState === 'open'">
+          <button
+            class="button is-small is-success is-light mr-2"
+            type="button"
+            :disabled="!commitId"
+            @click="emit('approve')"
+          >
+            <CheckIcon :size="14" class="mr-1" />
+            {{ t('prReview.eventApprove') }}
+          </button>
+          <button
+            class="button is-small is-warning is-light mr-2"
+            type="button"
+            :disabled="!commitId"
+            @click="emit('request-changes')"
+          >
+            <XCircleIcon :size="14" class="mr-1" />
+            {{ t('prReview.eventRequestChanges') }}
+          </button>
+          <button
+            v-if="canMerge && mergeable !== false"
+            class="button is-small is-info is-light mr-2"
+            type="button"
+            @click="emit('merge')"
+          >
+            <GitMergeIcon :size="14" class="mr-1" />
+            {{ t('prReview.mergePr') }}
+          </button>
+          <button
+            class="button is-small is-danger is-light"
+            type="button"
+            @click="emit('close-pr')"
+          >
+            <GitPullRequestClosedIcon :size="14" class="mr-1" />
+            {{ t('prReview.closePr') }}
+          </button>
+        </template>
+        <button
+          v-else
+          class="button is-small is-success is-light"
+          type="button"
+          @click="emit('reopen-pr')"
+        >
+          <GitPullRequestIcon :size="14" class="mr-1" />
+          {{ t('prReview.reopenPr') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -82,9 +131,11 @@
 <script setup lang="ts">
 import {
   ArrowRightIcon,
-  GitPullRequestIcon,
+  CheckIcon,
   GitMergeIcon,
   GitPullRequestClosedIcon,
+  GitPullRequestIcon,
+  XCircleIcon,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -118,6 +169,18 @@ const props = defineProps<{
   pullRequest?: PullRequestHeaderPullRequest | null;
   repoOwner: string;
   repoName: string;
+  pullNumber: number;
+  commitId: string;
+  mergeable?: boolean | null;
+  canMerge?: boolean;
+}>();
+
+const emit = defineEmits<{
+  (e: 'approve'): void;
+  (e: 'request-changes'): void;
+  (e: 'merge'): void;
+  (e: 'close-pr'): void;
+  (e: 'reopen-pr'): void;
 }>();
 
 const displayState = computed(() => {
@@ -162,3 +225,12 @@ const typeStyle = {
   color: 'var(--nekogit-text-strong)',
 };
 </script>
+
+<style scoped lang="scss">
+.pr-header__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+</style>
