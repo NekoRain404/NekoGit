@@ -95,12 +95,6 @@
             :pull-number="currentPullRequest?.number || 0"
           />
 
-          <PRChecksPanel
-            :owner="repoOwner"
-            :repo="repoName"
-            :pull-number="currentPullRequest?.number || 0"
-          />
-
           <PRReviewerRequestModal
             :is-visible="isReviewerPickerOpen"
             :candidates="reviewerCandidates"

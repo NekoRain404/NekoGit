@@ -1,7 +1,7 @@
 <!-- PRChecksPanel — NekoGit dashboard component. -->
 <script setup lang="ts">
 import { AlertCircleIcon, CheckCircleIcon, ClockIcon, ExternalLinkIcon, Loader2Icon, PlayIcon, RotateCcwIcon, XCircleIcon } from 'lucide-vue-next';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import getFetchErrorMessage from '~/utils/getFetchErrorMessage';
