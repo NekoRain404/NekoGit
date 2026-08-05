@@ -737,6 +737,13 @@
     "nextUnviewedFileShortcut": "Next unviewed file (Alt+Shift+J)",
     "markFileViewedShortcut": "Mark file viewed (Alt+Shift+M)",
     "markFileUnviewedShortcut": "Mark file unviewed (Alt+Shift+M)",
+    "mergePr": "Merge pull request",
+    "closePr": "Close pull request",
+    "reopenPr": "Reopen pull request",
+    "loadingCommits": "Loading commits...",
+    "selectCommit": "Select commit",
+    "expandContext": "Expand {lines} lines",
+    "commitSelector": "Switch commit",
     "checkoutLocally": "Checkout locally",
     "checkingOut": "Checking out",
     "cloneFirst": "Clone the repository first"
