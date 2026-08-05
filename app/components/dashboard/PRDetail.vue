@@ -8,6 +8,8 @@
       :pull-number="currentPullRequest?.number || 0"
       :commit-id="reviewCommitId"
       :title="currentPullRequest?.title"
+      :commits="reviewCommits"
+      :commits-loading="reviewCommitsLoading"
       @close="closeReviewWindow"
     />
 
@@ -21,6 +23,15 @@
           :pull-request="currentPullRequest"
           :repo-owner="repoOwner"
           :repo-name="repoName"
+          :pull-number="currentPullRequest?.number || 0"
+          :commit-id="reviewCommitId"
+          :mergeable="currentPullRequest?.mergeable ?? null"
+          :can-merge="canMerge"
+          @approve="handleApprove"
+          @request-changes="handleRequestChanges"
+          @merge="handleMerge"
+          @close-pr="handleClosePr"
+          @reopen-pr="handleReopenPr"
         />
 
         <hr />
@@ -76,6 +87,12 @@
             @open-reviewers="openReviewerPicker"
             @request-reviewer="rerequestReviewer"
             @remove-reviewer="removeReviewerRequest"
+          />
+
+          <PRChecksPanel
+            :owner="repoOwner"
+            :repo="repoName"
+            :pull-number="currentPullRequest?.number || 0"
           />
 
           <PRReviewerRequestModal
@@ -136,6 +153,8 @@ import PRActions from '~/components/dashboard/pr/PRActions.vue';
 import PRHeader from '~/components/dashboard/pr/PRHeader.vue';
 import PRLabels from '~/components/dashboard/pr/PRLabels.vue';
 import PRReviewerRequestModal from '~/components/dashboard/pr/PRReviewerRequestModal.vue';
+import PRChecksPanel from '~/components/dashboard/pr/PRChecksPanel.vue';
+import PRChecksPanel from '~/components/dashboard/pr/PRChecksPanel.vue';
 import PRReviewWorkspace from '~/components/dashboard/pr/PRReviewWorkspace.vue';
 import PRTimelineEvents from '~/components/dashboard/pr/PRTimelineEvents.vue';
 import { useDesktopRuntime } from '~/composables/useDesktopRuntime';
@@ -191,6 +210,8 @@ const currentTimelinePage = ref(1);
 const hasNextTimelinePage = ref(false);
 const loadingMoreTimeline = ref(false);
 const isReviewWindowOpen = shallowRef(false);
+const reviewCommits = shallowRef<Array<{ sha: string; shortSha: string; message: string; authorName: string; date: string }>>([]);
+const reviewCommitsLoading = shallowRef(false);
 const isReviewerPickerOpen = shallowRef(false);
 const loadingReviewerCandidates = shallowRef(false);
 const submittingReviewerRequest = shallowRef(false);
@@ -242,11 +263,41 @@ const repoName = computed(() => repoInfo.value?.repo || '');
 
 const reviewCommitId = computed(() => currentPullRequest.value?.head?.sha || '');
 
+const canMerge = computed(() => {
+  const p = repoPermissions.value;
+  return Boolean(p.admin || p.maintain || p.push);
+});
+
 const canOpenReviewWindow = computed(() =>
   Boolean(
     repoOwner.value && repoName.value && currentPullRequest.value?.number && reviewCommitId.value
   )
 );
+
+const loadReviewCommits = async () => {
+  if (!repoOwner.value || !repoName.value || !currentPullRequest.value?.number) return;
+  reviewCommitsLoading.value = true;
+  try {
+    const data = await apiFetch<{ timeline?: any[] }>(
+      `/api/pulls/${repoOwner.value}/${repoName.value}/${currentPullRequest.value.number}/timeline`,
+      { method: 'GET', query: { page: 1 } }
+    );
+    const commits = (data?.timeline ?? [])
+      .filter((item: any) => item.kind === 'commit' && item.commit?.oid)
+      .map((item: any) => ({
+        sha: item.commit.oid,
+        shortSha: (item.commit.oid as string).slice(0, 7),
+        message: (item.commit.message ?? '').split('\n')[0] || '(no message)',
+        authorName: item.commit.author?.name ?? item.author?.login ?? 'Unknown',
+        date: item.commit.committedDate ?? item.createdAt ?? '',
+      }));
+    reviewCommits.value = commits;
+  } catch {
+    reviewCommits.value = [];
+  } finally {
+    reviewCommitsLoading.value = false;
+  }
+};
 
 const openReviewWindow = () => {
   if (!canOpenReviewWindow.value) {
@@ -255,6 +306,7 @@ const openReviewWindow = () => {
 
   isReviewWindowOpen.value = true;
   emit('open-review');
+  void loadReviewCommits();
 };
 
 const closeReviewWindow = () => {
