@@ -9,6 +9,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, shallowRef, watch } from 'vue';
 
+import PRReviewCommitSelector from '~/components/dashboard/pr/PRReviewCommitSelector.vue';
 import PRReviewDiffViewer from '~/components/dashboard/pr/PRReviewDiffViewer.vue';
 import PRReviewFileSidebar from '~/components/dashboard/pr/PRReviewFileSidebar.vue';
 import PRReviewSubmitBar from '~/components/dashboard/pr/PRReviewSubmitBar.vue';
@@ -39,6 +40,8 @@ const props = defineProps<{
   pullNumber: number;
   commitId: string;
   title?: string;
+  commits?: Array<{ sha: string; shortSha: string; message: string; authorName: string; date: string }>;
+  commitsLoading?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -57,11 +60,22 @@ const {
   replaceWithEntry,
 } = useNavigationHistory();
 
+const selectedCommitSha = shallowRef(props.commitId);
+
+watch(() => props.commitId, (newCommitId) => {
+  selectedCommitSha.value = newCommitId;
+});
+
+const handleCommitSelect = (sha: string) => {
+  selectedCommitSha.value = sha;
+};
+
 const review = usePRReview({
   owner: () => props.owner,
   repo: () => props.repo,
   pullNumber: () => props.pullNumber,
   commitId: () => props.commitId,
+  commitSha: () => selectedCommitSha.value !== props.commitId ? selectedCommitSha.value : undefined,
   messages: {
     loadFailed: t('prReview.loadFailed'),
     submitFailed: t('prReview.submitFailed'),
@@ -493,6 +507,14 @@ watch(
           <h1 class="pr-review-workspace__title mb-0">{{ workspaceTitle }}</h1>
         </div>
       </div>
+
+      <PRReviewCommitSelector
+        v-if="commits && commits.length > 1"
+        :commits="commits"
+        :selected-sha="selectedCommitSha"
+        :loading="commitsLoading"
+        @select="handleCommitSelect"
+      />
 
       <div class="pr-review-workspace__summary" aria-live="polite">
         <span class="pr-review-workspace__summary-pill">{{

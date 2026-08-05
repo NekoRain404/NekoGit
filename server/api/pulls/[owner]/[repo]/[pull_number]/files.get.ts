@@ -42,6 +42,7 @@ export default definePrivateApiCoalescedEventHandler(async (event) => {
     const page = parsePaginationNumber(query.page, 1);
     const perPage = parsePaginationNumber(query.per_page, 100, 100);
     const pullNumber = parsePaginationNumber(pull_number, 0);
+    const sha = typeof query.sha === 'string' ? query.sha : undefined;
 
     if (!owner || !repo || pullNumber < 1) {
       throw createError({
@@ -59,6 +60,7 @@ export default definePrivateApiCoalescedEventHandler(async (event) => {
         pull_number: pullNumber,
         page,
         per_page: perPage,
+        ...(sha ? { sha } : {}),
       }
     );
 

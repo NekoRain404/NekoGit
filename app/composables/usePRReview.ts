@@ -187,6 +187,7 @@ interface UsePRReviewOptions {
   repo: () => string;
   pullNumber: () => number;
   commitId: () => string;
+  commitSha?: () => string | undefined;
   messages: {
     loadFailed: string;
     submitFailed: string;
@@ -401,6 +402,7 @@ export function usePRReview(options: UsePRReviewOptions) {
     repo: options.repo(),
     pullNumber: options.pullNumber(),
     commitId: options.commitId(),
+    commitSha: options.commitSha?.() ?? undefined,
   }));
 
   const selectedFile = computed(
@@ -612,11 +614,15 @@ export function usePRReview(options: UsePRReviewOptions) {
     }
 
     try {
-      const { owner, repo, pullNumber } = identity.value;
+      const { owner, repo, pullNumber, commitSha } = identity.value;
       const [response, reviewCommentResponse] = await Promise.all([
         $fetch<PullFilesResponse>(`/api/pulls/${owner}/${repo}/${pullNumber}/files`, {
           method: 'GET',
-          query: { page, per_page: 100 },
+          query: {
+            page,
+            per_page: 100,
+            ...(commitSha ? { sha: commitSha } : {}),
+          },
         }),
         isFirstPage ? fetchReviewComments() : Promise.resolve(null),
       ]);
@@ -802,6 +808,7 @@ export function usePRReview(options: UsePRReviewOptions) {
       identity.value.repo,
       identity.value.pullNumber,
       identity.value.commitId,
+      identity.value.commitSha,
     ],
     () => {
       requestId.value += 1;
