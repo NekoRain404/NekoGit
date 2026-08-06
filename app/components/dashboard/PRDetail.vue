@@ -413,6 +413,15 @@ const checkoutPullRequestLocally = async () => {
   checkoutPRError.value = '';
 
   try {
+    // For fork PRs the head branch lives in the fork, not in the local base clone.
+    // Comparing repo full_names prevents checking out an unrelated same-named branch.
+    const headRepo = currentPullRequest.value?.head?.repo?.full_name;
+    const baseRepo = currentPullRequest.value?.base?.repo?.full_name;
+    if (headRepo && baseRepo && String(headRepo).toLowerCase() !== String(baseRepo).toLowerCase()) {
+      checkoutPRError.value = t('prReview.checkoutForkHead');
+      return;
+    }
+
     // Build the clone URL to check if local repo exists
     const cloneUrl = `https://github.com/${repoOwner.value}/${repoName.value}.git`;
     const status = await getLocalRepositoryStatus(cloneUrl);

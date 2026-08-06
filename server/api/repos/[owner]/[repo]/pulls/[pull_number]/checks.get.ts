@@ -1,4 +1,4 @@
-import { normalizeCheckRun } from '#server/utils/ci-checks-utils';
+import { normalizeCheckRun, summarizeCheckRuns } from '#server/utils/ci-checks-utils';
 // server/api/repos/[owner]/[repo]/pulls/[pull_number]/checks.get.ts
 import { extractPullRouteParams } from '#server/utils/repo-route-utils';
 
@@ -68,11 +68,25 @@ export default definePrivateApiCoalescedEventHandler(async (event) => {
       }
     );
 
+    const normalizedRuns = checkRunsData.check_runs.map(normalizeCheckRun) as CheckRun[];
+
+    let overallState = combinedStatusData.state;
+    // Repos using only Actions check runs (no legacy commit statuses) report
+    // "pending" here; derive the overall state from the check runs instead.
+    if (!Array.isArray(combinedStatusData.statuses) || combinedStatusData.statuses.length === 0) {
+      const summary = summarizeCheckRuns(normalizedRuns);
+      overallState = summary.failing > 0
+        ? 'failure'
+        : summary.passing === summary.total && summary.total > 0
+          ? 'success'
+          : 'pending';
+    }
+
     return {
-      check_runs: checkRunsData.check_runs.map(normalizeCheckRun) as CheckRun[],
+      check_runs: normalizedRuns,
       total_count: checkRunsData.total_count,
       combined_status: {
-        state: combinedStatusData.state,
+        state: overallState,
         statuses: combinedStatusData.statuses,
       },
     } satisfies ChecksApiResponse;

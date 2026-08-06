@@ -556,6 +556,15 @@ const expandContext = async (hunkRow: PRReviewDiffRow, linesToAdd: number) => {
     return;
   }
 
+  // Clamp the expanded rows to the old lines that actually exist above the
+  // hunk so oldLineNumber never goes negative for top-of-file hunks.
+  const availableAbove = Math.max(0, oldStart - 1);
+  const expandable = Math.min(contextLines, availableAbove);
+
+  if (expandable <= 0) {
+    return;
+  }
+
   try {
     const contents = await apiFetch<{ content?: string }>(
       `/api/repos/${props.repoOwner}/${props.repoName}/contents/${encodeURIComponent(props.filename)}`,
@@ -572,17 +581,16 @@ const expandContext = async (hunkRow: PRReviewDiffRow, linesToAdd: number) => {
     const fileLines = decoded.split('\n');
     const contextRows: PRReviewDiffRow[] = [];
 
-    for (let i = 0; i < contextLines; i += 1) {
-      const lineIndex = contextStart - 1 + i;
+    for (let i = 0; i < expandable; i += 1) {
       const lineNumber = contextStart + i;
-      const content = fileLines[lineIndex] ?? '';
+      const content = fileLines[oldStart - 1 - expandable + i] ?? '';
       contextRows.push({
         key: `expanded-${lineNumber}-${hunkKey}`,
         type: 'context',
         content,
         oldContent: undefined,
         newContent: undefined,
-        oldLineNumber: oldStart - contextLines + i,
+        oldLineNumber: oldStart - expandable + i,
         newLineNumber: lineNumber,
         position: null,
         isCommentable: false,

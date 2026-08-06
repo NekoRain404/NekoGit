@@ -748,6 +748,7 @@
     "checkoutLocally": "检出到本地",
     "checkingOut": "检出中",
     "cloneFirst": "请先克隆仓库",
+    "checkoutForkHead": "此 PR 来自 fork 仓库，请手动检出该分支。",
     "ciChecks": {
       "checks": "检查",
       "passing": "通过",

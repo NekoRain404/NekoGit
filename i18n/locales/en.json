@@ -748,6 +748,7 @@
     "checkoutLocally": "Checkout locally",
     "checkingOut": "Checking out",
     "cloneFirst": "Clone the repository first",
+    "checkoutForkHead": "This pull request is from a fork. Check out the branch manually.",
     "ciChecks": {
       "checks": "Checks",
       "passing": "passing",

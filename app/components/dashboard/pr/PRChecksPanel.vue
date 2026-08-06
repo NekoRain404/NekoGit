@@ -50,13 +50,21 @@ const summary = computed(() => {
   const passing = checkRuns.value.filter(
     (r) => r.status === 'completed' && r.conclusion === 'success'
   ).length;
+  const skipped = checkRuns.value.filter(
+    (r) => r.status === 'completed' && (r.conclusion === 'skipped' || r.conclusion === 'neutral')
+  ).length;
   const failing = checkRuns.value.filter(
-    (r) => r.status === 'completed' && r.conclusion && r.conclusion !== 'success'
+    (r) =>
+      r.status === 'completed' &&
+      r.conclusion &&
+      r.conclusion !== 'success' &&
+      r.conclusion !== 'skipped' &&
+      r.conclusion !== 'neutral'
   ).length;
   const pending = checkRuns.value.filter(
     (r) => r.status !== 'completed'
   ).length;
-  return { total, passing, failing, pending };
+  return { total, passing, failing, pending, skipped };
 });
 
 const combinedStateLabel = computed(() => {
@@ -211,6 +219,9 @@ watch(
           </span>
           <span v-if="summary.pending > 0" class="checks-summary__item checks-summary__item--pending">
             {{ summary.pending }} {{ t('prReview.ciChecks.pending') }}
+          </span>
+          <span v-if="summary.skipped > 0" class="checks-summary__item checks-summary__item--skipped">
+            {{ summary.skipped }} {{ t('prReview.ciChecks.skipped') }}
           </span>
         </div>
 
@@ -392,6 +403,11 @@ watch(
   &--pending {
     color: var(--nekogit-warning);
     background: var(--nekogit-warning-soft);
+  }
+
+  &--skipped {
+    color: var(--nekogit-text-muted);
+    background: var(--nekogit-surface-hover);
   }
 }
 
