@@ -1,4 +1,4 @@
-///  Utils / Github Auth Utils
+///  Utils / Github Auth Utils - Creates authenticated Octokit clients and extracts GitHub tokens from user sessions.
 import { Octokit } from '@octokit/core';
 import type { H3Event } from 'h3';
 

@@ -1,4 +1,4 @@
-///  Utils / Auth Rate Limit Utils
+///  Utils / Auth Rate Limit Utils - Enforces per-client rate limits on personal-mode unlock and PAT login attempts.
 import type { H3Event } from 'h3';
 import { getHeader } from 'h3';
 

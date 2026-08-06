@@ -1,4 +1,4 @@
-///  Utils / Auth Session Utils
+///  Utils / Auth Session Utils - Persists authenticated GitHub user sessions after OAuth or PAT login.
 import type { H3Event } from 'h3';
 
 type GitHubAuthProvider = 'github' | 'pat';

@@ -1,4 +1,4 @@
-///  Plugins / Csrf
+///  Plugins / Csrf - Seeds the CSRF double-submit cookie on safe requests when none is present.
 import { randomBytes } from 'node:crypto';
 
 import { getCookie, getRequestProtocol, setCookie } from 'h3';

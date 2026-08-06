@@ -1,4 +1,4 @@
-///  Utils / Api Cache Utils
+///  Utils / Api Cache Utils - Sets private cache-control headers and coalesces concurrent identical API GET requests.
 import { createHash } from 'node:crypto';
 
 import type { H3Event } from 'h3';

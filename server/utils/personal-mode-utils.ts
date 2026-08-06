@@ -1,4 +1,4 @@
-///  Utils / Personal Mode Utils
+///  Utils / Personal Mode Utils - Password verification, remember-device cookies, and identity caching for single-user personal mode.
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 import type { H3Event } from 'h3';

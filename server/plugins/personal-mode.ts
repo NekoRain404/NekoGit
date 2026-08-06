@@ -1,4 +1,4 @@
-///  Plugins / Personal Mode
+///  Plugins / Personal Mode - Validates the personal-mode GitHub token at startup and caches the authenticated identity.
 import { resolveAuthProviderState } from '../utils/auth-providers';
 import { createGitHubClient } from '../utils/github-auth-utils';
 import {

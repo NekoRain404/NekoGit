@@ -1,4 +1,4 @@
-///  Utils / PR Commits Utils
+///  Utils / PR Commits Utils - Normalizes GitHub pull request commit payloads for the frontend commit list.
 
 export interface PullCommitResponse {
   sha?: string;

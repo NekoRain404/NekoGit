@@ -1,4 +1,4 @@
-///  Utils / Repo Route Utils
+///  Utils / Repo Route Utils - Extracts and validates repo/issue/pull/discussion route params and executes GitHub API requests with error handling.
 import type { H3Event } from 'h3';
 
 import { throwGitHubRouteError, getGitHubClient } from './github-auth-utils';

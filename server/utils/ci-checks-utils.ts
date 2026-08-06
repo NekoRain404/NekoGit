@@ -1,4 +1,4 @@
-///  Utils / CI Checks Utils
+///  Utils / CI Checks Utils - Normalizes GitHub check runs and aggregates passing/failing/pending/skipped summaries.
 
 export type CheckRunStatus = 'queued' | 'in_progress' | 'completed';
 

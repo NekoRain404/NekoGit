@@ -1,4 +1,4 @@
-///  Utils / User Settings Utils
+///  Utils / User Settings Utils - Read, save, and patch per-user settings through a storage adapter, keyed by the session login.
 import type { H3Event } from 'h3';
 
 import type { UserSettings } from '#shared/types/user-settings';

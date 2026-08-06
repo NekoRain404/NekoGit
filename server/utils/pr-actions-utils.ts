@@ -1,4 +1,4 @@
-///  Utils / PR Actions Utils
+///  Utils / PR Actions Utils - Validates and normalizes pull request update actions (merge/open/close) from PATCH request bodies.
 
 export type PullUpdateState = 'open' | 'closed';
 export type PullMergeMethod = 'merge' | 'squash' | 'rebase';

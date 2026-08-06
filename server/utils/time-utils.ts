@@ -1,4 +1,4 @@
-///  Utils / Time Utils
+///  Utils / Time Utils - Date helpers, e.g. one year ago formatted for GitHub search queries.
 import { getOneYearAgoSearchDate } from '#shared/utils/github-search-query';
 
 /**

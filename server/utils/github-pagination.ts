@@ -1,3 +1,5 @@
+/// Pagination parsing and metadata helpers for GitHub Link headers and in-memory collections.
+
 /** Metadata describing the current pagination state of a list response. */
 export interface PaginationMeta {
   page: number;

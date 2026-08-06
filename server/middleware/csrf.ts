@@ -1,4 +1,4 @@
-///  Middleware / Csrf
+///  Middleware / Csrf - Enforces CSRF token validation on state-changing /api requests with OAuth route exemptions.
 import { assertCsrfToken } from '../utils/csrf-utils';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);

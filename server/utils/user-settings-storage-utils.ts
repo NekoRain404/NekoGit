@@ -1,4 +1,4 @@
-///  Utils / User Settings Storage Utils
+///  Utils / User Settings Storage Utils - Pluggable user-settings persistence over Nitro storage or Upstash Redis with per-user write locking.
 import { Redis } from '@upstash/redis';
 
 import type { UserSettings } from '#shared/types/user-settings';

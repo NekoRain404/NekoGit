@@ -1,4 +1,4 @@
-///  Utils / Pr Reviewers Utils
+///  Utils / Pr Reviewers Utils - Aggregates PR reviewers, review states, and reviewer candidates for assignment workflows.
 import type { Octokit } from '@octokit/core';
 
 import { fetchPaginatedArray } from '#server/utils/github-timeline-utils';

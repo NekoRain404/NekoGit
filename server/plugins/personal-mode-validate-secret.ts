@@ -1,4 +1,4 @@
-///  Plugins / Personal Mode Validate Secret
+///  Plugins / Personal Mode Validate Secret - Checks personal-mode secret strength at startup and warns on deprecated env vars.
 import { resolveAuthProviderState } from '../utils/auth-providers';
 import {
   assertPersonalCookieSecretStrength,

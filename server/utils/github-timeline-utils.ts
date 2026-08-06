@@ -1,4 +1,4 @@
-///  Utils / Github Timeline Utils
+///  Utils / Github Timeline Utils - Fetches and normalizes issue/PR timelines from GitHub REST and GraphQL, including review threads.
 import type { Octokit } from '@octokit/core';
 
 import { parseLinkHeader } from './github-pagination';

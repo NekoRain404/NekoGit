@@ -1,4 +1,4 @@
-///  Utils / Csrf Utils
+///  Utils / Csrf Utils - Validates the CSRF double-submit token and Origin/Referer host on state-changing requests.
 import type { H3Event } from 'h3';
 import { getCookie, getHeader, getRequestHost } from 'h3';
 

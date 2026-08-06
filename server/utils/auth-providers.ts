@@ -1,4 +1,4 @@
-///  Utils / Auth Providers
+///  Utils / Auth Providers - Resolves the enabled authentication mode (personal/pat/oauth/hybrid) from runtime config and env.
 import type { AuthProviderMode, AuthProviderState } from '#shared/types/auth-provider';
 
 import { resolvePersonalModeSecrets } from '../../shared/utils/personal-mode-env';

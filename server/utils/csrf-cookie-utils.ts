@@ -1,3 +1,5 @@
+/// CSRF cookie security helper that decides whether the token cookie should use the Secure attribute.
+
 /**
  * Determine whether the CSRF cookie should use the `Secure` flag
  * based on the request protocol (only for HTTPS).

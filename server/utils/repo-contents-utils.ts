@@ -1,4 +1,4 @@
-///  Utils / Repo Contents Utils
+///  Utils / Repo Contents Utils - Fetches and normalizes GitHub repository contents (files and directories) for the code explorer.
 import type { H3Event } from 'h3';
 
 import { executeGitHubRequest, extractRepoParams } from './repo-route-utils';

@@ -1,4 +1,4 @@
-///  Utils / Github Proxy Utils
+///  Utils / Github Proxy Utils - Resolves proxy settings and builds fetch implementations that route GitHub API traffic through an HTTP(S) proxy.
 import type { H3Event } from 'h3';
 import {
   EnvHttpProxyAgent,

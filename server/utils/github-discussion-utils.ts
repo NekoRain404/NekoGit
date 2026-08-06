@@ -1,4 +1,4 @@
-///  Utils / Github Discussion Utils
+///  Utils / Github Discussion Utils - Fetches GitHub discussions and comments via GraphQL and normalizes them for the frontend.
 import type { Octokit } from '@octokit/core';
 
 import type {
