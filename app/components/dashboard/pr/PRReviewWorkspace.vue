@@ -1,4 +1,4 @@
-<!-- PRReview Workspace — NekoGit dashboard component. -->
+<!-- PRReview Workspace — Full-screen review workspace combining commit selector, file sidebar, diff viewer and submit bar. -->
 <script setup lang="ts">
 import {
   ArrowLeftIcon,

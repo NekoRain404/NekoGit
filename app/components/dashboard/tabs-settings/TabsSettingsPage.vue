@@ -1,4 +1,4 @@
-<!-- Tabs Settings Page — NekoGit dashboard component. -->
+<!-- Tabs Settings Page — Full settings page combining the tab editor and views management panels. -->
 <script setup lang="ts">
 import { ArrowLeftIcon, LinkIcon } from 'lucide-vue-next';
 

@@ -1,4 +1,4 @@
-<!-- Local Repository Changed Files — NekoGit dashboard component. -->
+<!-- Local Repository Changed Files — Lists changed/uncommitted files of a local repository and links to their diffs. -->
 <script setup lang="ts">
 import { ExternalLinkIcon, Loader2Icon } from 'lucide-vue-next';
 

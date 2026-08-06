@@ -1,4 +1,4 @@
-<!-- Dashboard Pagination — NekoGit dashboard component. -->
+<!-- Dashboard Pagination — Pagination controls (previous/next/page numbers) for dashboard list views. -->
 <template>
   <nav
     class="pagination is-centered is-rounded dashboard-pagination"

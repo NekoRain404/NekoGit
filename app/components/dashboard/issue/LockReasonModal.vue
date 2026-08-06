@@ -1,4 +1,4 @@
-<!-- Lock Reason Modal — NekoGit dashboard component. -->
+<!-- Lock Reason Modal — Modal to pick a reason and confirm locking an issue. -->
 <template>
   <div class="modal" :class="{ 'is-active': isVisible }">
     <div class="modal-background" @click="$emit('close')"></div>

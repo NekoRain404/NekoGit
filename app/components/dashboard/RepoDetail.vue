@@ -1,4 +1,4 @@
-<!-- Repo Detail — NekoGit dashboard component. -->
+<!-- Repo Detail — Full repository detail view (overview, branch info, file tree, local actions). -->
 <script setup lang="ts">
 import {
   ArchiveIcon,

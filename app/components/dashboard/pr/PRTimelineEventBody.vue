@@ -1,4 +1,4 @@
-<!-- PRTimeline Event Body — NekoGit dashboard component. -->
+<!-- PRTimeline Event Body — Body text for a generic PR timeline event with actor and links. -->
 <template>
   <span class="is-size-7">
     <a

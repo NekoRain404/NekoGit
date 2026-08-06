@@ -1,4 +1,4 @@
-<!-- Tabs Views Panel — NekoGit dashboard component. -->
+<!-- Tabs Views Panel — Panel to manage dashboard tab views: create, rename, reorder, duplicate and remove. -->
 <script setup lang="ts">
 import {
   BellIcon,

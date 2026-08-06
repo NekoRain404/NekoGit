@@ -1,4 +1,4 @@
-<!-- Issue Detail — NekoGit dashboard component. -->
+<!-- Issue Detail — Issue detail page: header, description, timeline and sidebar actions. -->
 <template>
   <div class="detail-scroll">
     <div class="columns">

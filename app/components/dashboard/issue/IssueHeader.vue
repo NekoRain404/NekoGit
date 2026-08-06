@@ -1,4 +1,4 @@
-<!-- Issue Header — NekoGit dashboard component. -->
+<!-- Issue Header — Issue page header with title, state icon, type and metadata. -->
 <template>
   <div class="mb-6">
     <div class="is-flex is-align-items-center mb-4">

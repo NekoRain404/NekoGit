@@ -1,4 +1,4 @@
-<!-- Issue Timeline State Events — NekoGit dashboard component. -->
+<!-- Issue Timeline State Events — Renders localized text for issue timeline state-change events (labels, milestone, assignee, etc.). -->
 <template>
   <template v-if="item.eventType === 'labeled' || item.eventType === 'unlabeled'">
     {{ item.eventType === 'labeled' ? 'added label' : 'removed label' }}

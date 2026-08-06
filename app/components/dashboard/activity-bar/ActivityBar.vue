@@ -1,4 +1,4 @@
-<!-- Activity Bar — NekoGit dashboard component. -->
+<!-- Activity Bar — Vertical navigation bar with user avatar and tab navigation buttons. -->
 <template>
   <div class="activity-bar">
     <button

@@ -1,4 +1,4 @@
-<!-- Discussion Actions — NekoGit dashboard component. -->
+<!-- Discussion Actions — Sidebar card with discussion metadata, labels and action controls. -->
 <template>
   <div>
     <div class="sidebar-card mb-4">

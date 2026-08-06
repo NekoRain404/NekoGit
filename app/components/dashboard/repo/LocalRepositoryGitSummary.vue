@@ -1,4 +1,4 @@
-<!-- Local Repository Git Summary — NekoGit dashboard component. -->
+<!-- Local Repository Git Summary — Shows git status summary (ahead/behind, branch, uncommitted counts) for a local repository. -->
 <script setup lang="ts">
 import {
   AlertCircleIcon,

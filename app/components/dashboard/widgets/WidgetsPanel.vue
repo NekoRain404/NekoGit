@@ -1,4 +1,4 @@
-<!-- Widgets Panel — NekoGit dashboard component. -->
+<!-- Widgets Panel — Container that renders the active dashboard widgets (stats, quick actions, filters). -->
 <template>
   <div class="widgets-panel">
     <div class="widgets-panel__content">

@@ -1,4 +1,4 @@
-<!-- PRLabels — NekoGit dashboard component. -->
+<!-- PRLabels — Sidebar card to view and edit labels on a pull request. -->
 <template>
   <div class="sidebar-card mb-4">
     <div class="sidebar-card__header">

@@ -1,4 +1,4 @@
-<!-- Repo Item — NekoGit dashboard component. -->
+<!-- Repo Item — Compact card rendering a repository (name, description, language, stars) in the dashboard list. -->
 <template>
   <div
     class="card dashboard-list-card dashboard-list-card--repo dashboard-list-card--compact repo-item"

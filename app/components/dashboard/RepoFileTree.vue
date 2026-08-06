@@ -1,4 +1,4 @@
-<!-- Repo File Tree — NekoGit dashboard component. -->
+<!-- Repo File Tree — Collapsible file/folder tree for browsing a repository's content and opening files. -->
 <script setup lang="ts">
 import { FileIcon, FolderIcon, Loader2Icon } from 'lucide-vue-next';
 import { computed } from 'vue';

@@ -1,4 +1,4 @@
-<!-- Search Item — NekoGit dashboard component. -->
+<!-- Search Item — Card rendering a single search result (issue or PR) with icon, title, snippet and metadata. -->
 <template>
   <div class="card dashboard-list-card dashboard-list-card--activity dashboard-list-card--detailed">
     <div class="card-content p-3">

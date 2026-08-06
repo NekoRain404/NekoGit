@@ -1,4 +1,4 @@
-<!-- Branch Selector — NekoGit dashboard component. -->
+<!-- Branch Selector — Searchable dropdown to switch the active branch of a repository file view. -->
 <script setup lang="ts">
 import {
   CheckIcon,

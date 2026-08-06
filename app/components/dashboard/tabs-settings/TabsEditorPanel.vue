@@ -1,4 +1,4 @@
-<!-- Tabs Editor Panel — NekoGit dashboard component. -->
+<!-- Tabs Editor Panel — Panel to edit a tab's name, query and view settings with preview. -->
 <script setup lang="ts">
 import {
   CheckIcon,

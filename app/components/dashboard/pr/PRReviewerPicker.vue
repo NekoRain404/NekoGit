@@ -1,4 +1,4 @@
-<!-- PRReviewer Picker — NekoGit dashboard component. -->
+<!-- PRReviewer Picker — Sidebar picker to select and add reviewers to a review request. -->
 <template>
   <div class="reviewer-picker sidebar-card">
     <div class="reviewer-picker__header">

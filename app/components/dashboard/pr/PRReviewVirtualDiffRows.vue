@@ -1,4 +1,4 @@
-<!-- PRReview Virtual Diff Rows — NekoGit dashboard component. -->
+<!-- PRReview Virtual Diff Rows — Virtualized rendering of diff rows for the review diff viewer. -->
 <script setup lang="ts">
 import { CheckIcon, XIcon } from 'lucide-vue-next';
 import {

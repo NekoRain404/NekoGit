@@ -1,4 +1,4 @@
-<!-- PRReviewer Request Modal — NekoGit dashboard component. -->
+<!-- PRReviewer Request Modal — Modal to request reviewers for a PR with search and selection. -->
 <template>
   <Teleport to="body">
     <Transition name="reviewer-modal">

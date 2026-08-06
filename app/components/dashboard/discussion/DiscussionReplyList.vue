@@ -1,4 +1,4 @@
-<!-- Discussion Reply List — NekoGit dashboard component. -->
+<!-- Discussion Reply List — Lists the replies of a discussion comment with markdown bodies and authors. -->
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

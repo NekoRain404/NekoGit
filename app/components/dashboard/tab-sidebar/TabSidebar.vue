@@ -1,4 +1,4 @@
-<!-- Tab Sidebar — NekoGit dashboard component. -->
+<!-- Tab Sidebar — Sidebar listing dashboard tab groups with selection and a manage-views button. -->
 <template>
   <aside class="tab-sidebar" aria-label="Tab groups">
     <!-- Compact header: title + manage button only -->

@@ -1,4 +1,4 @@
-<!-- Issue Actions — NekoGit dashboard component. -->
+<!-- Issue Actions — Sidebar action card for an issue: lock, subscribe, labels and milestone controls. -->
 <template>
   <div>
     <div v-if="canLockIssue" class="sidebar-card mb-4">

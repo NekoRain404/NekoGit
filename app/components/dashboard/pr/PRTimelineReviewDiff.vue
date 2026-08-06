@@ -1,4 +1,4 @@
-<!-- PRTimeline Review Diff — NekoGit dashboard component. -->
+<!-- PRTimeline Review Diff — Renders the inline diff hunk attached to a review timeline comment. -->
 <script setup lang="ts">
 import { computed } from 'vue';
 

@@ -1,4 +1,4 @@
-<!-- PRReview File Sidebar — NekoGit dashboard component. -->
+<!-- PRReview File Sidebar — Sidebar listing changed files to navigate within the review workspace. -->
 <script setup lang="ts">
 import {
   ChevronRightIcon,

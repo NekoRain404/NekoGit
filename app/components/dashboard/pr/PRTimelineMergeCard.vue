@@ -1,4 +1,4 @@
-<!-- PRTimeline Merge Card — NekoGit dashboard component. -->
+<!-- PRTimeline Merge Card — Card showing a merged/closed timeline event with actor and message. -->
 <template>
   <div class="merge-item px-4 pt-3 pb-3">
     <div class="is-flex is-align-items-center">

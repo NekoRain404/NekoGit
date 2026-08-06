@@ -1,4 +1,4 @@
-<!-- Project Tag — NekoGit dashboard component. -->
+<!-- Project Tag — Renders a project badge that links out to the referenced project. -->
 <template>
   <a
     v-if="project?.url"

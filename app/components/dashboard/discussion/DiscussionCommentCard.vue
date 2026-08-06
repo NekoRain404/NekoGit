@@ -1,4 +1,4 @@
-<!-- Discussion Comment Card — NekoGit dashboard component. -->
+<!-- Discussion Comment Card — Card rendering a single discussion comment with its reply list and composer. -->
 <script setup lang="ts">
 import { CheckCircle2Icon, MessageSquareReplyIcon } from 'lucide-vue-next';
 import { computed, shallowRef, watch } from 'vue';

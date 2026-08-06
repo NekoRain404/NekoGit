@@ -1,4 +1,4 @@
-<!-- PRDetail — NekoGit dashboard component. -->
+<!-- PRDetail — Pull request detail page: header, timeline, sidebar actions, and integrated review workspace. -->
 <template>
   <div :class="['pr-detail-layout', { 'pr-detail-layout--review': isReviewWindowOpen }]">
     <PRReviewWorkspace

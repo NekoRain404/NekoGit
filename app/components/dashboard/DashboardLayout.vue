@@ -1,4 +1,4 @@
-<!-- Dashboard Layout — NekoGit dashboard component. -->
+<!-- Dashboard Layout — Root layout grid wiring the activity bar, tab sidebar and main content slots together. -->
 <template>
   <div class="dashboard-layout">
     <div class="columns dashboard-layout-columns">

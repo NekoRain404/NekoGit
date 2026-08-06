@@ -1,4 +1,4 @@
-<!-- Dashboard Quick Open Palette — NekoGit dashboard component. -->
+<!-- Dashboard Quick Open Palette — Teleported quick-open palette to switch dashboard tabs and run quick actions via fuzzy search. -->
 <template>
   <Teleport to="body">
     <Transition name="quick-open">

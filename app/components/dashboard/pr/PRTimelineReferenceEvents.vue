@@ -1,4 +1,4 @@
-<!-- PRTimeline Reference Events — NekoGit dashboard component. -->
+<!-- PRTimeline Reference Events — Renders localized text for PR cross-reference timeline events. -->
 <template>
   <template v-if="item.eventType === 'blocked_by_added'">
     marked this as blocked by

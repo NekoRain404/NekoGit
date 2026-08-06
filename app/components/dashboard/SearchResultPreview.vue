@@ -1,4 +1,4 @@
-<!-- Search Result Preview — NekoGit dashboard component. -->
+<!-- Search Result Preview — Preview panel showing search result items with loading, empty and error states. -->
 <template>
   <div class="search-result-preview">
     <div class="srp-toolbar">

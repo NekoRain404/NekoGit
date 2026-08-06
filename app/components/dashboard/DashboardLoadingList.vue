@@ -1,4 +1,4 @@
-<!-- Dashboard Loading List — NekoGit dashboard component. -->
+<!-- Dashboard Loading List — Skeleton placeholder cards shown while dashboard tab items are loading. -->
 <script setup lang="ts">
 import SimpleBar from 'simplebar-vue';
 

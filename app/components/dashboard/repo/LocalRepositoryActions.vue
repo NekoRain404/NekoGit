@@ -1,4 +1,4 @@
-<!-- Local Repository Actions — NekoGit dashboard component. -->
+<!-- Local Repository Actions — Sidebar card with git actions for a local repository (pull, push, fetch, archive, etc.). -->
 <script setup lang="ts">
 import {
   ArchiveIcon,

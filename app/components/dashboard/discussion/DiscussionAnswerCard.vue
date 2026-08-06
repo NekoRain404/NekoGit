@@ -1,4 +1,4 @@
-<!-- Discussion Answer Card — NekoGit dashboard component. -->
+<!-- Discussion Answer Card — Card rendering the accepted answer of a discussion. -->
 <script setup lang="ts">
 import { CheckCircle2Icon } from 'lucide-vue-next';
 import { computed } from 'vue';

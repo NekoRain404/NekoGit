@@ -1,4 +1,4 @@
-<!-- PRReview Submit Bar — NekoGit dashboard component. -->
+<!-- PRReview Submit Bar — Bottom bar to submit a review with approve/request-changes/comment and pending inline comments. -->
 <script setup lang="ts">
 import {
   CheckCircle2Icon,

@@ -1,4 +1,4 @@
-<!-- Issue Timeline Commit Card — NekoGit dashboard component. -->
+<!-- Issue Timeline Commit Card — Card showing a commit referenced in the issue timeline. -->
 <template>
   <div class="commit-item px-4 pt-3 pb-1">
     <div class="is-flex is-align-items-start mb-2">

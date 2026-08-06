@@ -1,4 +1,4 @@
-<!-- PRTimeline State Events — NekoGit dashboard component. -->
+<!-- PRTimeline State Events — Renders localized text describing PR timeline state-change events (draft, merge queue, etc.). -->
 <template>
   <template v-if="item.eventType === 'added_to_merge_queue'">added this to merge queue</template>
   <template v-else-if="item.eventType === 'auto_merge_enabled'">enabled auto-merge</template>

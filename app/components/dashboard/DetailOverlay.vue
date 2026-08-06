@@ -1,4 +1,4 @@
-<!-- Detail Overlay — NekoGit dashboard component. -->
+<!-- Detail Overlay — Modal overlay shell with back navigation toolbar and slot for the detail content. -->
 <template>
   <div class="detail-overlay is-flex is-align-items-center is-justify-content-center">
     <div class="detail-container is-flex is-flex-direction-column">

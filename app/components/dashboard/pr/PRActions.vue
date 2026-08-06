@@ -1,4 +1,4 @@
-<!-- PRActions — NekoGit dashboard component. -->
+<!-- PRActions — Sidebar action card for a PR: reviewers, assignees, labels, milestone and merge/close controls. -->
 <template>
   <div>
     <div class="sidebar-card mb-4">

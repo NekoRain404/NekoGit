@@ -1,4 +1,4 @@
-<!-- Timeline Comment Card — NekoGit dashboard component. -->
+<!-- Timeline Comment Card — Card rendering a timeline comment with author, rendered markdown body, and metadata. -->
 <template>
   <div class="comment-item px-4 pt-4 pb-1">
     <div class="mb-4">

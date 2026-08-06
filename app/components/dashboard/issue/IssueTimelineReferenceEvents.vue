@@ -1,4 +1,4 @@
-<!-- Issue Timeline Reference Events — NekoGit dashboard component. -->
+<!-- Issue Timeline Reference Events — Renders localized text for issue cross-reference timeline events. -->
 <template>
   <template v-if="item.eventType === 'connected' && item.otherTarget">
     connected this issue to

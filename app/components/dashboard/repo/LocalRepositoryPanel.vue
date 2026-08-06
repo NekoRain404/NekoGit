@@ -1,4 +1,4 @@
-<!-- Local Repository Panel — NekoGit dashboard component. -->
+<!-- Local Repository Panel — Container panel that loads and hosts local repository summary, actions, commit history and changed files. -->
 <script setup lang="ts">
 import { AlertCircleIcon, CheckCircle2Icon, HardDriveIcon, Loader2Icon } from 'lucide-vue-next';
 import { computed } from 'vue';

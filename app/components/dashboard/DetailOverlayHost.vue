@@ -1,4 +1,4 @@
-<!-- Detail Overlay Host — NekoGit dashboard component. -->
+<!-- Detail Overlay Host — Hosts the detail overlay, lazily loading the matching detail component per tab type. -->
 <script setup lang="ts">
 import { Loader2Icon } from 'lucide-vue-next';
 import { computed, defineAsyncComponent, shallowRef, watch } from 'vue';

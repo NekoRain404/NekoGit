@@ -1,4 +1,4 @@
-<!-- Issue Labels — NekoGit dashboard component. -->
+<!-- Issue Labels — Sidebar card to view and edit labels on an issue. -->
 <template>
   <div class="sidebar-card mb-4">
     <div class="sidebar-card__header">

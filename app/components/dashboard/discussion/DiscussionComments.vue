@@ -1,4 +1,4 @@
-<!-- Discussion Comments — NekoGit dashboard component. -->
+<!-- Discussion Comments — Renders the list of discussion comments with reply support. -->
 <script setup lang="ts">
 import { AlertCircleIcon, MessageSquareIcon } from 'lucide-vue-next';
 

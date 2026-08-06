@@ -1,4 +1,4 @@
-<!-- Repo File View — NekoGit dashboard component. -->
+<!-- Repo File View — Detail view of a single repository file: content preview, raw/export actions and metadata. -->
 <script setup lang="ts">
 import {
   ArrowLeftIcon,

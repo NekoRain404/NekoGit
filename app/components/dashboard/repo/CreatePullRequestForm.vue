@@ -1,4 +1,4 @@
-<!-- CreatePullRequestForm — NekoGit dashboard component. -->
+<!-- CreatePullRequestForm — Modal form to create a pull request from local repository branches, with title/description fields and submit handling. -->
 <script setup lang="ts">
 import { GitPullRequestIcon, Loader2Icon, XIcon } from 'lucide-vue-next';
 import { onMounted } from 'vue';

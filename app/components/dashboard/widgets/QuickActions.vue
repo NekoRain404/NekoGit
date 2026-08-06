@@ -1,4 +1,4 @@
-<!-- Quick Actions — NekoGit dashboard component. -->
+<!-- Quick Actions — Quick action buttons for common dashboard operations (open, search, new item). -->
 <template>
   <div class="quick-actions" aria-labelledby="quick-actions-title">
     <h3 id="quick-actions-title" class="quick-actions__title">

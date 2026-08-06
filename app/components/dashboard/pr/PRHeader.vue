@@ -1,4 +1,4 @@
-<!-- PRHeader — NekoGit dashboard component. -->
+<!-- PRHeader — PR page header with title, state icon, number and metadata. -->
 <template>
   <div class="mb-6">
     <div class="is-flex is-align-items-center mb-4">

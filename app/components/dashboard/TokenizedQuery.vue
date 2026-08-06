@@ -1,4 +1,4 @@
-<!-- Tokenized Query — NekoGit dashboard component. -->
+<!-- Tokenized Query — Renders a parsed dashboard query as color-coded, individually styled token segments. -->
 <template>
   <div class="tokenized-query">
     <span

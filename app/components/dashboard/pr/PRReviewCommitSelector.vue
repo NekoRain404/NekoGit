@@ -1,4 +1,4 @@
-<!-- PRReview Commit Selector — NekoGit dashboard component. -->
+<!-- PRReview Commit Selector — Dropdown to pick which commit the review is based on. -->
 <script setup lang="ts">
 import { ChevronDownIcon } from 'lucide-vue-next';
 import { computed, shallowRef, watch } from 'vue';

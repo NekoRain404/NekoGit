@@ -1,4 +1,4 @@
-<!-- Issue Timeline Referenced Event Card — NekoGit dashboard component. -->
+<!-- Issue Timeline Referenced Event Card — Card showing an issue reference event (committed/closing etc.) with actor and subject. -->
 <template>
   <div class="commit-item px-4 pt-2 pb-1">
     <div class="is-flex is-align-items-center mb-2">

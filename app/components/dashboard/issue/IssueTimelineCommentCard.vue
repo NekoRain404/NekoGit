@@ -1,4 +1,4 @@
-<!-- Issue Timeline Comment Card — NekoGit dashboard component. -->
+<!-- Issue Timeline Comment Card — Wraps TimelineCommentCard for issue timeline comments with localized empty text. -->
 <template>
   <TimelineCommentCard
     :item="item"

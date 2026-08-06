@@ -1,4 +1,4 @@
-<!-- Notification Item — NekoGit dashboard component. -->
+<!-- Notification Item — Card rendering a single notification with unread state and linked subject. -->
 <template>
   <div
     class="card dashboard-list-card dashboard-list-card--activity dashboard-list-card--detailed notification-card"

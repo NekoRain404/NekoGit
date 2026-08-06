@@ -1,4 +1,4 @@
-<!-- PRTimeline Comment Card — NekoGit dashboard component. -->
+<!-- PRTimeline Comment Card — Wraps TimelineCommentCard for PR timeline comments with localized empty text. -->
 <template>
   <TimelineCommentCard
     :item="props.item"

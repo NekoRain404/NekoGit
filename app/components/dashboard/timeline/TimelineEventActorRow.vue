@@ -1,4 +1,4 @@
-<!-- Timeline Event Actor Row — NekoGit dashboard component. -->
+<!-- Timeline Event Actor Row — Row showing the avatar and name of the actor who performed a timeline event. -->
 <template>
   <div class="is-flex is-align-items-center">
     <RoundImg

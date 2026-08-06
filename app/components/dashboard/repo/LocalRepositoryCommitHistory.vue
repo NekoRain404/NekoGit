@@ -1,4 +1,4 @@
-<!-- Local Repository Commit History — NekoGit dashboard component. -->
+<!-- Local Repository Commit History — Lists the recent commit history of a local repository with loading state. -->
 <script setup lang="ts">
 import { Loader2Icon } from 'lucide-vue-next';
 

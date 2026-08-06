@@ -1,4 +1,4 @@
-<!-- PRReview Inline Comment — NekoGit dashboard component. -->
+<!-- PRReview Inline Comment — Inline comment bubble anchored to a specific diff line. -->
 <script setup lang="ts">
 import { computed } from 'vue';
 

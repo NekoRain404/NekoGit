@@ -1,4 +1,4 @@
-<!-- PRTimeline Events — NekoGit dashboard component. -->
+<!-- PRTimeline Events — Activity feed that renders the full ordered list of PR timeline events. -->
 <template>
   <div>
     <div class="mb-4 is-flex is-align-items-center">

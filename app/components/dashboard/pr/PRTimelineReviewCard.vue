@@ -1,4 +1,4 @@
-<!-- PRTimeline Review Card — NekoGit dashboard component. -->
+<!-- PRTimeline Review Card — Card displaying a review event: summary, inline diff and reviewer action. -->
 <template>
   <TimelineCommentCard
     v-if="isPlainComment"

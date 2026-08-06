@@ -1,4 +1,4 @@
-<!-- PRReview Diff Viewer — NekoGit dashboard component. -->
+<!-- PRReview Diff Viewer — Renders a single file's diff with sticky header and inline comment anchors. -->
 <script setup lang="ts">
 import { ChevronRightIcon } from 'lucide-vue-next';
 import {

@@ -1,4 +1,4 @@
-<!-- Discussion Detail — NekoGit dashboard component. -->
+<!-- Discussion Detail — Discussion detail page: title, comments, replies, and sidebar metadata. -->
 <script setup lang="ts">
 import { computed, shallowRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';

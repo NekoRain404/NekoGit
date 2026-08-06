@@ -1,4 +1,4 @@
-<!-- Comment Composer — NekoGit dashboard component. -->
+<!-- Comment Composer — Markdown textarea + preview composer for writing and submitting a comment. -->
 <template>
   <div
     v-show="!isAnyModalOpen"

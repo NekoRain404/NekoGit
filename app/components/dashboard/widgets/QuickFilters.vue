@@ -1,4 +1,4 @@
-<!-- Quick Filters — NekoGit dashboard component. -->
+<!-- Quick Filters — Quick filter option groups to narrow the current tab's visible items. -->
 <template>
   <div class="quick-filters">
     <div class="quick-filters__group" v-if="options.length > 0">

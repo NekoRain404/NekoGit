@@ -1,4 +1,4 @@
-<!-- Tab Stats — NekoGit dashboard component. -->
+<!-- Tab Stats — Displays per-tab statistics such as counts for issues, PRs and notifications. -->
 <template>
   <div class="tab-stats">
     <nav class="level is-mobile">

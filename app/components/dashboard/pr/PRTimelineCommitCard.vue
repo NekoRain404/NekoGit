@@ -1,4 +1,4 @@
-<!-- PRTimeline Commit Card — NekoGit dashboard component. -->
+<!-- PRTimeline Commit Card — Card showing a commit referenced in the PR timeline. -->
 <template>
   <div class="commit-item px-4 pt-3 pb-1">
     <div class="is-flex is-align-items-center mb-2">

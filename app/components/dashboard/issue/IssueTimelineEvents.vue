@@ -1,4 +1,4 @@
-<!-- Issue Timeline Events — NekoGit dashboard component. -->
+<!-- Issue Timeline Events — Activity feed that renders the full ordered list of issue timeline events. -->
 <template>
   <div>
     <div class="mb-4 is-flex is-align-items-center">

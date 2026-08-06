@@ -1,4 +1,4 @@
-<!-- PRChecksPanel — NekoGit dashboard component. -->
+<!-- PRChecksPanel — Sidebar panel listing PR check runs with status, duration, logs link and re-run. -->
 <script setup lang="ts">
 import { AlertCircleIcon, CheckCircleIcon, ClockIcon, ExternalLinkIcon, Loader2Icon, PlayIcon, RefreshCwIcon, RotateCcwIcon, XCircleIcon } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';

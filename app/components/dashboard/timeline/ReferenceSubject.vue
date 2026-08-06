@@ -1,4 +1,4 @@
-<!-- Reference Subject — NekoGit dashboard component. -->
+<!-- Reference Subject — Renders a referenced issue/PR subject with a link and click-to-switch handler. -->
 ﻿
 <template>
   <a
