@@ -566,7 +566,9 @@ const expandContext = async (hunkRow: PRReviewDiffRow, linesToAdd: number) => {
       return;
     }
 
-    const decoded = atob(contents.content);
+    const decoded = new TextDecoder('utf-8').decode(
+      Uint8Array.from(atob(contents.content), (char) => char.charCodeAt(0))
+    );
     const fileLines = decoded.split('\n');
     const contextRows: PRReviewDiffRow[] = [];
 

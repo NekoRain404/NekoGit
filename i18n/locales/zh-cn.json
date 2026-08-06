@@ -756,6 +756,8 @@
       "noChecks": "没有检查项",
       "loading": "加载检查中...",
       "failedToLoad": "加载检查失败",
+      "overall": "总体",
+      "refresh": "刷新检查",
       "rerun": "重跑",
       "rerunning": "重跑中...",
       "viewLogs": "查看日志",

@@ -1,6 +1,6 @@
 <!-- PRChecksPanel — NekoGit dashboard component. -->
 <script setup lang="ts">
-import { AlertCircleIcon, CheckCircleIcon, ClockIcon, ExternalLinkIcon, Loader2Icon, PlayIcon, RotateCcwIcon, XCircleIcon } from 'lucide-vue-next';
+import { AlertCircleIcon, CheckCircleIcon, ClockIcon, ExternalLinkIcon, Loader2Icon, PlayIcon, RefreshCwIcon, RotateCcwIcon, XCircleIcon } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -42,6 +42,8 @@ const checkRuns = ref<CheckRun[]>([]);
 const loading = ref(false);
 const error = ref('');
 const rerunningRunId = ref<number | null>(null);
+const totalCount = ref(0);
+const combinedStatus = ref<CombinedStatus | null>(null);
 
 const summary = computed(() => {
   const total = checkRuns.value.length;
@@ -55,6 +57,21 @@ const summary = computed(() => {
     (r) => r.status !== 'completed'
   ).length;
   return { total, passing, failing, pending };
+});
+
+const combinedStateLabel = computed(() => {
+  const state = combinedStatus.value?.state;
+  if (state === 'success') return t('prReview.ciChecks.passed');
+  if (state === 'failure' || state === 'error') return t('prReview.ciChecks.failed');
+  if (state === 'pending') return t('prReview.ciChecks.pending');
+  return state || '';
+});
+
+const combinedStateClass = computed(() => {
+  const state = combinedStatus.value?.state;
+  if (state === 'success') return 'pass';
+  if (state === 'failure' || state === 'error') return 'fail';
+  return 'pending';
 });
 
 const getCheckIcon = (run: CheckRun) => {
@@ -122,10 +139,14 @@ const fetchChecks = async () => {
       { method: 'GET' }
     );
     checkRuns.value = data?.check_runs || [];
+    totalCount.value = data?.total_count ?? checkRuns.value.length;
+    combinedStatus.value = data?.combined_status ?? null;
   } catch (err: unknown) {
     console.error('Error fetching PR checks:', err);
     error.value = getFetchErrorMessage(err, t('prReview.ciChecks.failedToLoad'));
     checkRuns.value = [];
+    totalCount.value = 0;
+    combinedStatus.value = null;
   } finally {
     loading.value = false;
   }
@@ -147,8 +168,17 @@ watch(
         <PlayIcon :size="14" class="sidebar-card__icon" />
         <span class="sidebar-card__title">{{ t('prReview.ciChecks.checks') }}</span>
       </div>
-      <div v-if="!loading" class="sidebar-card__header-actions">
-        <span class="sidebar-badge">{{ summary.total }}</span>
+      <div class="sidebar-card__header-actions">
+        <span v-if="!loading" class="sidebar-badge">{{ totalCount }}</span>
+        <button
+          class="checks-refresh"
+          type="button"
+          :disabled="loading"
+          :title="t('prReview.ciChecks.refresh')"
+          @click="fetchChecks"
+        >
+          <RefreshCwIcon :size="13" />
+        </button>
       </div>
     </div>
     <div class="sidebar-card__content">
@@ -167,6 +197,12 @@ watch(
 
       <template v-else>
         <div class="checks-summary">
+          <span
+            v-if="combinedStatus"
+            :class="['checks-summary__item', `checks-summary__item--${combinedStateClass}`]"
+          >
+            {{ t('prReview.ciChecks.overall') }}: {{ combinedStateLabel }}
+          </span>
           <span v-if="summary.passing > 0" class="checks-summary__item checks-summary__item--pass">
             {{ summary.passing }} {{ t('prReview.ciChecks.passing') }}
           </span>
@@ -294,6 +330,32 @@ watch(
   color: var(--nekogit-text-muted);
   background: var(--nekogit-surface-hover);
   border-radius: 10px;
+}
+
+.checks-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: var(--nekogit-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.6;
+
+  &:hover:not(:disabled) {
+    color: var(--bulma-text-strong, var(--nekogit-text-strong));
+    background: var(--nekogit-surface-hover);
+    opacity: 1;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 
 .checks-loading {

@@ -115,7 +115,7 @@
           </button>
         </template>
         <button
-          v-else
+          v-else-if="displayState === 'closed'"
           class="button is-small is-success is-light"
           type="button"
           @click="emit('reopen-pr')"
@@ -169,7 +169,6 @@ const props = defineProps<{
   pullRequest?: PullRequestHeaderPullRequest | null;
   repoOwner: string;
   repoName: string;
-  pullNumber: number;
   commitId: string;
   mergeable?: boolean | null;
   canMerge?: boolean;

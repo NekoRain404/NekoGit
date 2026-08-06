@@ -756,6 +756,8 @@
       "noChecks": "No checks found",
       "loading": "Loading checks...",
       "failedToLoad": "Failed to load checks",
+      "overall": "Overall",
+      "refresh": "Refresh checks",
       "rerun": "Rerun",
       "rerunning": "Rerunning...",
       "viewLogs": "View logs",

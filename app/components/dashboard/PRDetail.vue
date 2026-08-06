@@ -23,7 +23,6 @@
           :pull-request="currentPullRequest"
           :repo-owner="repoOwner"
           :repo-name="repoName"
-          :pull-number="currentPullRequest?.number || 0"
           :commit-id="reviewCommitId"
           :mergeable="currentPullRequest?.mergeable ?? null"
           :can-merge="canMerge"
@@ -359,6 +358,7 @@ const handleMerge = async () => {
     );
     if (data) {
       currentPullRequest.value = { ...currentPullRequest.value, ...data };
+      await fetchTimeline();
     }
   } catch (err) {
     detailError.value = getFetchErrorMessage(err, 'Failed to merge pull request.');
@@ -378,6 +378,7 @@ const handleClosePr = async () => {
     );
     if (data) {
       currentPullRequest.value = { ...currentPullRequest.value, ...data };
+      await fetchTimeline();
     }
   } catch (err) {
     detailError.value = getFetchErrorMessage(err, 'Failed to close pull request.');
@@ -397,6 +398,7 @@ const handleReopenPr = async () => {
     );
     if (data) {
       currentPullRequest.value = { ...currentPullRequest.value, ...data };
+      await fetchTimeline();
     }
   } catch (err) {
     detailError.value = getFetchErrorMessage(err, 'Failed to reopen pull request.');
