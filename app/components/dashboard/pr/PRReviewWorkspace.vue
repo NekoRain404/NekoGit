@@ -679,6 +679,7 @@ watch(
       <PRReviewDiffViewer
         :repo-owner="owner"
         :repo-name="repo"
+        :commit-sha="selectedCommitSha"
         :sections="review.allDiffSections.value"
         :active-filename="review.activeFilename.value"
         :draft-comments="review.draftComments.value"

@@ -55,6 +55,7 @@ const props = defineProps<{
   filename: string;
   repoOwner: string;
   repoName: string;
+  commitSha?: string;
   reviewCommentThreads: PRReviewCommentThread[];
   activeDraftTarget: { path: string; line: number } | null;
   activeDraftBody: string;
@@ -558,7 +559,7 @@ const expandContext = async (hunkRow: PRReviewDiffRow, linesToAdd: number) => {
   try {
     const contents = await apiFetch<{ content?: string }>(
       `/api/repos/${props.repoOwner}/${props.repoName}/contents/${encodeURIComponent(props.filename)}`,
-      { method: 'GET', query: { ref: 'HEAD' } }
+      { method: 'GET', query: { ref: props.commitSha ?? 'HEAD' } }
     );
 
     if (!contents?.content) {
@@ -629,9 +630,9 @@ const toggleReviewThread = (thread: PRReviewCommentThread) => {
 };
 
 watch(
-  () => [props.filename, props.rows, expandedHunks.value],
-  ([filename, _rows, _expanded], [prevFilename]) => {
-    if (filename !== prevFilename) {
+  () => [props.filename, props.commitSha, props.rows, expandedHunks.value],
+  ([filename, commitSha, _rows, _expanded], [prevFilename, prevCommitSha]) => {
+    if (filename !== prevFilename || commitSha !== prevCommitSha) {
       expandedHunks.value = new Map();
     }
 

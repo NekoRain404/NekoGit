@@ -27,6 +27,7 @@ const EMPTY_REVIEW_COMMENT_THREADS: PRReviewCommentThread[] = [];
 const props = defineProps<{
   repoOwner: string;
   repoName: string;
+  commitSha?: string;
   sections: PRReviewDiffSection[];
   activeFilename: string;
   draftComments: PRReviewDraftComment[];
@@ -384,6 +385,7 @@ onBeforeUnmount(() => {
               :filename="section.file.filename"
               :repo-owner="repoOwner"
               :repo-name="repoName"
+              :commit-sha="commitSha"
               :review-comment-threads="getReviewThreadsForFile(section.file.filename)"
               :active-draft-target="activeDraftTarget"
               :active-draft-body="getInlineDraftBodyForFile(section.file.filename)"
