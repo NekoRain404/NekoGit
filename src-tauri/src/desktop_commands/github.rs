@@ -1,3 +1,5 @@
+//! Tauri commands that open GitHub pages and profiles in the system browser.
+
 use tauri::{AppHandle, Runtime, Url};
 
 use crate::{

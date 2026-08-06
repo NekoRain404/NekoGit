@@ -1,3 +1,4 @@
+/// Unit tests for repository file tree building helpers.
 import { describe, expect, test } from 'vitest';
 
 import {

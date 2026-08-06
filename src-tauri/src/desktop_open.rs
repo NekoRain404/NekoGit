@@ -1,3 +1,5 @@
+//! Native open operations for external URLs, files/directories, and terminal launch.
+
 use std::{
     path::Path,
     process::{Command, Stdio},

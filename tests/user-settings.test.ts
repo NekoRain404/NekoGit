@@ -1,3 +1,4 @@
+/// Unit tests for user settings defaults, normalization, and merge helpers.
 import { describe, expect, test } from 'vitest';
 
 import {

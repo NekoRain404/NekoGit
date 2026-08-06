@@ -1,3 +1,4 @@
+/// Unit tests for GitHub URL, repo path, and markdown target parsing helpers.
 import { describe, expect, test } from 'vitest';
 
 import {

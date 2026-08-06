@@ -1,3 +1,5 @@
+//! Tauri commands for opening local repository folders and terminals.
+
 use std::path::Path;
 
 use tauri::State;

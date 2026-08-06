@@ -1,3 +1,4 @@
+/// Prepares the Nitro server output for Tauri packaging by materializing symlinked node_modules entries.
 import {
   cpSync,
   existsSync,

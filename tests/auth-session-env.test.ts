@@ -1,3 +1,4 @@
+/// Unit tests for auth session environment parsing (boolean env and cookie Secure flag).
 import { describe, expect, test } from 'vitest';
 
 import {

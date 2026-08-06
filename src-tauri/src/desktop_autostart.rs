@@ -1,3 +1,5 @@
+//! Desktop autostart integration: enables, disables, and reports whether NekoGit launches with the system.
+
 use std::{
     env, fs,
     path::{Path, PathBuf},

@@ -1,3 +1,5 @@
+//! Tauri commands for reading local repository state (status, branches, history, diffs).
+
 use tauri::State;
 
 use crate::{

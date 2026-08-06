@@ -1,3 +1,4 @@
+/// Downloads and stages the standalone Node.js runtime for Tauri builds into .node-runtime.
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { chmod, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';

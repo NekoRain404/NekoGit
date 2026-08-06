@@ -1,3 +1,4 @@
+/// Unit tests for download filename sanitization helpers.
 import { describe, expect, test } from 'vitest';
 
 import { sanitizeDownloadFileName } from '../app/utils/file-download-utils';

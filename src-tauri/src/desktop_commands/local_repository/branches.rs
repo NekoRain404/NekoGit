@@ -1,3 +1,5 @@
+//! Tauri commands for local repository branch operations (switch, create, checkout).
+
 use tauri::State;
 
 use crate::{

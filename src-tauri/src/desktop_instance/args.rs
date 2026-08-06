@@ -1,3 +1,5 @@
+//! Parses desktop startup command-line arguments (e.g. `--start-hidden`).
+
 use std::env;
 
 use crate::desktop_autostart::START_HIDDEN_ARG;

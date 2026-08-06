@@ -1,3 +1,4 @@
+/// Unit tests for GitHub issue search query building helpers.
 import { describe, expect, test } from 'vitest';
 
 import {

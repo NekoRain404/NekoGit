@@ -1,3 +1,4 @@
+/// Runs the Nuxt server for Tauri: ensures a persistent session password and spawns the app with desktop-friendly defaults.
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';

@@ -1,3 +1,4 @@
+/// Unit tests for GitHub notification thread ID normalization helpers.
 import { describe, expect, test } from 'vitest';
 
 import {

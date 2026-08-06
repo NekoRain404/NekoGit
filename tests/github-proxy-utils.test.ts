@@ -1,3 +1,4 @@
+/// Unit tests for environment proxy URL resolution.
 import { describe, expect, test } from 'vitest';
 
 import { resolveEnvProxyUrl } from '../shared/utils/proxy-url';

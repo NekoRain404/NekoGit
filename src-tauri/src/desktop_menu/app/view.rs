@@ -1,3 +1,5 @@
+//! Builds the application View submenu (refresh, reload, manage views).
+
 use tauri::{
     menu::{Submenu, SubmenuBuilder},
     Manager, Runtime,

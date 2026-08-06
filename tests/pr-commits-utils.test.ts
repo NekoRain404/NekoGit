@@ -1,3 +1,4 @@
+/// Unit tests for PR commit normalization.
 import { describe, expect, test } from 'vitest';
 
 import { normalizePullCommit } from '../server/utils/pr-commits-utils';

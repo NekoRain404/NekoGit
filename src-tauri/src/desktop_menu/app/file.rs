@@ -1,3 +1,5 @@
+//! Builds the application File submenu (settings, data directory, server, quit).
+
 use tauri::{
     menu::{Submenu, SubmenuBuilder},
     Manager, Runtime,

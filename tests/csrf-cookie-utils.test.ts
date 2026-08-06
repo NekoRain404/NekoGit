@@ -1,3 +1,4 @@
+/// Unit tests for CSRF cookie security flag helpers.
 import { describe, expect, test } from 'vitest';
 
 import { shouldUseSecureCsrfCookie } from '../server/utils/csrf-cookie-utils';

@@ -1,3 +1,5 @@
+//! Reads the GitHub CLI (`gh`) auth token with explicit user confirmation.
+
 use std::{
     io::Read,
     process::{Command, Stdio},

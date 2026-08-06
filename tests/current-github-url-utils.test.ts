@@ -1,3 +1,4 @@
+/// Unit tests for current GitHub URL, repository, and dashboard route resolution helpers.
 import { describe, expect, test } from 'vitest';
 
 import {

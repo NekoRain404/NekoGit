@@ -1,3 +1,5 @@
+//! Builds the application Help submenu.
+
 use tauri::{
     menu::{Submenu, SubmenuBuilder},
     Manager, Runtime,

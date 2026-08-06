@@ -1,3 +1,4 @@
+/// Unit tests for raw repository content response header helpers.
 import { describe, expect, test } from 'vitest';
 
 import {

@@ -1,3 +1,5 @@
+//! Builds the application Review submenu (file review navigation and toggles).
+
 use tauri::{
     menu::{Submenu, SubmenuBuilder},
     Manager, Runtime,

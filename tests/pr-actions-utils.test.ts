@@ -1,3 +1,4 @@
+/// Unit tests for PR pull update action normalization.
 import { describe, expect, test } from 'vitest';
 
 import { normalizePullUpdateAction } from '../server/utils/pr-actions-utils';

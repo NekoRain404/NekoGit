@@ -1,3 +1,5 @@
+//! Runtime holders for mutable menu items and the aggregated application menu.
+
 use serde::{Deserialize, Serialize};
 use tauri::{
     menu::{Menu, MenuItem},

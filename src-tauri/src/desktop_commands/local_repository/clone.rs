@@ -1,3 +1,5 @@
+//! Tauri command for cloning a GitHub repository into a local directory and opening it.
+
 use std::path::Path;
 
 use tauri::State;

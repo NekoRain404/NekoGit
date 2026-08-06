@@ -1,3 +1,5 @@
+//! Tauri commands for synchronizing local repositories with their remotes (fetch, pull, push).
+
 use tauri::State;
 
 use crate::{

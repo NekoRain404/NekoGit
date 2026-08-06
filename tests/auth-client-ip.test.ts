@@ -1,3 +1,4 @@
+/// Unit tests for auth client IP resolution with trust-proxy support.
 import { describe, expect, test } from 'vitest';
 
 import {

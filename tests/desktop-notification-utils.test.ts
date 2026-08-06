@@ -1,3 +1,4 @@
+/// Unit tests for desktop notification payload helpers.
 import { describe, expect, test } from 'vitest';
 
 import {

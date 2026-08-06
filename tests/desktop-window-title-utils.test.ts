@@ -1,3 +1,4 @@
+/// Unit tests for desktop window title building helpers.
 import { describe, expect, test } from 'vitest';
 
 import { buildDesktopWindowTitle } from '../app/utils/desktop-window-title-utils';

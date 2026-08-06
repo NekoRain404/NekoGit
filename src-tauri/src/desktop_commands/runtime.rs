@@ -1,3 +1,5 @@
+//! Tauri commands exposing desktop runtime diagnostics, server management, and autostart control.
+
 use std::sync::Arc;
 
 use tauri::{Manager, Runtime, State};

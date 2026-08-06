@@ -1,3 +1,4 @@
+/// Unit tests for the authentication rate-limit store helpers.
 import { describe, expect, test } from 'vitest';
 
 import {

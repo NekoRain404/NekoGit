@@ -1,3 +1,5 @@
+//! Single-instance activation: notifies a running instance and listens for activation requests.
+
 use std::{
     fs,
     io::{Read, Write},

@@ -1,3 +1,4 @@
+/// Unit tests for desktop readiness proof (HMAC challenge) helpers.
 import { createHmac } from 'node:crypto';
 
 import { describe, expect, test } from 'vitest';

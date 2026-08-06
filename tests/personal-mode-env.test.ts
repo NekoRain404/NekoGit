@@ -1,3 +1,4 @@
+/// Unit tests for personal mode secret resolution and password strength checks.
 import { describe, expect, test } from 'vitest';
 
 import {

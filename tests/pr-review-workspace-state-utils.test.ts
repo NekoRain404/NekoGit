@@ -1,3 +1,4 @@
+/// Unit tests for PR review workspace state persistence helpers.
 import { describe, expect, test } from 'vitest';
 
 import {

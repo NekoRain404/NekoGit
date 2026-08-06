@@ -1,3 +1,5 @@
+//! Builds the application Navigate submenu (navigation, notifications, repository actions).
+
 use tauri::{
     menu::{MenuItem, Submenu, SubmenuBuilder},
     Manager, Runtime,

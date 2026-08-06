@@ -1,3 +1,5 @@
+//! Shared helpers for constructing application menu items.
+
 use tauri::{menu::MenuItem, Manager, Runtime};
 
 use crate::desktop_menu::accelerators::desktop_app_menu_accelerator;

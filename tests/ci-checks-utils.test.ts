@@ -1,3 +1,4 @@
+/// Unit tests for CI check-run normalization and summarization helpers.
 import { describe, expect, test } from 'vitest';
 
 import {

@@ -1,3 +1,5 @@
+//! Tauri commands that drive window, tray, and menu state from the frontend.
+
 use tauri::{Runtime, State};
 
 use crate::{

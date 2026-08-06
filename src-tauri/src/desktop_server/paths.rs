@@ -1,3 +1,5 @@
+//! Resolves bundled server paths and external client URLs.
+
 use std::{
     env, fs,
     fs::OpenOptions,

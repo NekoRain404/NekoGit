@@ -1,3 +1,5 @@
+//! Session secret generation and validation for the bundled desktop server.
+
 use std::{env, fs, fs::OpenOptions, io::Write, path::Path};
 
 #[cfg(unix)]

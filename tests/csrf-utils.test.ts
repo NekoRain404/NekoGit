@@ -1,3 +1,4 @@
+/// Unit tests for double-submit CSRF protection evaluation.
 import { describe, expect, test } from 'vitest';
 
 import { evaluateCsrfProtection } from '../shared/utils/csrf-protection';

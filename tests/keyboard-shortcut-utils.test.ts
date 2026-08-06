@@ -1,3 +1,4 @@
+/// Unit tests for keyboard shortcut modifier and target guards.
 import { describe, expect, test, vi } from 'vitest';
 
 import {

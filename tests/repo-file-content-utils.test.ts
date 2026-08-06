@@ -1,3 +1,4 @@
+/// Unit tests for repository file content decoding and language helpers.
 import { describe, expect, it } from 'vitest';
 
 import {

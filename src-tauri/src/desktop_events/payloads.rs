@@ -1,3 +1,5 @@
+//! Serialized payload types for desktop events exchanged with the frontend.
+
 use serde::Serialize;
 
 // The serialized kebab-case values are part of the frontend desktop command contract.

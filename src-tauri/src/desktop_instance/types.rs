@@ -1,3 +1,5 @@
+//! Shared types for single-instance management.
+
 use std::{fs, fs::File, path::PathBuf};
 
 use tauri::Runtime;

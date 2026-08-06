@@ -1,3 +1,4 @@
+/// Packages the Linux release: assembles a portable directory from the Tauri build, computes checksums, and writes release archives.
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';

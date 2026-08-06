@@ -1,3 +1,5 @@
+//! Emits desktop events to the frontend main window.
+
 use tauri::{Emitter, Runtime};
 
 use crate::MAIN_WINDOW_LABEL;

@@ -1,3 +1,5 @@
+//! Tauri commands for committing and stashing local repository changes.
+
 use tauri::State;
 
 use crate::{

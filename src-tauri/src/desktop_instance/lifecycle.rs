@@ -1,3 +1,5 @@
+//! Manages the single-instance lifecycle: acquiring the lock or activating the existing instance.
+
 use std::{fs, path::Path};
 
 use tauri::Runtime;

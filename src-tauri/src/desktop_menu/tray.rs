@@ -1,3 +1,5 @@
+//! Builds the system tray context menu with notification items for state updates.
+
 use tauri::{
     menu::{MenuBuilder, MenuItem},
     Manager, Runtime,
