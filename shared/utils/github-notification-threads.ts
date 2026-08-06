@@ -1,3 +1,4 @@
+/// Normalization helpers for GitHub notification thread IDs.
 /** Resolves github notification threads configuration from environment variables. */
 export const maxNotificationThreadIdsPerBatch = 50;
 

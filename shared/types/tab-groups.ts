@@ -1,3 +1,4 @@
+/// Types and constants describing tab groups that organize custom search tabs.
 /** Tab Group Source. */
 export type TabGroupSource = 'system' | 'github-search';
 

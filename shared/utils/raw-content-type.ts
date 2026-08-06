@@ -1,3 +1,4 @@
+/// Determines content-type and security headers for streaming raw repository content.
 /** Headers applied when streaming authenticated raw repository content. */
 export type RawContentResponseHeaders = {
   contentType: string;

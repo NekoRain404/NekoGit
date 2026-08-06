@@ -1,3 +1,4 @@
+/// Defaults, validation, and normalization for user settings persistence.
 /** Resolves user settings configuration from environment variables. */
 import type {
   CustomTab,

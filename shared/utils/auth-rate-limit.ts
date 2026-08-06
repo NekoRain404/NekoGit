@@ -1,3 +1,4 @@
+/// In-process sliding-window rate limiting for authentication failures.
 /** Default window for counting auth failures (15 minutes). */
 export const DEFAULT_AUTH_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 

@@ -1,3 +1,4 @@
+/// Builds GitHub search queries from custom tab query definitions.
 /** Resolves github search query configuration from environment variables. */
 import type {
   CustomTabOrder,

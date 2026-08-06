@@ -1,3 +1,4 @@
+/// Types describing custom GitHub search tabs and their query parameters.
 /** Custom Tab State. */
 export type CustomTabState = 'open' | 'closed' | 'all';
 /** Custom Tab Source. */

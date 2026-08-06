@@ -1,3 +1,4 @@
+/// Resolves personal-mode secrets (GitHub token, lock password, cookie secret) from env.
 /** Documented personal-mode secret env keys (preferred). */
 export const PERSONAL_MODE_GITHUB_TOKEN_ENV = 'NUXT_GIT_PULSE_AUTH_GITHUB_TOKEN';
 export const PERSONAL_MODE_PASSWORD_ENV = 'NUXT_GIT_PULSE_AUTH_PERSONAL_PASSWORD';

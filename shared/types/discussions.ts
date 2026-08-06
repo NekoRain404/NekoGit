@@ -1,3 +1,4 @@
+/// Types for GitHub discussions, including detail, comments, and reply payloads.
 /** Discussion Author. */
 export interface DiscussionAuthor {
   login: string;

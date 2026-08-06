@@ -1,3 +1,4 @@
+/// Shared types for dashboard issue/PR search results and repository list items.
 import type { NotificationSubjectState } from './notifications';
 
 /** Search Item Label. */

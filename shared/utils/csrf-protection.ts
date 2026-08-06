@@ -1,3 +1,4 @@
+/// Pure CSRF protection helpers: timing-safe token comparison and origin checks.
 /** Constant-time string comparison to prevent timing attacks on CSRF tokens. */
 export function timingSafeStringEqual(left: string, right: string): boolean {
   if (left.length !== right.length) {

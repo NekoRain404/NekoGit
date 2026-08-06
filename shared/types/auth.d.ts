@@ -1,3 +1,4 @@
+/// Ambient type declarations for the Nuxt #auth-utils module (user and session shapes).
 declare module '#auth-utils' {
   /** User. */
   interface User {

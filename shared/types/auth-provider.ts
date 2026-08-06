@@ -1,3 +1,4 @@
+/// Auth provider mode and state types for authentication configuration.
 /** Auth Provider Mode. */
 export type AuthProviderMode = 'personal' | 'pat-only' | 'oauth-only' | 'hybrid';
 

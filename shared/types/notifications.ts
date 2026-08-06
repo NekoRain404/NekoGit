@@ -1,3 +1,4 @@
+/// Types for GitHub notification subjects, repositories, and subject-state lookups.
 /** Notification Subject Kind. */
 export type NotificationSubjectKind = 'Issue' | 'PullRequest' | 'Discussion' | 'Release' | string;
 

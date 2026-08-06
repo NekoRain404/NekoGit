@@ -1,3 +1,4 @@
+/// Resolves the user settings storage backend (fs/Upstash) and its env configuration.
 /** Resolves user settings storage backend configuration from environment variables. */
 export const DEFAULT_USER_SETTINGS_STORAGE_DRIVER = 'fs';
 /** DEFAULT USER SETTINGS FS BASE. */

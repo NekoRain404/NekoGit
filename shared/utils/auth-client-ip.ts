@@ -1,3 +1,4 @@
+/// Client IP resolution for auth rate limiting, with optional reverse-proxy trust.
 /**
  * Resolve the client IP used for auth rate limiting.
  * By default uses the direct socket address only (ignores X-Forwarded-For) so

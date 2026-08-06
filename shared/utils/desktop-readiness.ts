@@ -1,3 +1,4 @@
+/// HMAC-based readiness proofs for verifying the desktop client companion.
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 /** Domain separation for the desktop readiness HMAC proof. */

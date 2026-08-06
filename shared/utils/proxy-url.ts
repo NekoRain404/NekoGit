@@ -1,3 +1,4 @@
+/// Resolves a proxy URL from standard HTTP(S) environment variables as fallback.
 import { normalizeProxyUrl } from './user-settings';
 
 /**

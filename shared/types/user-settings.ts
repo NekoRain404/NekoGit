@@ -1,3 +1,4 @@
+/// Types for user settings: fonts, desktop notifications, network, tab groups, and custom tabs.
 import type { CustomTab } from './custom-search';
 import type { TabGroup } from './tab-groups';
 

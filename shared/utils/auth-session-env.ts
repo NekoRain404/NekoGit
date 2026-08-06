@@ -1,3 +1,4 @@
+/// Resolves the auth session cookie Secure flag and normalizes boolean env values.
 /** Resolves the session cookie Secure flag from environment variables. */
 export const DEFAULT_AUTH_SESSION_COOKIE_SECURE = true;
 
