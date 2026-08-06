@@ -1,4 +1,4 @@
-<!-- Font Picker Modal — NekoGit dashboard component. -->
+<!-- FontPickerModal — Modal dialog for searching and selecting an app or code font. -->
 <template>
   <Teleport to="body">
     <Transition name="font-modal">

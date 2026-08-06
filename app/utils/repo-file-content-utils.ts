@@ -1,3 +1,4 @@
+/// Repository file content helpers: decoding, binary detection, and language mapping.
 const repositoryFileLanguageByExtension: Record<string, string> = {
   astro: 'astro',
   bash: 'bash',

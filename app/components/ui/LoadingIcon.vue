@@ -1,4 +1,4 @@
-<!-- Loading Icon — NekoGit dashboard component. -->
+<!-- LoadingIcon — Spinning refresh icon used to indicate loading state. -->
 <template>
   <RefreshCwIcon
     class="loading-spinner"

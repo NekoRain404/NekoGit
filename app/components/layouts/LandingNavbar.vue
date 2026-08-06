@@ -1,4 +1,4 @@
-<!-- Landing Navbar — NekoGit dashboard component. -->
+<!-- LandingNavbar — Navbar for the public landing page with GitHub link, language switcher, and color mode toggle. -->
 ﻿
 <template>
   <nav class="navbar" role="navigation" aria-label="main navigation">

@@ -1,3 +1,4 @@
+/// Lazy-loads Shiki grammar languages for syntax highlighting.
 import type { LanguageRegistration } from 'shiki/core';
 
 type ShikiLanguageModule = {

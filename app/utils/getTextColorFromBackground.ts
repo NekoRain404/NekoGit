@@ -1,4 +1,5 @@
-﻿/**
+﻿/// Chooses black or white text color for contrast against a hex background.
+/**
  * Returns '000000' or 'ffffff' depending on which provides better contrast
  * against the given hex background.
  */

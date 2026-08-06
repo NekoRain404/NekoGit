@@ -1,4 +1,4 @@
-<!-- Authenticated Landing Card — NekoGit dashboard component. -->
+<!-- AuthenticatedLandingCard — Signed-in landing card with user profile, dashboard entry, and logout. -->
 <template>
   <div class="auth-shell auth-shell--signed-in is-flex is-justify-content-center">
     <div class="box auth-shell__box has-text-centered">

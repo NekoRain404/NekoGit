@@ -1,3 +1,4 @@
+/// RepoPermissions type and factory returning all-permissions-disabled defaults.
 /** Granular access flags for a GitHub repository. */
 export interface RepoPermissions {
   admin: boolean;

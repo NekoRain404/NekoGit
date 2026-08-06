@@ -1,3 +1,4 @@
+/// Extracts owner/repo pairs from GitHub URLs or paths.
 import {
   hasAbsoluteUrlProtocol,
   isGitHubApiHost,

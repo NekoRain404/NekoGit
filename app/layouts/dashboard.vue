@@ -1,3 +1,4 @@
+<!-- DashboardLayout — Dashboard app shell with navbar, quick-open palette, and page slot. -->
 <script setup lang="ts">
 import Navbar from '~/components/layouts/Navbar.vue';
 

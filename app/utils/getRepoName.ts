@@ -1,4 +1,5 @@
-﻿import parseGitHubRepoPath from '~/utils/parseGitHubRepoPath';
+﻿/// Resolves a human-readable repository name from a GitHub URL.
+import parseGitHubRepoPath from '~/utils/parseGitHubRepoPath';
 
 /**
  * Resolves a human-readable repository name from a GitHub URL, falling

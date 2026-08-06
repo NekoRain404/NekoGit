@@ -1,3 +1,4 @@
+/// Client plugin forwarding Tauri desktop commands to dashboard actions.
 import type { Event } from '@tauri-apps/api/event';
 
 type DesktopCommandAction =

@@ -1,3 +1,4 @@
+/// Resolves dashboard navigation targets from GitHub notification subjects.
 import type { NotificationSubjectStateTarget } from '#shared/types/notifications';
 
 import parseGitHubMarkdownTarget, { type GitHubMarkdownTarget } from './parseGitHubMarkdownTarget';

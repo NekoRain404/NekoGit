@@ -1,3 +1,4 @@
+/// Safely extracts a single string value from a query parameter.
 /**
  * Safely extracts a single string value from a query parameter that may be
  * a string or string array.

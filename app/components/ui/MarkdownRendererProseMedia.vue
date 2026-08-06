@@ -1,4 +1,4 @@
-<!-- Markdown Renderer Prose Media — NekoGit dashboard component. -->
+<!-- MarkdownRendererProseMedia — Renders markdown media elements (img, video, audio) with repo-relative source resolution. -->
 <script setup lang="ts">
 import type { ComarkElement } from 'comark';
 import { computed, inject, useAttrs } from 'vue';

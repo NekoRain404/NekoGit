@@ -1,4 +1,4 @@
-<!-- Mermaid Viewer Modal — NekoGit dashboard component. -->
+<!-- MermaidViewerModal — Fullscreen modal for inspecting a mermaid diagram with zoom and pan controls. -->
 <script setup lang="ts">
 import { MinusIcon, PlusIcon, RotateCcwIcon, XIcon } from 'lucide-vue-next';
 import {

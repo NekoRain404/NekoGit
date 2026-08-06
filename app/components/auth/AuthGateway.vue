@@ -1,4 +1,4 @@
-<!-- Auth Gateway — NekoGit dashboard component. -->
+<!-- AuthGateway — Login method gateway offering OAuth, PAT, and Personal Mode. -->
 <template>
   <div class="auth-gateway">
     <div class="auth-gateway__header mb-4">

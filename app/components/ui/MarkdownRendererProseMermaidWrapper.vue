@@ -1,4 +1,4 @@
-<!-- Markdown Renderer Prose Mermaid Wrapper — NekoGit dashboard component. -->
+<!-- MarkdownRendererProseMermaidWrapper — Code block wrapper providing copy action and mermaid diagram rendering. -->
 <script setup lang="ts">
 import type { ComarkNode } from 'comark';
 import { CheckIcon, ClipboardIcon } from 'lucide-vue-next';

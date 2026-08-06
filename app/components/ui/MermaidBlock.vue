@@ -1,4 +1,4 @@
-<!-- Mermaid Block — NekoGit dashboard component. -->
+<!-- MermaidBlock — Renders a mermaid diagram as inline SVG with a fallback and fullscreen viewer. -->
 <script setup lang="ts">
 import { Maximize2Icon } from 'lucide-vue-next';
 import { nextTick, onMounted, shallowRef, useId, watch } from 'vue';

@@ -1,3 +1,4 @@
+/// GitHub host detection and URL parsing helpers.
 /** Canonical hostname for the GitHub REST API. */
 export const GITHUB_API_HOST = 'api.github.com';
 /** Canonical hostname for raw GitHub content. */

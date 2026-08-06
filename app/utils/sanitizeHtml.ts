@@ -1,3 +1,4 @@
+/// Sanitizes untrusted HTML to a safe inline-tag allowlist.
 import xss from 'xss';
 
 /**

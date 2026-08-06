@@ -1,3 +1,4 @@
+<!-- DashboardTabsPage — Tab views configuration settings page. -->
 <script setup lang="ts">
 import TabsSettingsPage from '~/components/dashboard/tabs-settings/TabsSettingsPage.vue';
 import { useTabsSettingsPage } from '~/composables/useTabsSettingsPage';

@@ -1,4 +1,4 @@
-<!-- Collapsible Group — NekoGit dashboard component. -->
+<!-- CollapsibleGroup — Expandable section with a toggle header and optional count badge. -->
 <template>
   <div class="collapsible-group">
     <button

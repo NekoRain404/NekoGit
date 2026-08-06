@@ -1,4 +1,4 @@
-<!-- Navbar — NekoGit dashboard component. -->
+<!-- Navbar — Dashboard navbar with logo, GitHub link, language switcher, and color mode toggle. -->
 <template>
   <nav class="navbar" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">

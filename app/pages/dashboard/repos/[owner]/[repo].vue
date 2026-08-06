@@ -1,3 +1,4 @@
+<!-- RepoRedirectPage — Redirects an owner/repo URL to the dashboard repos tab. -->
 <script setup lang="ts">
 const route = useRoute();
 const localePath = useLocalePath();

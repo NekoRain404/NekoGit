@@ -1,3 +1,4 @@
+/// Safe download filename sanitization helpers.
 const DEFAULT_DOWNLOAD_FILE_NAME = 'download';
 
 const WINDOWS_RESERVED_FILE_NAMES = new Set([

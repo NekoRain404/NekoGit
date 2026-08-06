@@ -1,4 +1,5 @@
-﻿<script setup lang="ts">
+﻿<!-- LandingLayout — Fullscreen landing shell with navbar and centered hero content. -->
+<script setup lang="ts">
 import LandingNavbar from '~/components/layouts/LandingNavbar.vue';
 </script>
 

@@ -1,3 +1,4 @@
+/// Keyboard shortcut helpers including editable-target suppression.
 /**
  * Returns true when the keyboard event target is an editable element
  * (input, textarea, contentEditable) and shortcuts should be suppressed.

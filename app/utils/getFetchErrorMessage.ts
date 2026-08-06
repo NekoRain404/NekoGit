@@ -1,3 +1,4 @@
+/// Extracts a user-facing message from unknown fetch errors.
 /**
  * Extracts a user-facing error message from an unknown fetch error,
  * falling back to the provided default.

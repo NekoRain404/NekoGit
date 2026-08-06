@@ -1,3 +1,4 @@
+/// Builders for native desktop notification payloads from dashboard notifications.
 import type { DashboardNotification } from '#shared/types/notifications';
 import type { DashboardTab } from '~/composables/useDashboardTabs';
 

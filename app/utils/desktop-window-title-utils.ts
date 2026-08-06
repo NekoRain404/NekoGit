@@ -1,3 +1,4 @@
+/// Derives the native desktop window title from the current route.
 /** Route state used to derive the native window title. */
 export interface DesktopWindowTitleRoute {
   path?: string;

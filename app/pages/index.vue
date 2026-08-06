@@ -1,3 +1,4 @@
+<!-- IndexPage — Public landing page: authenticated session card or login gateway. -->
 <template>
   <div
     v-if="loggedIn && user"

@@ -1,4 +1,4 @@
-<!-- Markdown Renderer Prose A — NekoGit dashboard component. -->
+<!-- MarkdownRendererProseA — Markdown link renderer routing GitHub links to dashboard views and external links safely. -->
 <script setup lang="ts">
 import { computed, inject } from 'vue';
 

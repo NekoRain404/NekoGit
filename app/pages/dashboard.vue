@@ -1,3 +1,4 @@
+<!-- DashboardPage — Main dashboard: activity bar, tab sidebar, file browsing, and detail views. -->
 <template>
   <NuxtPage v-if="isDashboardChildRoute" />
 

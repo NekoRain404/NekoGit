@@ -1,3 +1,4 @@
+/// Lightweight code line tokenizer for syntax-aware rendering.
 /** Semantic classification of a code token for syntax-aware rendering. */
 export type CodeTokenKind =
   | 'plain'

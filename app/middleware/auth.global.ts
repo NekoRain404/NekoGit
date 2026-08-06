@@ -1,3 +1,4 @@
+/// Global route guard redirecting unauthenticated users to the landing page.
 /**
  * Global route guard: blocks navigation to protected pages when no session exists.
  *

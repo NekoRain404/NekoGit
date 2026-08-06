@@ -1,3 +1,4 @@
+/// Persisted state management for PR review workspace sessions.
 /** Composite key identifying a specific PR review workspace. */
 export interface PRReviewWorkspaceStateScope {
   owner: string;

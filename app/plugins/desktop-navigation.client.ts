@@ -1,3 +1,4 @@
+/// Client plugin handling native back/forward/home navigation events from Tauri.
 import type { Event } from '@tauri-apps/api/event';
 import { watch } from 'vue';
 

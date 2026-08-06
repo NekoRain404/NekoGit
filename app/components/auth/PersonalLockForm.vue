@@ -1,4 +1,4 @@
-<!-- Personal Lock Form — NekoGit dashboard component. -->
+<!-- PersonalLockForm — Password unlock form that gates access in Personal Mode. -->
 <template>
   <div class="personal-lock-form">
     <div class="personal-lock-form__header mb-5 has-text-centered">

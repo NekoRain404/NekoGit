@@ -1,3 +1,4 @@
+/// Client plugin routing GitHub links clicked in the dashboard into the app.
 const EXTERNAL_LINK_SELECTOR = '[data-nekogit-external]';
 
 function isPrimaryUnmodifiedClick(event: MouseEvent) {

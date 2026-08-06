@@ -1,4 +1,4 @@
-<!-- Button — NekoGit dashboard component. -->
+<!-- Button — Button that renders as a NuxtLink, anchor, or native button with size and color variants. -->
 ﻿
 <template>
   <component :is="component" v-bind="bindProps" :class="classes">

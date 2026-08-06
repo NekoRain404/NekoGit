@@ -1,3 +1,4 @@
+/// Human-readable relative time formatting built on dayjs.
 import 'dayjs/locale/zh-cn';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';

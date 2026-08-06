@@ -1,3 +1,4 @@
+/// Resolves relative markdown resource paths and repo-aware dashboard URLs.
 import type { ComputedRef, InjectionKey } from 'vue';
 import type { LocationQueryRaw } from 'vue-router';
 

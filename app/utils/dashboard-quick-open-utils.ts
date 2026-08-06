@@ -1,3 +1,4 @@
+/// Quick-open helpers: target kinds, previews, and persisted recents.
 import type { DashboardUrlTarget } from './dashboard-url-navigation-utils';
 
 /** Discriminator for the kind of quick-open target. */

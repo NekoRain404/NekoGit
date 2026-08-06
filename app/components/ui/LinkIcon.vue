@@ -1,4 +1,4 @@
-<!-- Link Icon — NekoGit dashboard component. -->
+<!-- LinkIcon — Icon-only navigation link rendering an icon inside a localized router link. -->
 ﻿
 <template>
   <NuxtLinkLocale :to="target" class="is-flex is-justify-content-center">

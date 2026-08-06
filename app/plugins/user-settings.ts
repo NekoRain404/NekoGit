@@ -1,3 +1,4 @@
+/// App plugin loading user font settings and applying the corresponding CSS variables.
 const buildFontVariableCss = (appFontFamily: string, codeFontFamily: string) => {
   return `:root{--nekogit-app-font-family:${appFontFamily};--nekogit-code-font-family:${codeFontFamily};}`;
 };

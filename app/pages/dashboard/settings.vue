@@ -1,3 +1,4 @@
+<!-- SettingsPage — User settings for appearance, fonts, proxy, tokens, and account. -->
 <script setup lang="ts">
 import {
   ClipboardIcon,

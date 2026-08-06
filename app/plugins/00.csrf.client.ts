@@ -1,3 +1,4 @@
+/// Client plugin attaching a CSRF token to same-origin API requests.
 const CSRF_COOKIE_NAME = 'nekogit_csrf';
 const CSRF_HEADER_NAME = 'X-CSRF-Token';
 

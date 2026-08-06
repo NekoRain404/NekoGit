@@ -1,3 +1,4 @@
+/// Client plugin keeping the document and native desktop window title in sync with the route.
 import { watch } from 'vue';
 
 import { buildDesktopWindowTitle } from '~/utils/desktop-window-title-utils';

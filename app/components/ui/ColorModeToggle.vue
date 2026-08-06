@@ -1,4 +1,4 @@
-<!-- Color Mode Toggle — NekoGit dashboard component. -->
+<!-- ColorModeToggle — Switches the app between system, light, and dark color modes. -->
 <script setup lang="ts">
 import { MonitorIcon, MoonIcon, SunIcon } from 'lucide-vue-next';
 

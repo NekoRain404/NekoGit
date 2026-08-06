@@ -1,3 +1,4 @@
+/// Repository file tree building, flattening, and path helpers.
 /** A node in the repository file tree (file or directory). */
 export interface FolderTreeNode {
   name: string;

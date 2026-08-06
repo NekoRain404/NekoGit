@@ -1,3 +1,4 @@
+/// Parses GitHub issue/PR/discussion URLs into target references.
 import { isGitHubApiHost, isGitHubWebHost, parseUrl } from './github-url-utils';
 
 /** Parsed issue, pull-request, or discussion reference from a GitHub URL. */

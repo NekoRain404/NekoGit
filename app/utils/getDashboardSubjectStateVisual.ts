@@ -1,3 +1,4 @@
+/// Visual metadata (icon, color, label) for dashboard notification subjects.
 import {
   CircleDotIcon,
   CircleMinusIcon,

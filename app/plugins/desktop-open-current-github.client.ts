@@ -1,3 +1,4 @@
+/// Client plugin syncing current GitHub URL/repository state and handling desktop open/clone commands.
 const desktopOpenCurrentGitHubEvent = 'nekogit:open-current-github';
 const desktopOpenGitHubFromClipboardEvent = 'nekogit:open-github-from-clipboard';
 const desktopCopyCurrentGitHubEvent = 'nekogit:copy-current-github';

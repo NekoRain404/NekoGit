@@ -1,4 +1,4 @@
-<!-- Markdown Renderer — NekoGit dashboard component. -->
+<!-- MarkdownRenderer — Renders GitHub markdown with syntax highlighting, autolinks, and mermaid diagrams. -->
 <script setup lang="ts">
 import { parse } from 'comark';
 import type { ComarkNode, ComarkTree } from 'comark';

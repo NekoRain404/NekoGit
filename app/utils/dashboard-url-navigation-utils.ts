@@ -1,3 +1,4 @@
+/// Mapping of GitHub URLs to dashboard navigation targets and query keys.
 import type { LocationQueryRaw } from 'vue-router';
 
 import { isGitHubApiHost, isGitHubWebHost, parseUrl } from './github-url-utils';

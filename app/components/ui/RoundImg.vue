@@ -1,4 +1,4 @@
-<!-- Round Img — NekoGit dashboard component. -->
+<!-- RoundImg — Circular avatar/logo image with configurable size. -->
 ﻿
 <template>
   <div class="logo-image-wrapper" :style="style">

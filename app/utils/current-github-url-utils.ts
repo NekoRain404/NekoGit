@@ -1,3 +1,4 @@
+/// Helpers for resolving the current GitHub repository, URL, and content targets from the route.
 /** Represents the current route state for GitHub URL resolution. */
 export interface CurrentGitHubRoute {
   path?: string;
