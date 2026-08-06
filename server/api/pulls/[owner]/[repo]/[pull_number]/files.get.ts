@@ -52,6 +52,34 @@ export default definePrivateApiCoalescedEventHandler(async (event) => {
     }
 
     const octokit = await getGitHubClient(event);
+
+    // GitHub ignores `sha` on the PR files endpoint, so fetch per-commit diffs
+    // from the single-commit endpoint, which returns ALL files for that commit.
+    if (sha) {
+      const { data: commit } = await octokit.request(
+        'GET /repos/{owner}/{repo}/commits/{commit_sha}',
+        {
+          owner,
+          repo,
+          commit_sha: sha,
+        }
+      );
+
+      const files = Array.isArray(commit.files) ? commit.files.map(normalizePullFile) : [];
+
+      return {
+        items: files,
+        pagination: {
+          page,
+          perPage,
+          hasPrev: false,
+          hasNext: false,
+          totalCount: files.length,
+          totalPages: 1,
+        },
+      };
+    }
+
     const { data, headers } = await octokit.request(
       'GET /repos/{owner}/{repo}/pulls/{pull_number}/files',
       {
@@ -60,7 +88,6 @@ export default definePrivateApiCoalescedEventHandler(async (event) => {
         pull_number: pullNumber,
         page,
         per_page: perPage,
-        ...(sha ? { sha } : {}),
       }
     );
 
