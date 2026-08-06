@@ -277,19 +277,17 @@ const loadReviewCommits = async () => {
   if (!repoOwner.value || !repoName.value || !currentPullRequest.value?.number) return;
   reviewCommitsLoading.value = true;
   try {
-    const data = await apiFetch<{ timeline?: any[] }>(
-      `/api/pulls/${repoOwner.value}/${repoName.value}/${currentPullRequest.value.number}/timeline`,
-      { method: 'GET', query: { page: 1 } }
+    const data = await apiFetch<{ items?: any[] }>(
+      `/api/repos/${repoOwner.value}/${repoName.value}/pulls/${currentPullRequest.value.number}/commits`,
+      { method: 'GET' }
     );
-    const commits = (data?.timeline ?? [])
-      .filter((item: any) => item.kind === 'commit' && item.commit?.oid)
-      .map((item: any) => ({
-        sha: item.commit.oid,
-        shortSha: (item.commit.oid as string).slice(0, 7),
-        message: (item.commit.message ?? '').split('\n')[0] || '(no message)',
-        authorName: item.commit.author?.name ?? item.author?.login ?? 'Unknown',
-        date: item.commit.committedDate ?? item.createdAt ?? '',
-      }));
+    const commits = (data?.items ?? []).map((item: any) => ({
+      sha: item.sha ?? '',
+      shortSha: (item.shortSha ?? (item.sha ?? '').slice(0, 7)) as string,
+      message: item.message ?? '(no message)',
+      authorName: item.authorName ?? 'Unknown',
+      date: item.authorDate ?? '',
+    }));
     reviewCommits.value = commits;
   } catch {
     reviewCommits.value = [];
