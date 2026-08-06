@@ -1,4 +1,4 @@
-/// POST Comments / Replies Post
+/// Posts a reply to an existing discussion comment.
 import {
   addDiscussionReply,
   fetchDiscussionReplyContext,

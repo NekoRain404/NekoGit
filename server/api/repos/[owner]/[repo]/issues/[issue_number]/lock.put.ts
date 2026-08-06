@@ -1,4 +1,4 @@
-/// PUT Issues / Lock Put
+/// Locks a GitHub issue with an optional reason.
 import {
   extractIssueRouteParams,
   normalizeRequestBody,

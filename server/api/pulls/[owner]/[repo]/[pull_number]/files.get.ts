@@ -1,4 +1,4 @@
-/// GET Pulls / Files Get
+/// Fetches paginated file changes for a pull request, optionally scoped to a commit.
 import { buildLinkedPaginationMeta, parsePaginationNumber } from '#server/utils/github-pagination';
 
 interface PullFileResponse {

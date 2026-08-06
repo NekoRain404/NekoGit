@@ -1,3 +1,4 @@
+/// Fetches all commits for a pull request, auto-paginating through GitHub's limit.
 // server/api/repos/[owner]/[repo]/pulls/[pull_number]/commits.get.ts
 import { fetchPaginatedArray } from '#server/utils/github-timeline-utils';
 import { normalizePullCommit, type PullCommitResponse } from '#server/utils/pr-commits-utils';

@@ -1,4 +1,4 @@
-/// GET Issues / Timeline Get
+/// Fetches the normalized REST timeline for a GitHub issue.
 import {
   buildIssueTimelineCapabilities,
   createUnsupportedWarnings,

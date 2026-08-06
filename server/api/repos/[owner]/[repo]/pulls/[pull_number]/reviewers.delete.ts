@@ -1,4 +1,4 @@
-/// DELETE Pulls / Reviewers Delete
+/// Removes requested reviewers from a pull request and refreshes the reviewer summary.
 import {
   createEmptyPRReviewerSummary,
   fetchPRReviewerSummary,

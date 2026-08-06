@@ -1,4 +1,4 @@
-/// GET Repos / Permissions Get
+/// Fetches the authenticated user's permissions for a repository, including derived capabilities.
 import { extractRepoParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 
 /** Fetch the authenticated user's permissions for a repository, including derived capabilities. */

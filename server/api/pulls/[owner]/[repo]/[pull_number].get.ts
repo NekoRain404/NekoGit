@@ -1,4 +1,4 @@
-/// GET Api / Pulls
+/// Fetches a single pull request by number, with an empty reviewer summary placeholder.
 import { createEmptyPRReviewerSummary } from '#server/utils/pr-reviewers-utils';
 
 /** Fetch a single pull request by number, with an empty reviewer summary placeholder. */

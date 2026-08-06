@@ -1,4 +1,4 @@
-/// Marks a single notification thread as read or unread.
+/// Marks a single notification thread as read.
 import { normalizeNotificationThreadId } from '#shared/utils/github-notification-threads';
 
 /** Mark a single notification thread as read. */

@@ -1,4 +1,4 @@
-/// PUT Repos / Star Put
+/// Stars a repository for the authenticated user.
 import { extractRepoParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 
 /** Star a repository on behalf of the authenticated user. */

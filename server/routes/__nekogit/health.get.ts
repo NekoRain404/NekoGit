@@ -1,4 +1,4 @@
-/// GET Desktop readiness probe (loopback). Challenge-response HMAC; token never leaves the process.
+/// Desktop readiness probe: returns an HMAC proof only when a valid loopback challenge is supplied.
 
 import {
   buildDesktopReadinessProof,

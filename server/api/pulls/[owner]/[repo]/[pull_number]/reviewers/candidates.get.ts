@@ -1,4 +1,4 @@
-/// GET Reviewers / Candidates Get
+/// Fetches available reviewer candidates (collaborators and teams) for a pull request.
 import { fetchReviewerCandidates } from '#server/utils/pr-reviewers-utils';
 import { extractPullRouteParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 

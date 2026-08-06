@@ -1,4 +1,4 @@
-/// DELETE Repos / Star Delete
+/// Removes the authenticated user's star from a repository.
 import { extractRepoParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 
 /** Remove the authenticated user's star from a repository. */

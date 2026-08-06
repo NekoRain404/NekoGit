@@ -1,4 +1,4 @@
-/// GET Repos / License Get
+/// Fetches the license metadata for a repository, returning nulls when no license is found.
 import { hasGitHubErrorStatus } from '#server/utils/github-auth-utils';
 
 function getStringQueryParam(value: unknown) {

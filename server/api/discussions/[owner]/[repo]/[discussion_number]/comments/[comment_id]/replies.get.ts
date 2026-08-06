@@ -1,4 +1,4 @@
-/// GET Comments / Replies Get
+/// Fetches paginated replies to a specific discussion comment.
 import {
   fetchDiscussionCommentReplies,
   validateDiscussionNodeId,

@@ -1,4 +1,4 @@
-/// POST Review Threads / Resolve Post
+/// Resolves or unresolves a pull request review thread.
 import {
   setPullRequestReviewThreadResolved,
   validateReviewThreadId,

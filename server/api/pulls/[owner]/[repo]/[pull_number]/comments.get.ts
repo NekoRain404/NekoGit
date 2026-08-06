@@ -1,4 +1,4 @@
-/// GET Pulls / Comments Get
+/// Fetches normalized, non-outdated review comments for a pull request with thread state.
 import {
   buildReviewThreadStatePayload,
   buildReviewThreadsByCommentId,

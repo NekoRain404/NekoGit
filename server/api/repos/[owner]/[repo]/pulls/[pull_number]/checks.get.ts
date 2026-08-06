@@ -1,3 +1,4 @@
+/// Fetches check runs and combined commit status for a pull request's head commit.
 import { normalizeCheckRun, summarizeCheckRuns } from '#server/utils/ci-checks-utils';
 // server/api/repos/[owner]/[repo]/pulls/[pull_number]/checks.get.ts
 import { extractPullRouteParams } from '#server/utils/repo-route-utils';

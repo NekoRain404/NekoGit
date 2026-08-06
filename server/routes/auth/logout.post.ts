@@ -1,4 +1,4 @@
-/// POST Auth / Logout Post
+/// Clears the user session and any personal-mode remember-device cookie.
 import { resolveAuthProviderState } from '../../utils/auth-providers';
 import { assertCsrfToken } from '../../utils/csrf-utils';
 import { clearRememberDeviceCookie } from '../../utils/personal-mode-utils';

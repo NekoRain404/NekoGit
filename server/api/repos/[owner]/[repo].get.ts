@@ -1,4 +1,4 @@
-/// GET Api / Repos
+/// Fetches repository metadata by owner and repo name.
 import { extractRepoParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 
 /** Fetch repository metadata by owner and repo name. */

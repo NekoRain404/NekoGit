@@ -1,4 +1,4 @@
-/// GET Pulls / Reviewers Get
+/// Fetches the aggregated reviewer summary for a pull request.
 import { fetchPRReviewerSummary } from '#server/utils/pr-reviewers-utils';
 import { extractPullRouteParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 

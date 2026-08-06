@@ -1,4 +1,4 @@
-/// DELETE Issues / Lock Delete
+/// Unlocks a GitHub issue.
 import { extractIssueRouteParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 
 /** Unlock a GitHub issue. */

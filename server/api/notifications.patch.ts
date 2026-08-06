@@ -1,4 +1,4 @@
-/// Marks notifications as read or unread in bulk.
+/// Marks all notifications as read for the authenticated user.
 /** Mark all notifications as read for the authenticated user. */
 export default defineEventHandler(async (event) => {
   const octokit = await getGitHubClient(event);

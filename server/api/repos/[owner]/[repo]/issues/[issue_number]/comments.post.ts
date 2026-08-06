@@ -1,4 +1,4 @@
-/// POST Issues / Comments Post
+/// Posts a new comment on a GitHub issue.
 import {
   extractIssueRouteParams,
   normalizeRequestBody,

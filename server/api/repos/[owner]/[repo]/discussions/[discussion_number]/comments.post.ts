@@ -1,4 +1,4 @@
-/// POST Discussions / Comments Post
+/// Posts a new top-level comment on a GitHub Discussion.
 import { addDiscussionComment, fetchDiscussionNodeId } from '#server/utils/github-discussion-utils';
 import {
   executeGitHubRequest,

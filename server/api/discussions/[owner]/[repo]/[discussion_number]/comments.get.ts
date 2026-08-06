@@ -1,4 +1,4 @@
-/// GET Discussions / Comments Get
+/// Fetches paginated top-level comments on a GitHub Discussion.
 import { fetchDiscussionComments } from '#server/utils/github-discussion-utils';
 import { executeGitHubRequest, extractDiscussionRouteParams } from '#server/utils/repo-route-utils';
 

@@ -1,4 +1,4 @@
-/// GET Repos / Default Branch Get
+/// Fetches the default branch name for a repository.
 import { extractRepoParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 
 interface DefaultBranch {

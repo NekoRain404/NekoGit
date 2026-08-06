@@ -1,4 +1,4 @@
-/// GET Api / Discussions
+/// Fetches a single GitHub Discussion by number, including its accepted answer.
 import { fetchDiscussion } from '#server/utils/github-discussion-utils';
 import { executeGitHubRequest, extractDiscussionRouteParams } from '#server/utils/repo-route-utils';
 

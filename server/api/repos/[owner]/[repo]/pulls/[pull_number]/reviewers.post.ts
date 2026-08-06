@@ -1,4 +1,4 @@
-/// POST Pulls / Reviewers Post
+/// Requests reviewers for a pull request and refreshes the reviewer summary.
 import {
   createEmptyPRReviewerSummary,
   fetchPRReviewerSummary,

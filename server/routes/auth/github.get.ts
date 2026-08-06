@@ -1,4 +1,4 @@
-/// GET Auth / Github Get
+/// Handles the GitHub OAuth callback, establishing a persistent session on success.
 import { resolveAuthProviderState } from '../../utils/auth-providers';
 import {
   PERSISTENT_AUTH_SESSION_MAX_AGE_SECONDS,

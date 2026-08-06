@@ -1,4 +1,4 @@
-/// GET Repos / Branches Get
+/// Fetches all branches for a repository, auto-paginating through the full list.
 import { extractRepoParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 
 interface RepoBranch {

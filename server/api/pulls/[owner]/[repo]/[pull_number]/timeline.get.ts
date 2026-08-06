@@ -1,4 +1,4 @@
-/// GET Pulls / Timeline Get
+/// Fetches the normalized PR timeline with commits, reviews, and review thread data.
 import {
   buildPRTimelineCapabilities,
   createUnsupportedWarnings,

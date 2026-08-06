@@ -1,3 +1,4 @@
+/// Updates a pull request's state (open/closed) or merges it.
 import { normalizePullUpdateAction } from '#server/utils/pr-actions-utils';
 // server/api/repos/[owner]/[repo]/pulls/[pull_number].patch.ts
 import { extractPullRouteParams, executeGitHubRequest } from '#server/utils/repo-route-utils';

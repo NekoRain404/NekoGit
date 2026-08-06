@@ -1,4 +1,4 @@
-/// POST Auth / Unlock Post
+/// Unlocks personal mode via password or a valid remember-device cookie.
 import {
   assertUnlockAttemptAllowed,
   clearUnlockFailures,

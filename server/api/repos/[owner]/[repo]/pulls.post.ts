@@ -1,3 +1,4 @@
+/// Creates a new pull request in a repository.
 // server/api/repos/[owner]/[repo]/pulls.post.ts
 import { extractRepoParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 

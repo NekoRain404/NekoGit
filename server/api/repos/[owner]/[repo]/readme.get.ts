@@ -1,4 +1,4 @@
-/// GET Repos / Readme Get
+/// Fetches the decoded README content for a repository, returning nulls when none exists.
 import { Buffer } from 'node:buffer';
 
 import { hasGitHubErrorStatus } from '#server/utils/github-auth-utils';

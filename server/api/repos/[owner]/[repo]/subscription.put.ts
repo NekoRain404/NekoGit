@@ -1,4 +1,4 @@
-/// PUT Repos / Subscription Put
+/// Creates or updates the authenticated user's subscription to a repository.
 import {
   extractRepoParams,
   normalizeRequestBody,

@@ -1,5 +1,5 @@
+/// Reruns a specific check run for a pull request.
 import { normalizeCheckRunId } from '#server/utils/ci-checks-utils';
-/// POST Pulls / Checks / Run ID / Rerun
 import {
   extractRepoParams,
   extractPullNumber,

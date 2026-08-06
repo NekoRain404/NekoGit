@@ -1,4 +1,4 @@
-/// DELETE Repos / Subscription Delete
+/// Unsubscribes the authenticated user from a repository, disabling notifications.
 import { extractRepoParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 
 /** Delete the authenticated user's subscription (notifications) for a repository. */

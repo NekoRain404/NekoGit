@@ -1,4 +1,4 @@
-/// PUT Issues / Labels Put
+/// Replaces the full set of labels on a GitHub issue.
 import {
   extractIssueRouteParams,
   normalizeRequestBody,

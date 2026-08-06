@@ -1,4 +1,4 @@
-/// POST Auth / Pat Post
+/// Authenticates with a GitHub personal access token, validating it against the API.
 import { resolveAuthProviderState } from '../../utils/auth-providers';
 import {
   assertPatAttemptAllowed,

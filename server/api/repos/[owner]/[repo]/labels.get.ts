@@ -1,4 +1,4 @@
-/// GET Repos / Labels Get
+/// Fetches all labels defined on a repository.
 import { extractRepoParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 
 /** Fetch all labels defined on a repository. */

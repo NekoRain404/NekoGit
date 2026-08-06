@@ -1,4 +1,4 @@
-/// POST Pulls / Reviews Post
+/// Submits a pull request review (approve, comment, or request changes) with optional inline comments.
 import { extractPullRouteParams, executeGitHubRequest } from '#server/utils/repo-route-utils';
 
 type ReviewEvent = 'APPROVE' | 'COMMENT' | 'REQUEST_CHANGES';

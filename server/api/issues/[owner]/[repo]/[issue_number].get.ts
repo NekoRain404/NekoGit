@@ -1,4 +1,4 @@
-/// GET Api / Issues
+/// Fetches a single GitHub issue by owner, repo, and issue number.
 /** Fetch a single GitHub issue by owner, repo, and issue number. */
 export default definePrivateApiCoalescedEventHandler(async (event) => {
   try {

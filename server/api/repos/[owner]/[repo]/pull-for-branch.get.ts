@@ -1,3 +1,4 @@
+/// Finds the open pull request for a given branch in a repository, if any.
 // server/api/repos/[owner]/[repo]/pull-for-branch.get.ts
 import { extractRepoParams } from '#server/utils/repo-route-utils';
 

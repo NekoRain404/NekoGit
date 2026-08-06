@@ -1,4 +1,4 @@
-/// GET Repos / Raw
+/// Streams raw file content from a repository with content-type detection and base64 decoding.
 import { Buffer } from 'node:buffer';
 
 import { getGitHubClient, throwGitHubRouteError } from '#server/utils/github-auth-utils';
