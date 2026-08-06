@@ -1,3 +1,4 @@
+/// Manages opening, loading, and navigating between issue, pull request, discussion, and repo detail overlays.
 import { computed, nextTick, ref, watch, type Ref } from 'vue';
 import type { LocationQueryRaw } from 'vue-router';
 

@@ -1,3 +1,4 @@
+/// Data refresh pipeline for the local repository panel (status, git status, branches, commits, diffs) with stale-response guards.
 import type { ComputedRef } from 'vue';
 
 import type {

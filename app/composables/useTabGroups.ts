@@ -1,3 +1,4 @@
+/// CRUD management for dashboard tab groups with legacy localStorage migration support.
 import type { TabGroup, TabGroupSource } from '#shared/types/tab-groups';
 import { BUILTIN_TAB_GROUP_ID } from '#shared/types/tab-groups';
 import {

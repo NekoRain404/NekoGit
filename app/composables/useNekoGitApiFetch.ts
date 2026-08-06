@@ -1,3 +1,4 @@
+/// ofetch wrapper that automatically attaches the CSRF token to non-safe HTTP requests.
 import type { FetchOptions } from 'ofetch';
 
 const CSRF_COOKIE_NAME = 'nekogit_csrf';

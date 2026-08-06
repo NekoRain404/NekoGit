@@ -1,3 +1,4 @@
+/// Resolves GitHub URLs into dashboard route targets and navigates with navigation-history tracking.
 import {
   parseDashboardUrlTarget,
   type DashboardUrlTarget,

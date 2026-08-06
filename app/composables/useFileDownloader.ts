@@ -1,3 +1,4 @@
+/// Downloads files via a native Tauri save dialog when available, falling back to a browser download.
 import { sanitizeDownloadFileName } from '~/utils/file-download-utils';
 
 interface SaveFileOptions {

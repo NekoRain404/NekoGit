@@ -1,3 +1,4 @@
+/// Facade over the desktop runtime: runtime info, bundled server control, and local repository git commands.
 import { computed, shallowRef } from 'vue';
 
 import {

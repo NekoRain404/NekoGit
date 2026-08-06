@@ -1,3 +1,4 @@
+/// Writes text to the clipboard via the Tauri clipboard plugin when available, falling back to the Web Clipboard API.
 interface ClipboardWriteTextOptions {
   label?: string;
 }

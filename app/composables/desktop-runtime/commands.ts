@@ -1,3 +1,4 @@
+/// Desktop command wrappers exposing Tauri IPC calls for app data, diagnostics, GitHub links, server control, and window state.
 import { invokeDesktopCommand } from './invoke';
 import type {
   DesktopCurrentGitHubState,

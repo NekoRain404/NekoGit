@@ -1,3 +1,4 @@
+/// Manages repository file browsing: file tree, decoded file content, branches, and file navigation.
 import { computed, ref, watch } from 'vue';
 import type { LocationQueryRaw } from 'vue-router';
 

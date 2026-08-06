@@ -1,3 +1,4 @@
+/// Central data fetching, pagination, and state for dashboard notifications, issues, pulls, and repositories.
 import { ref } from 'vue';
 
 import type {

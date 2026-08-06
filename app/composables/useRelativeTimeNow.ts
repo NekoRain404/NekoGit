@@ -1,3 +1,4 @@
+/// Provides a reactive ISO timestamp refreshed once on client mount for relative time displays.
 import { onMounted, readonly } from 'vue';
 
 const relativeTimeNowStateKey = 'nekogit-relative-time-now';

@@ -1,3 +1,4 @@
+/// Derives presentation-ready computed values from raw local repository panel state.
 import { computed, type Ref } from 'vue';
 
 import type {

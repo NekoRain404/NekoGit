@@ -1,3 +1,4 @@
+/// Full-featured local repository panel: status, branches, commits, diffs, clone, and git actions.
 import { computed, onMounted, onUnmounted, watch } from 'vue';
 
 import type {

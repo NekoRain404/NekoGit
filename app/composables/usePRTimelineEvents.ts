@@ -1,3 +1,4 @@
+/// Normalizes and processes GitHub pull request timeline events into displayable items with cross-references.
 import { computed, toValue, type MaybeRefOrGetter } from 'vue';
 
 import parseGitHubMarkdownTarget from '~/utils/parseGitHubMarkdownTarget';

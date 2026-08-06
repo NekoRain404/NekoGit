@@ -1,3 +1,4 @@
+/// Wires desktop back/forward/home navigation actions to the in-app navigation history stack.
 import type { LocationQueryRaw } from 'vue-router';
 
 import { buildDashboardQueryFromNavigationEntry } from '~/utils/dashboard-url-navigation-utils';

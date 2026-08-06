@@ -1,3 +1,4 @@
+/// Type definitions for the desktop runtime, bundled server status, and local repository command payloads.
 /** Shape of the desktop runtime information returned by Tauri. */
 export type DesktopRuntimeInfo = {
   productName: string;

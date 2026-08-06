@@ -1,3 +1,4 @@
+/// Aggregates pull request reviewer info into a summary of requested, approved, and pending reviewers.
 export type PRReviewerKind = 'user' | 'team';
 
 /** Review status derived from the latest submitted review. */

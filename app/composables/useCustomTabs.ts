@@ -1,3 +1,4 @@
+/// CRUD management for custom dashboard tabs: creation, updates, deletion, normalization, and persistence.
 import type {
   CustomTab,
   CustomTabArchived,

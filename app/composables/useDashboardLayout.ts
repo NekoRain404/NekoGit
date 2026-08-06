@@ -1,3 +1,4 @@
+/// Manages persisted dashboard layout state (tab sidebar and widgets panel widths, widgets visibility).
 import { watch } from 'vue';
 
 /** Persisted layout dimensions for the dashboard sidebar and widgets panel. */

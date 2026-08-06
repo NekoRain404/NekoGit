@@ -1,3 +1,4 @@
+/// Normalizes and processes GitHub issue timeline events into displayable comment, event, and commit items.
 import { computed, toValue, type MaybeRefOrGetter } from 'vue';
 
 import type {

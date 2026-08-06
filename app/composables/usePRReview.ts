@@ -1,3 +1,4 @@
+/// Manages pull request review state, depth-first file ordering, and review submission logic.
 import { computed, ref, shallowRef, watch } from 'vue';
 
 import getFetchErrorMessage from '~/utils/getFetchErrorMessage';

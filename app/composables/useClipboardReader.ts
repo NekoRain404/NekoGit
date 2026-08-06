@@ -1,3 +1,4 @@
+/// Reads clipboard text via the Tauri clipboard plugin when available, falling back to the Web Clipboard API.
 /** Attempt to read clipboard text via the Tauri clipboard plugin. */
 const readWithTauriClipboard = async (): Promise<string | null> => {
   try {

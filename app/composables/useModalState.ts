@@ -1,3 +1,4 @@
+/// Tracks the open/close count of dashboard modals so sibling components can react to nesting changes.
 import { readonly } from 'vue';
 
 /** Track the open/close count of modals in the dashboard so sibling components can react. */

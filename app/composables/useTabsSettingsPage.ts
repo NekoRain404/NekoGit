@@ -1,3 +1,4 @@
+/// State management for the tab settings page: editing, previewing, validating, and persisting tabs.
 import {
   ArrowDownIcon,
   ArrowUpIcon,

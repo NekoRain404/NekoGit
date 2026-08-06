@@ -1,3 +1,4 @@
+/// Stateful composable that tracks active scrolling on a scrollable element and auto-hides after a timeout.
 import { onBeforeUnmount, shallowRef } from 'vue';
 
 /** Tracks whether a scrollable element is actively scrolling, auto-hiding after a timeout. */

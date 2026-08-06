@@ -1,3 +1,4 @@
+/// Desktop command wrappers for local git repository operations (clone, status, branches, diffs, commits, pull/push).
 import { invokeDesktopCommand } from './invoke';
 import type {
   DesktopCloneRepositoryResult,

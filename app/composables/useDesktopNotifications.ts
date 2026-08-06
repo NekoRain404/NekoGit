@@ -1,3 +1,4 @@
+/// Sends GitHub notification payloads as native desktop notifications with permission and action handling.
 import type { DashboardNotification } from '#shared/types/notifications';
 import type { DashboardTab } from '~/composables/useDashboardTabs';
 import { useDesktopRuntime } from '~/composables/useDesktopRuntime';

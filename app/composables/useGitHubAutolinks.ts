@@ -1,3 +1,4 @@
+/// Transforms issue and pull request references in markdown into autolinked GitHub URLs with existence checks.
 import type { ComarkElement, ComarkNode, ComarkTree } from 'comark';
 
 interface GitHubAutolinkContext {

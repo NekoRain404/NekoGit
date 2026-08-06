@@ -1,3 +1,4 @@
+/// Options, translations, and search-query builders used by the custom tab settings editor.
 import {
   appendCustomTabQueryParams,
   buildIssueSearchParts,

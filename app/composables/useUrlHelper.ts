@@ -1,3 +1,4 @@
+/// Extracts structured issue/PR/discussion detail info from GitHub notifications and opens them externally.
 import parseGitHubNotificationSubjectTarget from '~/utils/parseGitHubNotificationSubjectTarget';
 
 interface NotificationSubject {

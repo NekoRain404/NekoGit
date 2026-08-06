@@ -1,4 +1,5 @@
-﻿import { onUnmounted, ref, toValue } from 'vue';
+﻿/// Polls GitHub notifications on an interval and emits new arrivals to registered listeners.
+import { onUnmounted, ref, toValue } from 'vue';
 import type { MaybeRefOrGetter, Ref } from 'vue';
 
 import type { DashboardNotification } from '#shared/types/notifications';

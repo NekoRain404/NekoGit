@@ -1,3 +1,4 @@
+/// In-app navigation history stack supporting back, forward, and home navigation across dashboard pages.
 import { computed } from 'vue';
 
 import type { PullRequestDashboardView } from '~/utils/dashboard-url-navigation-utils';

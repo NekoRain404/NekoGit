@@ -1,3 +1,4 @@
+/// Type definitions for local repository panel actions, git actions, options, and localized copy strings.
 import type { ComputedRef } from 'vue';
 
 /** All possible user actions in the local repository panel toolbar. */

@@ -1,3 +1,4 @@
+/// Tracks the active built-in dashboard tab and delegates refresh to the matching data fetcher.
 import { ref } from 'vue';
 
 import type { DashboardFetchOptions } from '~/composables/useGithubData';

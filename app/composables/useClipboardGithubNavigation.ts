@@ -1,3 +1,4 @@
+/// Reads a GitHub URL from the clipboard and navigates to it on the dashboard.
 /** Read a GitHub URL from the clipboard and navigate to it on the dashboard. */
 export function useClipboardGithubNavigation() {
   const { readClipboardText } = useClipboardReader();

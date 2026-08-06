@@ -1,3 +1,4 @@
+/// Helpers for showing native desktop dialogs (error/info messages and clone destination picker).
 /** Extract an error message string, falling back to a caller-provided default. */
 export const getDesktopActionErrorMessage = (value: unknown, fallback: string) => {
   if (value instanceof Error && value.message) return value.message;

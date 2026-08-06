@@ -1,3 +1,4 @@
+/// Central reactive state, request serials, and reset helpers for the local repository panel.
 import { ref, shallowRef } from 'vue';
 
 import type {

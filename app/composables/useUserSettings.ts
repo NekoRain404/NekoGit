@@ -1,3 +1,4 @@
+/// User settings state and persistence (fonts, network, desktop notifications) with normalization and patches.
 import type {
   UserDesktopNotificationSettings,
   UserFontSettings,

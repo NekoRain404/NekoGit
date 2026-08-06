@@ -1,3 +1,4 @@
+/// Resolves and tracks the current GitHub URL and repository derived from the active dashboard route.
 import { computed } from 'vue';
 
 import {

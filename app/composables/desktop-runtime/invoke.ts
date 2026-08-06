@@ -1,3 +1,4 @@
+/// Helper that invokes Tauri desktop commands safely with client-only and isTauri runtime guards.
 /** Invoke a Tauri desktop command with client-side and runtime guards. */
 export const invokeDesktopCommand = async <T>(
   command: string,

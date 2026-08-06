@@ -1,3 +1,4 @@
+/// Migration bridge from the legacy flat tab-list model to the grouped custom-tabs model.
 import { BellIcon, BookMarkedIcon, CircleDotIcon, GitPullRequestIcon } from 'lucide-vue-next';
 import type { Component } from 'vue';
 import { computed, ref } from 'vue';
