@@ -1,3 +1,4 @@
+import { normalizeCheckRun } from '#server/utils/ci-checks-utils';
 // server/api/repos/[owner]/[repo]/pulls/[pull_number]/checks.get.ts
 import { extractPullRouteParams } from '#server/utils/repo-route-utils';
 
@@ -28,11 +29,14 @@ export default definePrivateApiCoalescedEventHandler(async (event) => {
     const { octokit } = await getGitHubSessionContext(event);
 
     // Get the PR to find the head commit SHA
-    const { data: pullRequest } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
-      owner,
-      repo,
-      pull_number: pullNumber,
-    });
+    const { data: pullRequest } = await octokit.request(
+      'GET /repos/{owner}/{repo}/pulls/{pull_number}',
+      {
+        owner,
+        repo,
+        pull_number: pullNumber,
+      }
+    );
 
     const headSha = pullRequest.head?.sha;
     if (!headSha) {
@@ -44,22 +48,28 @@ export default definePrivateApiCoalescedEventHandler(async (event) => {
     }
 
     // Fetch check runs for the head commit
-    const { data: checkRunsData } = await octokit.request('GET /repos/{owner}/{repo}/commits/{ref}/check-runs', {
-      owner,
-      repo,
-      ref: headSha,
-      per_page: 100,
-    });
+    const { data: checkRunsData } = await octokit.request(
+      'GET /repos/{owner}/{repo}/commits/{ref}/check-runs',
+      {
+        owner,
+        repo,
+        ref: headSha,
+        per_page: 100,
+      }
+    );
 
     // Fetch combined status for the head commit
-    const { data: combinedStatusData } = await octokit.request('GET /repos/{owner}/{repo}/commits/{ref}/status', {
-      owner,
-      repo,
-      ref: headSha,
-    });
+    const { data: combinedStatusData } = await octokit.request(
+      'GET /repos/{owner}/{repo}/commits/{ref}/status',
+      {
+        owner,
+        repo,
+        ref: headSha,
+      }
+    );
 
     return {
-      check_runs: checkRunsData.check_runs as CheckRun[],
+      check_runs: checkRunsData.check_runs.map(normalizeCheckRun) as CheckRun[],
       total_count: checkRunsData.total_count,
       combined_status: {
         state: combinedStatusData.state,
