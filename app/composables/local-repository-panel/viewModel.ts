@@ -169,6 +169,28 @@ export const useLocalRepositoryPanelViewModel = (options: LocalRepositoryPanelVi
     );
   });
 
+  const desktopCanAmendCommit = computed(() => {
+    const status = options.desktopLocalRepositoryGitStatus.value;
+    return Boolean(
+      options.desktopLocalRepositoryStatus.value?.exists &&
+      status &&
+      status.staged > 0 &&
+      status.conflicted === 0 &&
+      !options.desktopGitStatusLoading.value &&
+      !options.desktopAction.value
+    );
+  });
+
+  const desktopCanUndoCommit = computed(() => {
+    const status = options.desktopLocalRepositoryGitStatus.value;
+    return Boolean(
+      options.desktopLocalRepositoryStatus.value?.exists &&
+      status?.lastCommit &&
+      !options.desktopGitStatusLoading.value &&
+      !options.desktopAction.value
+    );
+  });
+
   const desktopCanStashChanges = computed(() => {
     const status = options.desktopLocalRepositoryGitStatus.value;
     return Boolean(
@@ -192,8 +214,10 @@ export const useLocalRepositoryPanelViewModel = (options: LocalRepositoryPanelVi
   }));
 
   return {
+    desktopCanAmendCommit,
     desktopCanCommitChanges,
     desktopCanStashChanges,
+    desktopCanUndoCommit,
     desktopChangedFileStatusLabels,
     desktopChangedFiles,
     desktopCommitHistory,

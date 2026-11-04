@@ -14,6 +14,8 @@ export type DesktopRepositoryAction =
   | 'push'
   | 'rebase'
   | 'abortRebase'
+  | 'amend'
+  | 'undoCommit'
   | 'stash'
   | 'terminal'
   | null;
@@ -28,6 +30,10 @@ export type LocalRepositoryCopy = {
   clone: string;
   copied: string;
   copyCloneUrl: string;
+  gitAmend: string;
+  gitAmending: string;
+  gitUndoLastCommit: string;
+  gitUndoingCommit: string;
   gitAhead: string;
   gitBehind: string;
   gitBranch: string;
@@ -106,6 +112,8 @@ export type LocalRepositoryCopy = {
   createPullRequestTitlePlaceholder: string;
   createPullRequestDescriptionPlaceholder: string;
   confirmCommit: string;
+  confirmAmend: string;
+  confirmUndoCommit: string;
   gitCancelOperation: string;
   confirmClearStashes: string;
   confirmDeleteBranch: string;

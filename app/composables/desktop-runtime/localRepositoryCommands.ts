@@ -277,6 +277,30 @@ export const commitLocalRepositoryChanges = async (
   );
 };
 
+/** Amend the current HEAD commit with staged changes, optionally replacing its message. */
+export const amendLocalRepositoryCommit = async (
+  repositoryUrl: string,
+  commitMessage?: string | null
+) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_amend_local_repository_commit',
+    {
+      repositoryUrl,
+      commitMessage: commitMessage?.trim() || null,
+    }
+  );
+};
+
+/** Undo the last local commit while keeping its changes staged. */
+export const undoLocalRepositoryCommit = async (repositoryUrl: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_undo_local_repository_commit',
+    {
+      repositoryUrl,
+    }
+  );
+};
+
 /** Stash all current working-tree changes. */
 export const stashLocalRepositoryChanges = async (repositoryUrl: string) => {
   return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(

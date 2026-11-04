@@ -2007,6 +2007,12 @@
           "markdownDescription": "Enables the desktop_abort_local_repository_rebase command without any pre-configured scope."
         },
         {
+          "description": "Enables the desktop_amend_local_repository_commit command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-amend-local-repository-commit",
+          "markdownDescription": "Enables the desktop_amend_local_repository_commit command without any pre-configured scope."
+        },
+        {
           "description": "Enables the desktop_apply_local_repository_stash command without any pre-configured scope.",
           "type": "string",
           "const": "allow-desktop-apply-local-repository-stash",
@@ -2271,6 +2277,12 @@
           "markdownDescription": "Enables the desktop_switch_local_repository_branch command without any pre-configured scope."
         },
         {
+          "description": "Enables the desktop_undo_local_repository_commit command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-undo-local-repository-commit",
+          "markdownDescription": "Enables the desktop_undo_local_repository_commit command without any pre-configured scope."
+        },
+        {
           "description": "Enables the desktop_unstage_local_repository_path command without any pre-configured scope.",
           "type": "string",
           "const": "allow-desktop-unstage-local-repository-path",
@@ -2281,6 +2293,12 @@
           "type": "string",
           "const": "deny-desktop-abort-local-repository-rebase",
           "markdownDescription": "Denies the desktop_abort_local_repository_rebase command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the desktop_amend_local_repository_commit command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-amend-local-repository-commit",
+          "markdownDescription": "Denies the desktop_amend_local_repository_commit command without any pre-configured scope."
         },
         {
           "description": "Denies the desktop_apply_local_repository_stash command without any pre-configured scope.",
@@ -2545,6 +2563,12 @@
           "type": "string",
           "const": "deny-desktop-switch-local-repository-branch",
           "markdownDescription": "Denies the desktop_switch_local_repository_branch command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the desktop_undo_local_repository_commit command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-undo-local-repository-commit",
+          "markdownDescription": "Denies the desktop_undo_local_repository_commit command without any pre-configured scope."
         },
         {
           "description": "Denies the desktop_unstage_local_repository_path command without any pre-configured scope.",

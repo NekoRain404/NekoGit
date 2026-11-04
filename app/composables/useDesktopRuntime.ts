@@ -19,6 +19,7 @@ import {
 import { getCommandErrorMessage, invokeDesktopCommand } from './desktop-runtime/invoke';
 import {
   abortLocalRepositoryRebase,
+  amendLocalRepositoryCommit,
   applyLocalRepositoryStash,
   cancelLocalRepositoryOperation,
   checkoutRemoteLocalRepositoryBranch,
@@ -46,6 +47,7 @@ import {
   stageLocalRepositoryPath,
   stashLocalRepositoryChanges,
   switchLocalRepositoryBranch,
+  undoLocalRepositoryCommit,
   unstageLocalRepositoryPath,
 } from './desktop-runtime/localRepositoryCommands';
 import type {
@@ -191,6 +193,8 @@ export function useDesktopRuntime() {
     checkoutRemoteLocalRepositoryBranch,
     deleteLocalRepositoryBranch,
     commitLocalRepositoryChanges,
+    amendLocalRepositoryCommit,
+    undoLocalRepositoryCommit,
     stashLocalRepositoryChanges,
     popLocalRepositoryStash,
     applyLocalRepositoryStash,

@@ -65,6 +65,102 @@ pub(crate) fn commit_local_repository_changes(
     local_repository_git_status(app_data_dir, &git_status.repository_url)
 }
 
+/// Amends the current HEAD commit with staged changes and optionally a new message.
+fn amend_repository_commit(
+    repository_path: &str,
+    commit_message: Option<&str>,
+) -> Result<(), String> {
+    let message = match commit_message
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        Some(value) => Some(normalize_local_commit_message(value)?),
+        None => None,
+    };
+
+    let mut command = git_command(repository_path);
+    command.args(["commit", "--amend"]);
+    match message {
+        Some(message) => {
+            command.arg("-m").arg(message);
+        }
+        None => {
+            command.arg("--no-edit");
+        }
+    }
+
+    let output = command
+        .output()
+        .map_err(|error| format!("failed to start git commit --amend: {error}"))?;
+
+    if !output.status.success() {
+        let details = git_command_failure_details(&output);
+        return Err(format!("git commit --amend failed: {details}"));
+    }
+
+    Ok(())
+}
+
+/// Amends the current HEAD commit with currently staged changes.
+pub(crate) fn amend_local_repository_commit(
+    app_data_dir: &Path,
+    repository_url: &str,
+    commit_message: Option<&str>,
+) -> Result<DesktopLocalRepositoryGitStatus, String> {
+    let git_status = local_repository_git_status(app_data_dir, repository_url)?;
+    if git_status.conflicted > 0 {
+        return Err("local repository has unresolved conflicts".to_owned());
+    }
+    if git_status.staged == 0 {
+        return Err("local repository has no staged changes to amend".to_owned());
+    }
+
+    amend_repository_commit(&git_status.repository_path, commit_message)?;
+    local_repository_git_status(app_data_dir, &git_status.repository_url)
+}
+
+/// Rewinds the current branch by one commit while keeping changes staged.
+fn undo_repository_commit(repository_path: &str) -> Result<(), String> {
+    if !git_has_head(repository_path)? {
+        return Err("local repository has no commits to undo".to_owned());
+    }
+
+    let parent = git_command(repository_path)
+        .args(["rev-parse", "--verify", "--quiet", "HEAD~1"])
+        .output()
+        .map_err(|error| format!("failed to start git rev-parse: {error}"))?;
+
+    if !parent.status.success() {
+        return Err("cannot undo the initial commit; create another commit first".to_owned());
+    }
+
+    let output = git_command(repository_path)
+        .args(["reset", "--soft", "HEAD~1"])
+        .output()
+        .map_err(|error| format!("failed to start git reset --soft: {error}"))?;
+
+    if !output.status.success() {
+        let details = git_command_failure_details(&output);
+        return Err(format!("git reset --soft failed: {details}"));
+    }
+
+    Ok(())
+}
+
+/// Undoes the last local commit, leaving its changes staged.
+pub(crate) fn undo_local_repository_commit(
+    app_data_dir: &Path,
+    repository_url: &str,
+) -> Result<DesktopLocalRepositoryGitStatus, String> {
+    let git_status = local_repository_git_status(app_data_dir, repository_url)?;
+    if git_status.conflicted > 0 {
+        return Err("local repository has unresolved conflicts".to_owned());
+    }
+
+    undo_repository_commit(&git_status.repository_path)?;
+    local_repository_git_status(app_data_dir, &git_status.repository_url)
+}
+
 /// Normalizes and validates a repository-relative path used by file-level actions.
 fn normalize_changed_file_path(relative_path: &str) -> Result<PathBuf, String> {
     let normalized_path = normalize_repository_relative_path(relative_path)?;
@@ -686,6 +782,87 @@ mod tests {
         assert_eq!(
             fs::read_to_string(repository_path.join("README.md")).unwrap(),
             "changed\n"
+        );
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn amend_includes_staged_changes_and_rewrites_the_message() {
+        let base = test_base("amend");
+        let repository_path = init_repository(&base);
+        let repository_path_str = repository_path.to_str().unwrap();
+
+        fs::write(repository_path.join("README.md"), "changed\n").unwrap();
+        git(&repository_path, &["add", "README.md"]);
+        amend_repository_commit(repository_path_str, Some("amended")).unwrap();
+
+        assert_eq!(
+            git_output(&repository_path, &["log", "-1", "--pretty=%s"]).trim(),
+            "amended"
+        );
+        assert_eq!(
+            git_output(&repository_path, &["rev-list", "--count", "HEAD"]).trim(),
+            "1"
+        );
+        assert_eq!(
+            git_output(&repository_path, &["show", "HEAD:README.md"]).trim(),
+            "changed"
+        );
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn amend_without_a_message_preserves_the_existing_subject() {
+        let base = test_base("amend-no-message");
+        let repository_path = init_repository(&base);
+        let repository_path_str = repository_path.to_str().unwrap();
+
+        fs::write(repository_path.join("README.md"), "changed\n").unwrap();
+        git(&repository_path, &["add", "README.md"]);
+        amend_repository_commit(repository_path_str, None).unwrap();
+
+        assert_eq!(
+            git_output(&repository_path, &["log", "-1", "--pretty=%s"]).trim(),
+            "initial"
+        );
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn undo_soft_reset_keeps_the_commit_changes_staged() {
+        let base = test_base("undo");
+        let repository_path = init_repository(&base);
+        fs::write(repository_path.join("README.md"), "second\n").unwrap();
+        git(&repository_path, &["add", "README.md"]);
+        git(&repository_path, &["commit", "-q", "-m", "second"]);
+
+        undo_repository_commit(repository_path.to_str().unwrap()).unwrap();
+
+        assert_eq!(
+            git_output(&repository_path, &["log", "-1", "--pretty=%s"]).trim(),
+            "initial"
+        );
+        assert_eq!(
+            git_output(&repository_path, &["rev-list", "--count", "HEAD"]).trim(),
+            "1"
+        );
+        assert_eq!(
+            git_output(&repository_path, &["diff", "--cached", "--name-only"]).trim(),
+            "README.md"
+        );
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn undo_rejects_the_initial_commit() {
+        let base = test_base("undo-root");
+        let repository_path = init_repository(&base);
+
+        let error = undo_repository_commit(repository_path.to_str().unwrap())
+            .expect_err("root commit should be rejected");
+        assert!(
+            error.contains("initial commit"),
+            "unexpected error: {error}"
         );
         let _ = fs::remove_dir_all(&base);
     }

@@ -285,6 +285,8 @@ pub fn run() {
             desktop_rebase_local_repository,
             desktop_abort_local_repository_rebase,
             desktop_commit_local_repository_changes,
+            desktop_amend_local_repository_commit,
+            desktop_undo_local_repository_commit,
             desktop_stash_local_repository_changes,
             desktop_pop_local_repository_stash,
             desktop_apply_local_repository_stash,

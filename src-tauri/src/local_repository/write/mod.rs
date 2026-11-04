@@ -11,9 +11,9 @@ pub(crate) use branches::{
     switch_local_repository_branch,
 };
 pub(crate) use changes::{
-    apply_local_repository_stash, clear_local_repository_stashes, commit_local_repository_changes,
-    pop_local_repository_stash, stage_local_repository_path, stash_local_repository_changes,
-    unstage_local_repository_path,
+    amend_local_repository_commit, apply_local_repository_stash, clear_local_repository_stashes,
+    commit_local_repository_changes, pop_local_repository_stash, stage_local_repository_path,
+    stash_local_repository_changes, undo_local_repository_commit, unstage_local_repository_path,
 };
 pub(crate) use clone::clone_github_repository;
 pub(crate) use sync::{fetch_local_repository, pull_local_repository, push_local_repository};

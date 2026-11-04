@@ -5,10 +5,11 @@ use tauri::State;
 use crate::{
     desktop_runtime::DesktopRuntime,
     local_repository::{
-        apply_local_repository_stash, clear_local_repository_stashes,
-        commit_local_repository_changes, pop_local_repository_stash, request_git_cancellation,
-        stage_local_repository_path, stash_local_repository_changes, unstage_local_repository_path,
-        DesktopLocalRepositoryGitStatus,
+        amend_local_repository_commit, apply_local_repository_stash,
+        clear_local_repository_stashes, commit_local_repository_changes,
+        pop_local_repository_stash, request_git_cancellation, stage_local_repository_path,
+        stash_local_repository_changes, undo_local_repository_commit,
+        unstage_local_repository_path, DesktopLocalRepositoryGitStatus,
     },
 };
 
@@ -25,6 +26,35 @@ pub(crate) async fn desktop_commit_local_repository_changes(
     })
     .await
     .map_err(|error| format!("failed to run git commit task: {error}"))?
+}
+
+/// Amends the current HEAD commit with staged changes.
+#[tauri::command]
+pub(crate) async fn desktop_amend_local_repository_commit(
+    runtime: State<'_, DesktopRuntime>,
+    repository_url: String,
+    commit_message: Option<String>,
+) -> Result<DesktopLocalRepositoryGitStatus, String> {
+    let app_data_dir = runtime.app_data_dir.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        amend_local_repository_commit(&app_data_dir, &repository_url, commit_message.as_deref())
+    })
+    .await
+    .map_err(|error| format!("failed to run git commit --amend task: {error}"))?
+}
+
+/// Undoes the last local commit and keeps its changes staged.
+#[tauri::command]
+pub(crate) async fn desktop_undo_local_repository_commit(
+    runtime: State<'_, DesktopRuntime>,
+    repository_url: String,
+) -> Result<DesktopLocalRepositoryGitStatus, String> {
+    let app_data_dir = runtime.app_data_dir.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        undo_local_repository_commit(&app_data_dir, &repository_url)
+    })
+    .await
+    .map_err(|error| format!("failed to run git reset --soft task: {error}"))?
 }
 
 #[tauri::command]

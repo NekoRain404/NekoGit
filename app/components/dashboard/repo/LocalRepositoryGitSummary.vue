@@ -8,6 +8,7 @@ import {
   GitPullRequestIcon,
   Loader2Icon,
   Trash2Icon,
+  Undo2Icon,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
@@ -361,6 +362,51 @@ const openAssociatedPullRequest = () => {
           </button>
         </div>
       </form>
+
+      <div
+        v-if="state.desktopLocalRepositoryGitStatus.value.lastCommit"
+        class="local-repo-commit__secondary"
+      >
+        <button
+          v-if="state.desktopLocalRepositoryGitStatus.value.staged > 0"
+          type="button"
+          class="local-repo-commit__button local-repo-commit__button--secondary"
+          :disabled="!state.desktopCanAmendCommit.value"
+          :title="copy.gitAmend"
+          @click="state.amendDesktopLocalRepositoryCommit"
+        >
+          <Loader2Icon
+            v-if="state.desktopAction.value === 'amend'"
+            :size="12"
+            class="spin-animation"
+          />
+          <GitCommitIcon v-else :size="12" />
+          <span>
+            {{ state.desktopAction.value === 'amend' ? copy.gitAmending : copy.gitAmend }}
+          </span>
+        </button>
+        <button
+          type="button"
+          class="local-repo-commit__button local-repo-commit__button--secondary"
+          :disabled="!state.desktopCanUndoCommit.value"
+          :title="copy.gitUndoLastCommit"
+          @click="state.undoDesktopLocalRepositoryCommit"
+        >
+          <Loader2Icon
+            v-if="state.desktopAction.value === 'undoCommit'"
+            :size="12"
+            class="spin-animation"
+          />
+          <Undo2Icon v-else :size="12" />
+          <span>
+            {{
+              state.desktopAction.value === 'undoCommit'
+                ? copy.gitUndoingCommit
+                : copy.gitUndoLastCommit
+            }}
+          </span>
+        </button>
+      </div>
     </template>
   </div>
 </template>

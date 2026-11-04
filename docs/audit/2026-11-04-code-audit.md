@@ -166,7 +166,7 @@
 
 **桌面本地 Git**
 
-- stash apply/clear、远端 publish、rebase、冲突处理、commit amend/undo、完整变更文件/历史（接管已有 clone、stash list/pop、分支删除、按文件 stage/unstage、命令超时与取消已支持）
+- stash apply/clear、远端 publish、rebase、冲突处理、完整变更文件/历史（接管已有 clone、stash list/pop、分支删除、按文件 stage/unstage、commit amend/undo、命令超时与取消已支持）
 
 **打包与测试**
 
@@ -264,7 +264,7 @@
 - AUD-028：clone/fetch/pull/push 增加 120s 超时（`NEKOGIT_GIT_TIMEOUT_SECS` 可调），并发排空 stdout/stderr 防止管道死锁；新增 `desktop_cancel_local_repository_operation`，Unix 下以进程组 SIGKILL 终止 fetch/pull/push/clone/rebase。
 - AUD-029：reviewer summary 增加 45s 客户端 TTL 缓存、并发请求去重，并在 reviewer 增删后失效。
 - 额外功能：桌面端支持“接管已有本地 clone”（校验 Git work tree 与 origin 后记录），无需重新 clone。
-- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，并加入 `@vue/test-utils` + happy-dom 组件测试（PREditModal、LabelCreateForm），共 40 个测试文件 / 255 个用例；Rust 105 个测试。
+- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，并加入 `@vue/test-utils` + happy-dom 组件测试（PREditModal、LabelCreateForm），共 40 个测试文件 / 255 个用例；Rust 109 个测试。
 - 浏览器 E2E：新增 Playwright 配置与 `e2e/landing.spec.ts`，使用系统 Chrome（不下载浏览器）验证 landing 渲染、CSRF cookie 与未登录访问 `/dashboard` 的重定向；CI Build job 执行 `pnpm test:e2e`。
 - 本地 Git 补全：stash 列表/pop、非当前分支安全删除（`git branch -d`）。
 - Issue 写操作：关闭/重开、编辑标题/正文（PATCH route + modal + 权限 gating）。
@@ -274,6 +274,7 @@
 - 本地 Git 补全：按文件 stage/unstage（含初始提交无 HEAD 的 unstage 回退）、stash apply/clear。
 - Discussion 写操作：mark/unmark answer、讨论/评论 upvote、lock/unlock（GraphQL + UI）。
 - 本地 Git：rebase / abort rebase（含冲突检测与明确提示）、进程组取消（fetch/pull/push/clone/rebase 可前端取消）。
+- 本地 Git：amend 上次提交（仅使用已暂存改动，可替换提交消息）与撤销上次提交（soft reset，改动保留在暂存区，带确认与根提交保护）。
 - 通知：线程退订（REST + UI）。
 - Label：创建 label 的 endpoint、校验与 label editor 内联创建 UI。
 - PR：review dismissal（endpoint + 时间线内联弹层）。
@@ -287,9 +288,9 @@
 - `pnpm lint` ✅（correctness 已启用）
 - `pnpm test` ✅ 40 files / 255 tests（含 2 个 Vue 组件测试）
 - `pnpm build` ✅（`taskset -c 0-3`，47.3 MB）
-- `node scripts/check-tauri-commands.mjs` ✅ 46 commands
+- `node scripts/check-tauri-commands.mjs` ✅ 48 commands
 - `cargo fmt --check` ✅
-- `cargo test --jobs 4` ✅ 105 tests
+- `cargo test --jobs 4` ✅ 109 tests
 - `cargo clippy --jobs 4 --all-targets -- -D warnings` ✅
 - `pnpm smoke:server` ✅ 安全响应头、未认证 401、缺失 CSRF 403、带 CSRF 空 token 400
 - `pnpm test:e2e` ✅ 2 tests（系统 Chrome，landing 与未登录路由守卫）

@@ -25,11 +25,11 @@ pub(crate) use types::{
     DesktopLocalRepositoryPathStatus, DesktopLocalRepositoryStashes, DesktopLocalRepositoryStatus,
 };
 pub(crate) use write::{
-    abort_local_repository_rebase, apply_local_repository_stash,
+    abort_local_repository_rebase, amend_local_repository_commit, apply_local_repository_stash,
     checkout_remote_local_repository_branch, clear_local_repository_stashes,
     clone_github_repository, commit_local_repository_changes, create_local_repository_branch,
     delete_local_repository_branch, fetch_local_repository, pop_local_repository_stash,
     pull_local_repository, push_local_repository, rebase_local_repository,
     stage_local_repository_path, stash_local_repository_changes, switch_local_repository_branch,
-    unstage_local_repository_path,
+    undo_local_repository_commit, unstage_local_repository_path,
 };

@@ -26,6 +26,7 @@ export type { LocalRepositoryCopy } from './local-repository-panel/types';
 /** Full-featured local repository panel: status, branches, commits, diff, clone, and git actions. */
 export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions) {
   const {
+    amendLocalRepositoryCommit,
     available: desktopAvailable,
     cancelLocalRepositoryOperation,
     checkoutRemoteLocalRepositoryBranch,
@@ -56,6 +57,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     stageLocalRepositoryPath,
     stashLocalRepositoryChanges,
     switchLocalRepositoryBranch,
+    undoLocalRepositoryCommit,
     unstageLocalRepositoryPath,
   } = useDesktopRuntime();
   const { writeClipboardText } = useClipboardWriter();
@@ -116,8 +118,10 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
   );
   const desktopCloneUrl = computed(() => desktopRepository.value?.cloneUrl ?? '');
   const {
+    desktopCanAmendCommit,
     desktopCanCommitChanges,
     desktopCanStashChanges,
+    desktopCanUndoCommit,
     desktopChangedFileStatusLabels,
     desktopChangedFiles,
     desktopCommitHistory,
@@ -450,6 +454,71 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
       desktopGitStatusError.value = getDesktopActionErrorMessage(
         error,
         'Failed to commit local changes.'
+      );
+      await showDesktopMessage(desktopGitStatusError.value, 'error');
+    } finally {
+      desktopGitStatusLoading.value = false;
+      desktopAction.value = null;
+    }
+  };
+
+  const amendDesktopLocalRepositoryCommit = async () => {
+    const repository = desktopRepository.value;
+    if (
+      !repository ||
+      !desktopLocalRepositoryStatus.value?.exists ||
+      !desktopCanAmendCommit.value
+    ) {
+      return;
+    }
+    if (import.meta.client && !window.confirm(options.copy.value.confirmAmend)) return;
+
+    desktopAction.value = 'amend';
+    desktopGitStatusLoading.value = true;
+    desktopGitStatusError.value = '';
+
+    try {
+      desktopLocalRepositoryGitStatus.value = await amendLocalRepositoryCommit(
+        repository.cloneUrl,
+        desktopCommitMessage.value
+      );
+      void refreshAssociatedPullRequest();
+      desktopCommitMessage.value = '';
+      await refreshDesktopLocalRepositoryChangedFiles();
+      await refreshDesktopLocalRepositoryCommitHistory();
+    } catch (error) {
+      desktopGitStatusError.value = getDesktopActionErrorMessage(
+        error,
+        'Failed to amend the last commit.'
+      );
+      await showDesktopMessage(desktopGitStatusError.value, 'error');
+    } finally {
+      desktopGitStatusLoading.value = false;
+      desktopAction.value = null;
+    }
+  };
+
+  const undoDesktopLocalRepositoryCommit = async () => {
+    const repository = desktopRepository.value;
+    if (!repository || !desktopLocalRepositoryStatus.value?.exists || !desktopCanUndoCommit.value) {
+      return;
+    }
+    if (import.meta.client && !window.confirm(options.copy.value.confirmUndoCommit)) return;
+
+    desktopAction.value = 'undoCommit';
+    desktopGitStatusLoading.value = true;
+    desktopGitStatusError.value = '';
+
+    try {
+      desktopLocalRepositoryGitStatus.value = await undoLocalRepositoryCommit(repository.cloneUrl);
+      void refreshAssociatedPullRequest();
+      desktopCommitMessage.value = '';
+      await refreshDesktopLocalRepositoryChangedFiles();
+      await refreshDesktopLocalRepositoryCommitHistory();
+    } catch (error) {
+      desktopGitStatusError.value = getDesktopActionErrorMessage(
+        error,
+        'Failed to undo the last commit.'
       );
       await showDesktopMessage(desktopGitStatusError.value, 'error');
     } finally {
@@ -951,8 +1020,10 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopBranchToDelete,
     desktopBranchesError,
     desktopBranchesLoading,
+    desktopCanAmendCommit,
     desktopCanCommitChanges,
     desktopCanStashChanges,
+    desktopCanUndoCommit,
     desktopChangedFileActionError,
     desktopChangedFileStatusLabels,
     desktopChangedFiles,
@@ -1009,6 +1080,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     refreshAssociatedPullRequest,
     submitCreatePullRequest,
     adoptDesktopLocalRepository,
+    amendDesktopLocalRepositoryCommit,
     cancelDesktopLocalRepositoryOperation,
     checkoutDesktopRemoteLocalRepositoryBranch,
     cloneDesktopRepository,
@@ -1031,6 +1103,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     stageDesktopChangedFile,
     stashDesktopLocalRepositoryChanges,
     switchDesktopLocalRepositoryBranch,
+    undoDesktopLocalRepositoryCommit,
     unstageDesktopChangedFile,
   };
 }
