@@ -34,7 +34,7 @@ Adaptive dark mode styling keeps the dashboard comfortable in low-light environm
 
 ### 📂 Repositories
 
-Paginated list of your repos with quick links to each. A fast way to jump to a project without leaving the dashboard.
+Paginated list of your repos with quick links to each. Create personal repositories, edit descriptions and homepages, archive or unarchive them, and delete a repository from its detail view with a typed-name confirmation.
 
 ---
 
@@ -87,6 +87,8 @@ pnpm client:build
 The package is written to `src-tauri/target/release/bundle/deb/`. Release builds bundle the Nuxt/Nitro output and a Linux x64 Node runtime, then start the server on `127.0.0.1` before opening the Tauri webview. The current Linux `.deb` package relies on Tauri's generated GTK/WebKit/appindicator runtime dependencies plus the shared libraries required by the bundled Node binary; it does not require system `nodejs` unless you override the runtime with `NEKOGIT_NODE_PATH`.
 
 The desktop client keeps its runtime state in the Tauri app data directory. It generates a persistent `session.secret` on first launch, stores webview data under `webview/`, writes the bundled server log to `logs/nekogit-server.log`, and exposes **File → Open Data Directory** / **File → Open Server Log** from the native menu. Closing the main window hides NekoGit to the system tray; use the tray menu or **File → Quit** to exit the bundled server. Reopening NekoGit while it is already running focuses the existing window instead of starting a second bundled server.
+
+The repository sidebar can clone or adopt an existing checkout, fetch, pull, push/publish, rebase, stage files individually, stash/apply/pop entries, amend the last commit, and undo a local commit while keeping its changes staged.
 
 Common desktop shortcuts include `F5` for refreshing the current NekoGit view, `Ctrl+,` for settings, `Alt+Left` / `Alt+Right` for in-app navigation, and `Ctrl+Shift+G` / `Ctrl+Shift+O` / `Ctrl+Shift+L` for opening, opening from clipboard, or copying GitHub URLs.
 
