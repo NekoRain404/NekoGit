@@ -11,13 +11,17 @@ import {
   GithubIcon,
   InfoIcon,
   Loader2Icon,
+  PlusIcon,
   StarIcon,
   XIcon,
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import type { LocationQueryRaw } from 'vue-router';
 
+import IssueCreateModal from '~/components/dashboard/issue/IssueCreateModal.vue';
 import LocalRepositoryPanel from '~/components/dashboard/repo/LocalRepositoryPanel.vue';
+import getFetchErrorMessage from '~/utils/getFetchErrorMessage';
 
 const props = defineProps<{
   repository: any;
@@ -31,7 +35,8 @@ type RepoDetailIcon = typeof GithubIcon;
 const { locale, t } = useI18n();
 const localePath = useLocalePath();
 const apiFetch = useNekoGitApiFetch();
-const { navigateToFile } = useNavigationHistory();
+const router = useRouter();
+const { navigateToFile, navigateToIssue } = useNavigationHistory();
 const {
   branches,
   currentBranch,
@@ -92,6 +97,7 @@ const copy = computed(() => {
       gitCommitMessage: '提交说明',
       gitCommitting: '提交中',
       gitConflicted: '冲突',
+      gitConflictActionUnavailable: '请先解决冲突，再暂存或取消暂存此文件',
       gitCommits: '提交记录',
       gitCheckoutRemoteBranch: '检出远程',
       gitCheckingOutRemoteBranch: '检出中',
@@ -118,6 +124,8 @@ const copy = computed(() => {
       gitPush: '推送',
       gitPushing: '推送中',
       gitStaged: '暂存',
+      gitStage: '暂存',
+      gitStaging: '暂存中',
       gitStash: '贮藏改动',
       gitStashes: '贮藏',
       gitStashesUnavailable: '无法读取贮藏',
@@ -125,6 +133,8 @@ const copy = computed(() => {
       gitPopStash: '弹出',
       gitPoppingStash: '弹出中',
       gitUnstaged: '未暂存',
+      gitUnstage: '取消暂存',
+      gitUnstaging: '取消暂存中',
       gitUntracked: '未跟踪',
       localChecking: '检查中',
       localChangesUnavailable: '无法读取改动文件',
@@ -207,6 +217,7 @@ const copy = computed(() => {
     gitCommitMessage: 'Commit message',
     gitCommitting: 'Committing',
     gitConflicted: 'Conflicts',
+    gitConflictActionUnavailable: 'Resolve conflicts before staging or unstaging this file.',
     gitCommits: 'Commits',
     gitCheckoutRemoteBranch: 'Checkout remote',
     gitCheckingOutRemoteBranch: 'Checking out',
@@ -233,6 +244,8 @@ const copy = computed(() => {
     gitPush: 'Push',
     gitPushing: 'Pushing',
     gitStaged: 'Staged',
+    gitStage: 'Stage',
+    gitStaging: 'Staging',
     gitStash: 'Stash changes',
     gitStashes: 'Stashes',
     gitStashesUnavailable: 'Stashes unavailable',
@@ -240,6 +253,8 @@ const copy = computed(() => {
     gitPopStash: 'Pop',
     gitPoppingStash: 'Popping',
     gitUnstaged: 'Unstaged',
+    gitUnstage: 'Unstage',
+    gitUnstaging: 'Unstaging',
     gitUntracked: 'Untracked',
     localChecking: 'Checking',
     localChangesUnavailable: 'Changed files unavailable',
@@ -304,6 +319,9 @@ const starCount = ref(props.repository.stargazers_count ?? 0);
 /** Watch State. */
 type WatchState = 'all' | 'default' | 'ignore';
 const watchState = ref<WatchState | null>(null);
+const isIssueCreateModalOpen = ref(false);
+const creatingIssue = ref(false);
+const issueCreateError = ref('');
 const loadingWatch = ref(false);
 const showWatchDropdown = ref(false);
 const watchCount = ref(props.repository.watchers_count ?? 0);
@@ -599,6 +617,53 @@ const fetchLicense = async () => {
   }
 };
 
+const openIssueCreateModal = () => {
+  issueCreateError.value = '';
+  isIssueCreateModalOpen.value = true;
+};
+
+const closeIssueCreateModal = () => {
+  if (creatingIssue.value) return;
+  isIssueCreateModalOpen.value = false;
+  issueCreateError.value = '';
+};
+
+const createIssue = async (payload: { title: string; body: string }) => {
+  if (creatingIssue.value) return;
+
+  creatingIssue.value = true;
+  issueCreateError.value = '';
+  try {
+    const issue = await apiFetch<{ number?: number }>(
+      `/api/repos/${props.owner}/${props.repo}/issues`,
+      {
+        method: 'POST',
+        body: { title: payload.title, body: payload.body },
+      }
+    );
+
+    if (typeof issue?.number !== 'number') {
+      throw new Error(t('issueDetail.createIssueFailed'));
+    }
+
+    isIssueCreateModalOpen.value = false;
+    navigateToIssue(props.owner, props.repo, issue.number);
+    await router.push(
+      localePath({
+        path: '/dashboard',
+        query: {
+          tab: 'issues',
+          issue: `${props.owner}/${props.repo}/${issue.number}`,
+        },
+      })
+    );
+  } catch (error: unknown) {
+    issueCreateError.value = getFetchErrorMessage(error, t('issueDetail.createIssueFailed'));
+  } finally {
+    creatingIssue.value = false;
+  }
+};
+
 onMounted(() => {
   fetchStarState();
   fetchWatchState();
@@ -702,6 +767,17 @@ onUnmounted(() => {
                   </button>
                 </div>
               </div>
+
+              <button
+                class="repo-action-btn"
+                type="button"
+                :disabled="creatingIssue"
+                @click="openIssueCreateModal"
+              >
+                <Loader2Icon v-if="creatingIssue" :size="14" class="spin-animation" />
+                <PlusIcon v-else :size="14" />
+                <span>{{ t('issueDetail.newIssue') }}</span>
+              </button>
 
               <BranchSelector
                 :branches="branches"
@@ -867,6 +943,14 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
+
+  <IssueCreateModal
+    :is-visible="isIssueCreateModalOpen"
+    :loading="creatingIssue"
+    :error="issueCreateError"
+    @close="closeIssueCreateModal"
+    @save="createIssue"
+  />
 </template>
 
 <style scoped lang="scss">

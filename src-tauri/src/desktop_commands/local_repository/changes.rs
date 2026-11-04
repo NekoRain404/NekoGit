@@ -5,8 +5,9 @@ use tauri::State;
 use crate::{
     desktop_runtime::DesktopRuntime,
     local_repository::{
-        commit_local_repository_changes, pop_local_repository_stash,
-        stash_local_repository_changes, DesktopLocalRepositoryGitStatus,
+        commit_local_repository_changes, pop_local_repository_stash, stage_local_repository_path,
+        stash_local_repository_changes, unstage_local_repository_path,
+        DesktopLocalRepositoryGitStatus,
     },
 };
 
@@ -52,4 +53,34 @@ pub(crate) async fn desktop_pop_local_repository_stash(
     })
     .await
     .map_err(|error| format!("failed to run git stash pop task: {error}"))?
+}
+
+/// Stages a single file or directory inside a local repository.
+#[tauri::command]
+pub(crate) async fn desktop_stage_local_repository_path(
+    runtime: State<'_, DesktopRuntime>,
+    repository_url: String,
+    relative_path: String,
+) -> Result<DesktopLocalRepositoryGitStatus, String> {
+    let app_data_dir = runtime.app_data_dir.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        stage_local_repository_path(&app_data_dir, &repository_url, &relative_path)
+    })
+    .await
+    .map_err(|error| format!("failed to run git add task: {error}"))?
+}
+
+/// Unstages a single file or directory inside a local repository.
+#[tauri::command]
+pub(crate) async fn desktop_unstage_local_repository_path(
+    runtime: State<'_, DesktopRuntime>,
+    repository_url: String,
+    relative_path: String,
+) -> Result<DesktopLocalRepositoryGitStatus, String> {
+    let app_data_dir = runtime.app_data_dir.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        unstage_local_repository_path(&app_data_dir, &repository_url, &relative_path)
+    })
+    .await
+    .map_err(|error| format!("failed to run git restore --staged task: {error}"))?
 }

@@ -2223,6 +2223,12 @@
           "markdownDescription": "Enables the desktop_show_window command without any pre-configured scope."
         },
         {
+          "description": "Enables the desktop_stage_local_repository_path command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-stage-local-repository-path",
+          "markdownDescription": "Enables the desktop_stage_local_repository_path command without any pre-configured scope."
+        },
+        {
           "description": "Enables the desktop_stash_local_repository_changes command without any pre-configured scope.",
           "type": "string",
           "const": "allow-desktop-stash-local-repository-changes",
@@ -2233,6 +2239,12 @@
           "type": "string",
           "const": "allow-desktop-switch-local-repository-branch",
           "markdownDescription": "Enables the desktop_switch_local_repository_branch command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the desktop_unstage_local_repository_path command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-unstage-local-repository-path",
+          "markdownDescription": "Enables the desktop_unstage_local_repository_path command without any pre-configured scope."
         },
         {
           "description": "Denies the desktop_autostart_status command without any pre-configured scope.",
@@ -2457,6 +2469,12 @@
           "markdownDescription": "Denies the desktop_show_window command without any pre-configured scope."
         },
         {
+          "description": "Denies the desktop_stage_local_repository_path command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-stage-local-repository-path",
+          "markdownDescription": "Denies the desktop_stage_local_repository_path command without any pre-configured scope."
+        },
+        {
           "description": "Denies the desktop_stash_local_repository_changes command without any pre-configured scope.",
           "type": "string",
           "const": "deny-desktop-stash-local-repository-changes",
@@ -2467,6 +2485,12 @@
           "type": "string",
           "const": "deny-desktop-switch-local-repository-branch",
           "markdownDescription": "Denies the desktop_switch_local_repository_branch command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the desktop_unstage_local_repository_path command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-unstage-local-repository-path",
+          "markdownDescription": "Denies the desktop_unstage_local_repository_path command without any pre-configured scope."
         },
         {
           "description": "No features are enabled by default, as we believe\nthe clipboard can be inherently dangerous and it is \napplication specific if read and/or write access is needed.\n\nClipboard interaction needs to be explicitly enabled.\n",

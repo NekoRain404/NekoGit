@@ -32,6 +32,8 @@
           @close-pr="handleClosePr"
           @reopen-pr="handleReopenPr"
           @edit-pr="openPrEditModal"
+          @convert-to-draft="handleConvertToDraft"
+          @mark-ready="handleMarkReady"
         />
 
         <hr />
@@ -46,11 +48,14 @@
             :has-next-page="hasNextTimelinePage"
             :loading-more="loadingMoreTimeline"
             :resolving-review-thread-id="resolvingReviewThreadId"
+            :replying-review-thread-id="replyingReviewThreadId"
+            :review-thread-reply-result="reviewThreadReplyResult"
             @switch-issue="switchToIssue"
             @switch-pull-request="switchToPullRequest"
             @comment-created="addTimelineEvent"
             @load-more="loadMoreTimeline"
             @toggle-review-thread="toggleReviewThreadResolved"
+            @reply-to-review-thread="handleReplyToReviewThread"
           />
         </div>
       </div>
@@ -187,6 +192,15 @@ const props = defineProps<{
   reviewActive?: boolean;
 }>();
 
+type PullMergeMethod = 'merge' | 'squash' | 'rebase';
+
+/** Result of a review thread reply submission. */
+interface ReviewThreadReplyResult {
+  threadId: string;
+  success: boolean;
+  error?: string;
+}
+
 /** Pull Request Detail Label. */
 interface PullRequestDetailLabel {
   id?: number | string;
@@ -235,6 +249,8 @@ const submittingReviewerRequest = shallowRef(false);
 const reviewerRequestsAvailable = shallowRef<boolean | null>(null);
 const reviewerPickerError = shallowRef('');
 const resolvingReviewThreadId = shallowRef<string | null>(null);
+const replyingReviewThreadId = shallowRef<string | null>(null);
+const reviewThreadReplyResult = shallowRef<ReviewThreadReplyResult | null>(null);
 const reviewerCandidates = ref<PRReviewerCandidate[]>([]);
 const reviewerCandidateWarnings = ref<PRReviewerCandidateWarning[]>([]);
 const { t } = useI18n();
@@ -414,7 +430,7 @@ const handleSavePrEdit = async (payload: { title: string; body: string }) => {
   }
 };
 
-const handleMerge = async () => {
+const handleMerge = async (method: PullMergeMethod = 'merge') => {
   if (!repoInfo.value || !currentPullRequest.value?.number) return;
   if (!confirmDestructiveAction(`${t('prReview.mergePr')}?`)) return;
   try {
@@ -423,7 +439,7 @@ const handleMerge = async () => {
       `/api/repos/${owner}/${repo}/pulls/${currentPullRequest.value.number}`,
       {
         method: 'PATCH',
-        body: { merge: true, merge_method: 'merge' },
+        body: { merge: true, merge_method: method },
       }
     );
     if (!data) {
@@ -489,6 +505,73 @@ const handleReopenPr = async () => {
     }
   } catch (err) {
     detailError.value = getFetchErrorMessage(err, 'Failed to reopen pull request.');
+  }
+};
+
+const updatePullRequestDraft = async (draft: boolean) => {
+  if (!repoInfo.value || !currentPullRequest.value?.number) return;
+  try {
+    const { owner, repo } = repoInfo.value;
+    const data = await apiFetch<{ pullRequest?: Record<string, unknown> }>(
+      `/api/repos/${owner}/${repo}/pulls/${currentPullRequest.value.number}/draft`,
+      {
+        method: 'POST',
+        body: { draft },
+      }
+    );
+
+    currentPullRequest.value = {
+      ...currentPullRequest.value,
+      ...data?.pullRequest,
+      draft,
+    };
+
+    await fetchPullRequestDetails();
+    await fetchTimeline();
+  } catch (err) {
+    detailError.value = getFetchErrorMessage(err, t('prReview.updateDraftFailed'));
+  }
+};
+
+const handleConvertToDraft = () => {
+  void updatePullRequestDraft(true);
+};
+
+const handleMarkReady = () => {
+  void updatePullRequestDraft(false);
+};
+
+const handleReplyToReviewThread = async (payload: { threadId: string; body: string }) => {
+  if (!repoInfo.value || !currentPullRequest.value?.number || replyingReviewThreadId.value) {
+    return;
+  }
+
+  const body = payload.body.trim();
+  if (!body) return;
+
+  const { owner, repo } = repoInfo.value;
+  const pullNumber = currentPullRequest.value.number;
+  replyingReviewThreadId.value = payload.threadId;
+  reviewThreadReplyResult.value = null;
+
+  try {
+    await apiFetch(
+      `/api/repos/${owner}/${repo}/pulls/${pullNumber}/review-threads/${encodeURIComponent(payload.threadId)}/replies`,
+      {
+        method: 'POST',
+        body: { body },
+      }
+    );
+    reviewThreadReplyResult.value = { threadId: payload.threadId, success: true };
+    await fetchTimeline();
+  } catch (err) {
+    reviewThreadReplyResult.value = {
+      threadId: payload.threadId,
+      success: false,
+      error: getFetchErrorMessage(err, t('prReview.replyFailed')),
+    };
+  } finally {
+    replyingReviewThreadId.value = null;
   }
 };
 
@@ -800,6 +883,8 @@ const resetPullRequestScopedState = (pullRequest: any) => {
   loadingReviewerCandidates.value = false;
   submittingReviewerRequest.value = false;
   resolvingReviewThreadId.value = null;
+  replyingReviewThreadId.value = null;
+  reviewThreadReplyResult.value = null;
   reviewerRequestsAvailable.value = null;
   reviewerPickerError.value = '';
   reviewerCandidates.value = [];

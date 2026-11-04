@@ -106,14 +106,40 @@
             {{ t('prReview.eventRequestChanges') }}
           </button>
           <button
-            v-if="canMerge && mergeable !== false"
-            class="button is-small is-info is-light mr-2"
+            v-if="pullRequest?.draft"
+            class="button is-small is-light mr-2"
             type="button"
-            @click="emit('merge')"
+            @click="emit('mark-ready')"
           >
-            <GitMergeIcon :size="14" class="mr-1" />
-            {{ t('prReview.mergePr') }}
+            <GitPullRequestIcon :size="14" class="mr-1" />
+            {{ t('prReview.markReadyForReview') }}
           </button>
+          <button
+            v-else
+            class="button is-small is-light mr-2"
+            type="button"
+            @click="emit('convert-to-draft')"
+          >
+            <GitPullRequestDraftIcon :size="14" class="mr-1" />
+            {{ t('prReview.convertToDraft') }}
+          </button>
+          <div v-if="canMerge && mergeable !== false" class="pr-header__merge-controls mr-2">
+            <div class="select is-small">
+              <select v-model="mergeMethod" :aria-label="t('prReview.mergeMethod')">
+                <option value="merge">{{ t('prReview.mergeMethodMerge') }}</option>
+                <option value="squash">{{ t('prReview.mergeMethodSquash') }}</option>
+                <option value="rebase">{{ t('prReview.mergeMethodRebase') }}</option>
+              </select>
+            </div>
+            <button
+              class="button is-small is-info is-light"
+              type="button"
+              @click="emit('merge', mergeMethod)"
+            >
+              <GitMergeIcon :size="14" class="mr-1" />
+              {{ t('prReview.mergePr') }}
+            </button>
+          </div>
           <button
             class="button is-small is-danger is-light"
             type="button"
@@ -143,11 +169,12 @@ import {
   CheckIcon,
   GitMergeIcon,
   GitPullRequestClosedIcon,
+  GitPullRequestDraftIcon,
   GitPullRequestIcon,
   PencilIcon,
   XCircleIcon,
 } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { formatDurationFromNow } from '#imports';
@@ -173,6 +200,7 @@ interface PullRequestHeaderPullRequest {
   };
   created_at?: string;
   body?: string;
+  draft?: boolean;
 }
 
 const props = defineProps<{
@@ -187,11 +215,17 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'approve'): void;
   (e: 'request-changes'): void;
-  (e: 'merge'): void;
+  (e: 'merge', method: PullMergeMethod): void;
   (e: 'close-pr'): void;
   (e: 'reopen-pr'): void;
   (e: 'edit-pr'): void;
+  (e: 'convert-to-draft'): void;
+  (e: 'mark-ready'): void;
 }>();
+
+type PullMergeMethod = 'merge' | 'squash' | 'rebase';
+
+const mergeMethod = ref<PullMergeMethod>('merge');
 
 const displayState = computed(() => {
   if (props.pullRequest?.merged_at) return 'merged';
@@ -242,5 +276,12 @@ const typeStyle = {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.25rem;
+}
+
+.pr-header__merge-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
 }
 </style>

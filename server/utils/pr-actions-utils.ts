@@ -85,3 +85,21 @@ export function normalizePullUpdateAction(body: unknown): PullUpdateAction {
 
   return { type: 'update', ...update };
 }
+
+/**
+ * Validate and normalize a pull request draft transition body.
+ * Returns the requested draft state.
+ */
+export function normalizePullDraftAction(body: unknown): boolean {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    throwValidationError('draft must be a boolean');
+  }
+
+  const { draft } = body as { draft?: unknown };
+
+  if (typeof draft !== 'boolean') {
+    throwValidationError('draft must be a boolean');
+  }
+
+  return draft;
+}

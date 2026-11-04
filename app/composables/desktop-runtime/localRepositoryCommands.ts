@@ -86,6 +86,28 @@ export const popLocalRepositoryStash = async (repositoryUrl: string, index: numb
   );
 };
 
+/** Stage a single file or directory in a local repository. */
+export const stageLocalRepositoryPath = async (repositoryUrl: string, relativePath: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_stage_local_repository_path',
+    {
+      repositoryUrl,
+      relativePath,
+    }
+  );
+};
+
+/** Unstage a single file or directory in a local repository. */
+export const unstageLocalRepositoryPath = async (repositoryUrl: string, relativePath: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_unstage_local_repository_path',
+    {
+      repositoryUrl,
+      relativePath,
+    }
+  );
+};
+
 /** Fetch recent commit history for a repository. */
 export const getLocalRepositoryCommitHistory = async (repositoryUrl: string, limit = 6) => {
   return invokeDesktopCommand<DesktopLocalRepositoryCommitHistory>(

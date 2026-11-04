@@ -83,6 +83,30 @@ describe('issue update body normalization', () => {
     });
   });
 
+  test('normalizes assignees and milestone updates', () => {
+    expect(normalizeIssueUpdateBody({ assignees: [' octocat ', 'octocat', 'hubot'] })).toEqual({
+      assignees: ['octocat', 'hubot'],
+    });
+    expect(normalizeIssueUpdateBody({ assignees: [] })).toEqual({ assignees: [] });
+    expect(normalizeIssueUpdateBody({ milestone: 12 })).toEqual({ milestone: 12 });
+    expect(normalizeIssueUpdateBody({ milestone: null })).toEqual({ milestone: null });
+  });
+
+  test('rejects invalid assignees and milestone values', () => {
+    for (const assignees of ['octocat', [42], ['ok', ''], ['ok', null]]) {
+      expect(captureError(() => normalizeIssueUpdateBody({ assignees }))).toMatchObject({
+        statusCode: 400,
+      });
+    }
+
+    for (const milestone of [0, -1, 1.5, '12', false]) {
+      expect(captureError(() => normalizeIssueUpdateBody({ milestone }))).toMatchObject({
+        statusCode: 400,
+        statusMessage: 'milestone must be a positive integer or null',
+      });
+    }
+  });
+
   test('allows an empty body to clear the description', () => {
     expect(normalizeIssueUpdateBody({ body: '' })).toEqual({ body: '' });
     expect(normalizeIssueUpdateBody({ body: '', state: 'open' })).toEqual({

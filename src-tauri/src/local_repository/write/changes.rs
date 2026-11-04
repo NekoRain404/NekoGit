@@ -1,9 +1,10 @@
 //! Changes for Local git repository operations / Write git operations.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::local_repository::{
     parse::{git_command_failure_details, normalize_local_commit_message},
+    paths::normalize_repository_relative_path,
     read::local_repository_git_status,
     types::{DesktopLocalRepositoryGitStatus, MAX_LOCAL_REPOSITORY_STASH_INDEX},
 };
@@ -60,6 +61,128 @@ pub(crate) fn commit_local_repository_changes(
         let details = git_command_failure_details(&output);
         return Err(format!("git commit failed: {details}"));
     }
+
+    local_repository_git_status(app_data_dir, &git_status.repository_url)
+}
+
+/// Normalizes and validates a repository-relative path used by file-level actions.
+fn normalize_changed_file_path(relative_path: &str) -> Result<PathBuf, String> {
+    let normalized_path = normalize_repository_relative_path(relative_path)?;
+    if normalized_path.as_os_str().is_empty() {
+        return Err("repository path must not be empty".to_owned());
+    }
+
+    Ok(normalized_path)
+}
+
+/// Rejects a path that currently has unresolved merge conflicts.
+fn ensure_file_has_no_conflicts(
+    repository_path: &str,
+    relative_path: &Path,
+    action: &str,
+) -> Result<(), String> {
+    let output = git_command(repository_path)
+        .args(["ls-files", "-u", "--"])
+        .arg(relative_path)
+        .output()
+        .map_err(|error| format!("failed to start git ls-files: {error}"))?;
+
+    if !output.status.success() {
+        let details = git_command_failure_details(&output);
+        return Err(format!("git ls-files failed: {details}"));
+    }
+
+    if !output.stdout.is_empty() {
+        return Err(format!("cannot {action} a file with unresolved conflicts"));
+    }
+
+    Ok(())
+}
+
+fn git_has_head(repository_path: &str) -> Result<bool, String> {
+    let output = git_command(repository_path)
+        .args(["rev-parse", "--verify", "--quiet", "HEAD"])
+        .output()
+        .map_err(|error| format!("failed to start git rev-parse: {error}"))?;
+
+    Ok(output.status.success())
+}
+
+fn is_initial_commit_restore_failure(details: &str) -> bool {
+    let details = details.to_ascii_lowercase();
+    details.contains("could not resolve head")
+        || details.contains("ambiguous argument 'head'")
+        || details.contains("bad revision 'head'")
+        || details.contains("unknown revision or path not in the working tree")
+}
+
+/// Removes a path from the index, falling back to `git rm --cached` before the first commit.
+fn unstage_repository_path(repository_path: &str, relative_path: &Path) -> Result<(), String> {
+    if git_has_head(repository_path)? {
+        let output = git_command(repository_path)
+            .args(["restore", "--staged", "--"])
+            .arg(relative_path)
+            .output()
+            .map_err(|error| format!("failed to start git restore --staged: {error}"))?;
+
+        if output.status.success() {
+            return Ok(());
+        }
+
+        let details = git_command_failure_details(&output);
+        if !is_initial_commit_restore_failure(&details) {
+            return Err(format!("git restore --staged failed: {details}"));
+        }
+    }
+
+    let output = git_command(repository_path)
+        .args(["rm", "--cached", "--ignore-unmatch", "--"])
+        .arg(relative_path)
+        .output()
+        .map_err(|error| format!("failed to start git rm --cached: {error}"))?;
+
+    if !output.status.success() {
+        let details = git_command_failure_details(&output);
+        return Err(format!("git rm --cached failed: {details}"));
+    }
+
+    Ok(())
+}
+
+/// Stages a single repository-relative path and returns the updated git status.
+pub(crate) fn stage_local_repository_path(
+    app_data_dir: &Path,
+    repository_url: &str,
+    relative_path: &str,
+) -> Result<DesktopLocalRepositoryGitStatus, String> {
+    let relative_path = normalize_changed_file_path(relative_path)?;
+    let git_status = local_repository_git_status(app_data_dir, repository_url)?;
+    ensure_file_has_no_conflicts(&git_status.repository_path, &relative_path, "stage")?;
+
+    let output = git_command(&git_status.repository_path)
+        .args(["add", "--"])
+        .arg(&relative_path)
+        .output()
+        .map_err(|error| format!("failed to start git add: {error}"))?;
+
+    if !output.status.success() {
+        let details = git_command_failure_details(&output);
+        return Err(format!("git add failed: {details}"));
+    }
+
+    local_repository_git_status(app_data_dir, &git_status.repository_url)
+}
+
+/// Unstages a single repository-relative path and returns the updated git status.
+pub(crate) fn unstage_local_repository_path(
+    app_data_dir: &Path,
+    repository_url: &str,
+    relative_path: &str,
+) -> Result<DesktopLocalRepositoryGitStatus, String> {
+    let relative_path = normalize_changed_file_path(relative_path)?;
+    let git_status = local_repository_git_status(app_data_dir, repository_url)?;
+    ensure_file_has_no_conflicts(&git_status.repository_path, &relative_path, "unstage")?;
+    unstage_repository_path(&git_status.repository_path, &relative_path)?;
 
     local_repository_git_status(app_data_dir, &git_status.repository_url)
 }
@@ -168,7 +291,7 @@ mod tests {
         );
     }
 
-    fn init_repository_with_stash(base: &Path) -> PathBuf {
+    fn init_repository_without_commit(base: &Path) -> PathBuf {
         let repository_path = base.join("repo");
         fs::create_dir_all(&repository_path).unwrap();
         git(&repository_path, &["init", "-q", "-b", "main"]);
@@ -177,9 +300,19 @@ mod tests {
             &repository_path,
             &["config", "user.email", "nekogit@example.com"],
         );
+        repository_path
+    }
+
+    fn init_repository(base: &Path) -> PathBuf {
+        let repository_path = init_repository_without_commit(base);
         fs::write(repository_path.join("README.md"), "hello\n").unwrap();
         git(&repository_path, &["add", "README.md"]);
         git(&repository_path, &["commit", "-q", "-m", "initial"]);
+        repository_path
+    }
+
+    fn init_repository_with_stash(base: &Path) -> PathBuf {
+        let repository_path = init_repository(base);
         fs::write(repository_path.join("README.md"), "changed\n").unwrap();
         git(
             &repository_path,
@@ -194,6 +327,196 @@ mod tests {
         );
         remember_local_repository(base, REPOSITORY_URL, &repository_path).unwrap();
         repository_path
+    }
+
+    fn init_conflicted_repository(base: &Path) -> PathBuf {
+        let repository_path = init_repository(base);
+        git(&repository_path, &["checkout", "-q", "-b", "feature"]);
+        fs::write(repository_path.join("README.md"), "feature\n").unwrap();
+        git(&repository_path, &["add", "README.md"]);
+        git(&repository_path, &["commit", "-q", "-m", "feature"]);
+        git(&repository_path, &["checkout", "-q", "main"]);
+        fs::write(repository_path.join("README.md"), "main\n").unwrap();
+        git(&repository_path, &["add", "README.md"]);
+        git(&repository_path, &["commit", "-q", "-m", "main"]);
+        let output = Command::new("git")
+            .arg("-C")
+            .arg(&repository_path)
+            .args(["merge", "feature"])
+            .output()
+            .unwrap();
+        assert!(
+            !output.status.success(),
+            "merge should produce a conflict: {}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        repository_path
+    }
+
+    fn git_output(repository_path: &Path, args: &[&str]) -> String {
+        let output = Command::new("git")
+            .arg("-C")
+            .arg(repository_path)
+            .args(args)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "git {:?} failed: {}",
+            args,
+            String::from_utf8_lossy(&output.stderr)
+        );
+        String::from_utf8_lossy(&output.stdout).into_owned()
+    }
+
+    #[test]
+    fn stages_an_untracked_file() {
+        let base = test_base("stage-untracked");
+        let repository_path = init_repository(&base);
+        remember_local_repository(&base, REPOSITORY_URL, &repository_path).unwrap();
+        fs::write(repository_path.join("new.txt"), "new\n").unwrap();
+
+        let status = stage_local_repository_path(&base, REPOSITORY_URL, "new.txt").unwrap();
+
+        assert!(!status.clean);
+        assert_eq!(status.staged, 1);
+        assert_eq!(status.untracked, 0);
+        assert_eq!(
+            git_output(&repository_path, &["diff", "--cached", "--name-only"]).trim(),
+            "new.txt"
+        );
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn unstages_a_staged_file() {
+        let base = test_base("unstage");
+        let repository_path = init_repository(&base);
+        remember_local_repository(&base, REPOSITORY_URL, &repository_path).unwrap();
+        fs::write(repository_path.join("new.txt"), "new\n").unwrap();
+        git(&repository_path, &["add", "new.txt"]);
+
+        let status = unstage_local_repository_path(&base, REPOSITORY_URL, "new.txt").unwrap();
+
+        assert_eq!(status.staged, 0);
+        assert_eq!(status.untracked, 1);
+        assert!(
+            git_output(&repository_path, &["diff", "--cached", "--name-only"])
+                .trim()
+                .is_empty()
+        );
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn unstages_a_staged_file_before_the_first_commit() {
+        let base = test_base("unstage-initial");
+        let repository_path = init_repository_without_commit(&base);
+        remember_local_repository(&base, REPOSITORY_URL, &repository_path).unwrap();
+        fs::write(repository_path.join("first.txt"), "first\n").unwrap();
+        git(&repository_path, &["add", "first.txt"]);
+
+        let status = unstage_local_repository_path(&base, REPOSITORY_URL, "first.txt").unwrap();
+
+        assert_eq!(status.staged, 0);
+        assert_eq!(status.untracked, 1);
+        assert!(git_output(&repository_path, &["ls-files"])
+            .trim()
+            .is_empty());
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn stages_a_modified_file() {
+        let base = test_base("stage-modified");
+        let repository_path = init_repository(&base);
+        remember_local_repository(&base, REPOSITORY_URL, &repository_path).unwrap();
+        fs::write(repository_path.join("README.md"), "changed\n").unwrap();
+
+        let status = stage_local_repository_path(&base, REPOSITORY_URL, "README.md").unwrap();
+
+        assert_eq!(status.staged, 1);
+        assert_eq!(status.unstaged, 0);
+        assert_eq!(
+            git_output(&repository_path, &["diff", "--cached", "--name-only"]).trim(),
+            "README.md"
+        );
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn stages_a_deleted_file() {
+        let base = test_base("stage-deleted");
+        let repository_path = init_repository(&base);
+        remember_local_repository(&base, REPOSITORY_URL, &repository_path).unwrap();
+        fs::remove_file(repository_path.join("README.md")).unwrap();
+
+        let status = stage_local_repository_path(&base, REPOSITORY_URL, "README.md").unwrap();
+
+        assert_eq!(status.staged, 1);
+        assert_eq!(status.unstaged, 0);
+        assert!(
+            git_output(&repository_path, &["diff", "--cached", "--name-status"])
+                .lines()
+                .any(|line| line == "D\tREADME.md")
+        );
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn unstages_only_the_requested_path() {
+        let base = test_base("unstage-scoped");
+        let repository_path = init_repository(&base);
+        remember_local_repository(&base, REPOSITORY_URL, &repository_path).unwrap();
+        fs::write(repository_path.join("one.txt"), "one\n").unwrap();
+        fs::write(repository_path.join("two.txt"), "two\n").unwrap();
+        git(&repository_path, &["add", "one.txt", "two.txt"]);
+
+        let status = unstage_local_repository_path(&base, REPOSITORY_URL, "one.txt").unwrap();
+
+        assert_eq!(status.staged, 1);
+        assert_eq!(status.untracked, 1);
+        assert_eq!(
+            git_output(&repository_path, &["diff", "--cached", "--name-only"]).trim(),
+            "two.txt"
+        );
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn rejects_empty_and_unsafe_paths() {
+        let base = test_base("paths");
+        let repository_path = init_repository(&base);
+        remember_local_repository(&base, REPOSITORY_URL, &repository_path).unwrap();
+
+        let empty = stage_local_repository_path(&base, REPOSITORY_URL, "   ").unwrap_err();
+        assert!(empty.contains("must not be empty"));
+
+        let parent =
+            unstage_local_repository_path(&base, REPOSITORY_URL, "../README.md").unwrap_err();
+        assert!(parent.contains("must stay inside"));
+
+        let control = stage_local_repository_path(&base, REPOSITORY_URL, "bad\nname").unwrap_err();
+        assert!(control.contains("control characters"));
+
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn rejects_staging_and_unstaging_conflicted_files() {
+        let base = test_base("conflict");
+        let repository_path = init_conflicted_repository(&base);
+        remember_local_repository(&base, REPOSITORY_URL, &repository_path).unwrap();
+
+        let stage_error =
+            stage_local_repository_path(&base, REPOSITORY_URL, "README.md").unwrap_err();
+        assert!(stage_error.contains("unresolved conflicts"));
+
+        let unstage_error =
+            unstage_local_repository_path(&base, REPOSITORY_URL, "README.md").unwrap_err();
+        assert!(unstage_error.contains("unresolved conflicts"));
+
+        let _ = fs::remove_dir_all(&base);
     }
 
     #[test]

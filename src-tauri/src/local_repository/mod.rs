@@ -27,6 +27,6 @@ pub(crate) use write::{
     checkout_remote_local_repository_branch, clone_github_repository,
     commit_local_repository_changes, create_local_repository_branch,
     delete_local_repository_branch, fetch_local_repository, pop_local_repository_stash,
-    pull_local_repository, push_local_repository, stash_local_repository_changes,
-    switch_local_repository_branch,
+    pull_local_repository, push_local_repository, stage_local_repository_path,
+    stash_local_repository_changes, switch_local_repository_branch, unstage_local_repository_path,
 };

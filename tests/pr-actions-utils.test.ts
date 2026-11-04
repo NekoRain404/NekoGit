@@ -1,7 +1,10 @@
 /// Unit tests for PR pull update action normalization.
 import { describe, expect, test } from 'vitest';
 
-import { normalizePullUpdateAction } from '../server/utils/pr-actions-utils';
+import {
+  normalizePullDraftAction,
+  normalizePullUpdateAction,
+} from '../server/utils/pr-actions-utils';
 
 function captureError(callback: () => unknown) {
   try {
@@ -111,5 +114,21 @@ describe('PR pull update action normalization', () => {
       type: 'merge',
       mergeMethod: 'merge',
     });
+  });
+});
+
+describe('PR draft transition normalization', () => {
+  test('normalizes draft booleans', () => {
+    expect(normalizePullDraftAction({ draft: true })).toBe(true);
+    expect(normalizePullDraftAction({ draft: false })).toBe(false);
+  });
+
+  test('rejects missing and non-boolean draft values', () => {
+    for (const body of [undefined, null, {}, { draft: 'true' }, { draft: 1 }, []]) {
+      expect(captureError(() => normalizePullDraftAction(body))).toMatchObject({
+        statusCode: 400,
+        statusMessage: 'draft must be a boolean',
+      });
+    }
   });
 });

@@ -53,6 +53,8 @@
     "allow-desktop-set-unread-count",
     "allow-desktop-set-window-title",
     "allow-desktop-show-window",
-    "allow-desktop-switch-local-repository-branch"
+    "allow-desktop-switch-local-repository-branch",
+    "allow-desktop-stage-local-repository-path",
+    "allow-desktop-unstage-local-repository-path"
   ]
 }

@@ -15,7 +15,8 @@ pub(crate) use branches::{
 };
 pub(crate) use changes::{
     desktop_commit_local_repository_changes, desktop_pop_local_repository_stash,
-    desktop_stash_local_repository_changes,
+    desktop_stage_local_repository_path, desktop_stash_local_repository_changes,
+    desktop_unstage_local_repository_path,
 };
 pub(crate) use clone::desktop_clone_repository;
 pub(crate) use open::{

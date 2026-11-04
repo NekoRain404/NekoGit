@@ -48,8 +48,10 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     pullLocalRepository,
     pushLocalRepository,
     rememberLocalRepository,
+    stageLocalRepositoryPath,
     stashLocalRepositoryChanges,
     switchLocalRepositoryBranch,
+    unstageLocalRepositoryPath,
   } = useDesktopRuntime();
   const { writeClipboardText } = useClipboardWriter();
 
@@ -60,6 +62,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopBranchToDelete,
     desktopBranchesError,
     desktopBranchesLoading,
+    desktopChangedFileActionError,
     desktopChangedFilesError,
     desktopChangedFilesLoading,
     desktopCheckoutRemoteBranchLoading,
@@ -83,11 +86,13 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopNewBranchName,
     desktopRemoteBranchName,
     desktopSelectedChangedFilePath,
+    desktopStagingChangedFilePaths,
     desktopStashPoppingIndex,
     desktopStashesError,
     desktopStashesLoading,
     desktopStatusError,
     desktopStatusLoading,
+    desktopUnstagingChangedFilePaths,
     associatedPullRequest,
     prLoading,
     createPullRequestTitle,
@@ -427,6 +432,58 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     }
   };
 
+  const runDesktopChangedFileAction = async (
+    action: 'stage' | 'unstage',
+    file: DesktopLocalRepositoryChangedFile,
+    command: (
+      repositoryUrl: string,
+      relativePath: string
+    ) => Promise<DesktopLocalRepositoryGitStatus>
+  ) => {
+    const repository = desktopRepository.value;
+    if (
+      !repository ||
+      !desktopLocalRepositoryStatus.value?.exists ||
+      file.conflicted ||
+      desktopStagingChangedFilePaths.value[file.path] ||
+      desktopUnstagingChangedFilePaths.value[file.path]
+    ) {
+      return;
+    }
+
+    const loadingPaths =
+      action === 'stage' ? desktopStagingChangedFilePaths : desktopUnstagingChangedFilePaths;
+    loadingPaths.value = { ...loadingPaths.value, [file.path]: true };
+    desktopChangedFileActionError.value = '';
+    desktopGitStatusError.value = '';
+
+    try {
+      desktopLocalRepositoryGitStatus.value = await command(repository.cloneUrl, file.path);
+      await refreshDesktopLocalRepositoryGitStatus();
+      await refreshDesktopLocalRepositoryChangedFiles();
+      await refreshDesktopLocalRepositoryCommitHistory();
+      await refreshAssociatedPullRequest();
+    } catch (error) {
+      desktopChangedFileActionError.value = getDesktopActionErrorMessage(
+        error,
+        action === 'stage' ? 'Failed to stage local file.' : 'Failed to unstage local file.'
+      );
+      await showDesktopMessage(desktopChangedFileActionError.value, 'error');
+    } finally {
+      const remainingPaths = { ...loadingPaths.value };
+      delete remainingPaths[file.path];
+      loadingPaths.value = remainingPaths;
+    }
+  };
+
+  const stageDesktopChangedFile = async (file: DesktopLocalRepositoryChangedFile) => {
+    await runDesktopChangedFileAction('stage', file, stageLocalRepositoryPath);
+  };
+
+  const unstageDesktopChangedFile = async (file: DesktopLocalRepositoryChangedFile) => {
+    await runDesktopChangedFileAction('unstage', file, unstageLocalRepositoryPath);
+  };
+
   const deleteDesktopLocalRepositoryBranch = async () => {
     const repository = desktopRepository.value;
     const branchName = desktopBranchToDelete.value;
@@ -711,6 +768,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopBranchesLoading,
     desktopCanCommitChanges,
     desktopCanStashChanges,
+    desktopChangedFileActionError,
     desktopChangedFileStatusLabels,
     desktopChangedFiles,
     desktopChangedFilesError,
@@ -750,8 +808,10 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopNewBranchName,
     desktopRemoteBranchName,
     desktopStashPoppingIndex,
+    desktopStagingChangedFilePaths,
     desktopStashesError,
     desktopStashesLoading,
+    desktopUnstagingChangedFilePaths,
     desktopRepository,
     associatedPullRequest,
     prLoading,
@@ -775,8 +835,10 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     previewDesktopChangedFileDiff,
     pullDesktopLocalRepository,
     pushDesktopLocalRepository,
+    stageDesktopChangedFile,
     stashDesktopLocalRepositoryChanges,
     switchDesktopLocalRepositoryBranch,
+    unstageDesktopChangedFile,
   };
 }
 

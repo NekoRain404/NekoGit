@@ -38,6 +38,7 @@ export type LocalRepositoryCopy = {
   gitCommitMessage: string;
   gitCommitting: string;
   gitConflicted: string;
+  gitConflictActionUnavailable: string;
   gitCheckoutRemoteBranch: string;
   gitCheckingOutRemoteBranch: string;
   gitCopied: string;
@@ -61,6 +62,8 @@ export type LocalRepositoryCopy = {
   gitPushing: string;
   gitRenamed: string;
   gitStaged: string;
+  gitStage: string;
+  gitStaging: string;
   gitStash: string;
   gitStashes: string;
   gitStashesUnavailable: string;
@@ -70,6 +73,8 @@ export type LocalRepositoryCopy = {
   gitSelectBranchToDelete: string;
   gitSwitchBranch: string;
   gitUnstaged: string;
+  gitUnstage: string;
+  gitUnstaging: string;
   gitUntracked: string;
   localChecking: string;
   localChangesUnavailable: string;

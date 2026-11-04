@@ -7,9 +7,12 @@ export interface IssueUpdatePayload {
   title?: string;
   body?: string;
   state?: IssueUpdateState;
+  assignees?: string[];
+  milestone?: number | null;
 }
 
-const allowedFields = new Set(['title', 'body', 'state']);
+const allowedFields = new Set(['title', 'body', 'state', 'assignees', 'milestone']);
+const MAX_ASSIGNEES = 10;
 
 function throwValidationError(statusMessage: string): never {
   if (typeof createError === 'function') {
@@ -68,6 +71,43 @@ export function normalizeIssueUpdateBody(body: unknown): IssueUpdatePayload {
     }
 
     payload.state = record.state;
+  }
+
+  if ('assignees' in record) {
+    if (!Array.isArray(record.assignees)) {
+      throwValidationError('assignees must be an array');
+    }
+
+    const assignees: string[] = [];
+    for (const assignee of record.assignees) {
+      if (typeof assignee !== 'string' || !assignee.trim()) {
+        throwValidationError('assignees must contain non-empty strings');
+      }
+      const login = assignee.trim();
+      if (!assignees.includes(login)) {
+        assignees.push(login);
+      }
+    }
+
+    if (assignees.length > MAX_ASSIGNEES) {
+      throwValidationError(`assignees must contain at most ${MAX_ASSIGNEES} logins`);
+    }
+
+    payload.assignees = assignees;
+  }
+
+  if ('milestone' in record) {
+    if (record.milestone !== null) {
+      if (
+        typeof record.milestone !== 'number' ||
+        !Number.isSafeInteger(record.milestone) ||
+        record.milestone < 1
+      ) {
+        throwValidationError('milestone must be a positive integer or null');
+      }
+    }
+
+    payload.milestone = record.milestone as number | null;
   }
 
   if (Object.keys(payload).length === 0) {

@@ -19,7 +19,8 @@ pub(crate) use local_repository::{
     desktop_open_local_repository_path, desktop_open_local_repository_terminal,
     desktop_pop_local_repository_stash, desktop_pull_local_repository,
     desktop_push_local_repository, desktop_remember_local_repository,
-    desktop_stash_local_repository_changes, desktop_switch_local_repository_branch,
+    desktop_stage_local_repository_path, desktop_stash_local_repository_changes,
+    desktop_switch_local_repository_branch, desktop_unstage_local_repository_path,
 };
 pub(crate) use runtime::{
     desktop_autostart_status, desktop_diagnostics_report, desktop_open_app_data,

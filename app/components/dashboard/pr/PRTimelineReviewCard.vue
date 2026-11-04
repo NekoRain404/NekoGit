@@ -193,6 +193,51 @@
                     {{ t('prReview.noReviewCommentBody') }}
                   </p>
                 </div>
+                <div v-if="comment.threadId" class="review-item__reply">
+                  <button
+                    v-if="!isReplyComposerOpen(comment)"
+                    class="review-item__reply-trigger"
+                    type="button"
+                    @click="openReplyComposer(comment)"
+                  >
+                    <ReplyIcon :size="14" aria-hidden="true" />
+                    {{ t('prReview.reply') }}
+                  </button>
+                  <div v-else class="review-item__reply-composer">
+                    <textarea
+                      v-model="replyBody"
+                      class="review-item__reply-input"
+                      rows="2"
+                      :placeholder="t('prReview.replyPlaceholder')"
+                      :aria-label="t('prReview.replyPlaceholder')"
+                      :disabled="isReplySubmitting(comment)"
+                    />
+                    <p v-if="replyError" class="review-item__reply-error">
+                      {{ replyError }}
+                    </p>
+                    <div class="review-item__reply-actions">
+                      <button
+                        class="button is-small is-info is-light"
+                        type="button"
+                        :disabled="!trimmedReplyBody || isReplySubmitting(comment)"
+                        @click="submitReply(comment)"
+                      >
+                        <SendIcon :size="13" class="mr-1" aria-hidden="true" />
+                        {{
+                          isReplySubmitting(comment) ? t('prReview.sending') : t('prReview.send')
+                        }}
+                      </button>
+                      <button
+                        class="button is-small is-light"
+                        type="button"
+                        :disabled="isReplySubmitting(comment)"
+                        @click="closeReplyComposer()"
+                      >
+                        {{ t('prReview.cancel') }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </article>
@@ -209,10 +254,12 @@ import {
   CircleIcon,
   ClockIcon,
   MessageSquareIcon,
+  ReplyIcon,
+  SendIcon,
   SlashIcon,
   XIcon,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import PRTimelineReviewDiff from '~/components/dashboard/pr/PRTimelineReviewDiff.vue';
@@ -223,15 +270,25 @@ import { parsePRReviewPatch } from '~/composables/usePRReview';
 import type { PRTimelineItem, TimelineReviewComment } from '~/composables/usePRTimelineEvents';
 import formatDurationFromNow from '~/utils/formatDurationFromNow';
 
+/** Result of a review thread reply submission. */
+interface ReviewThreadReplyResult {
+  threadId: string;
+  success: boolean;
+  error?: string;
+}
+
 const props = defineProps<{
   item: PRTimelineItem;
   repoOwner: string;
   repoName: string;
   resolvingReviewThreadId?: string | null;
+  replyingReviewThreadId?: string | null;
+  reviewThreadReplyResult?: ReviewThreadReplyResult | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'toggle-review-thread', payload: { threadId: string; resolved: boolean }): void;
+  (e: 'reply-to-review-thread', payload: { threadId: string; body: string }): void;
 }>();
 
 const { t, locale } = useI18n();
@@ -376,6 +433,63 @@ const toggleReviewThread = (comment: TimelineReviewComment) => {
     resolved: !comment.isResolved,
   });
 };
+
+const activeReplyThreadId = ref<string | null>(null);
+const replyBody = ref('');
+const replyError = ref('');
+const trimmedReplyBody = computed(() => replyBody.value.trim());
+
+const isReplyComposerOpen = (comment: TimelineReviewComment) =>
+  Boolean(comment.threadId && comment.threadId === activeReplyThreadId.value);
+
+const isReplySubmitting = (comment: TimelineReviewComment) =>
+  Boolean(comment.threadId && comment.threadId === props.replyingReviewThreadId);
+
+const openReplyComposer = (comment: TimelineReviewComment) => {
+  if (!comment.threadId || isReplySubmitting(comment)) {
+    return;
+  }
+
+  activeReplyThreadId.value = comment.threadId;
+  replyBody.value = '';
+  replyError.value = '';
+};
+
+const closeReplyComposer = (force = false) => {
+  if (!force && props.replyingReviewThreadId === activeReplyThreadId.value) {
+    return;
+  }
+
+  activeReplyThreadId.value = null;
+  replyBody.value = '';
+  replyError.value = '';
+};
+
+const submitReply = (comment: TimelineReviewComment) => {
+  const body = trimmedReplyBody.value;
+  if (!comment.threadId || !body || isReplySubmitting(comment)) {
+    return;
+  }
+
+  replyError.value = '';
+  emit('reply-to-review-thread', { threadId: comment.threadId, body });
+};
+
+watch(
+  () => props.reviewThreadReplyResult,
+  (result) => {
+    if (!result || result.threadId !== activeReplyThreadId.value) {
+      return;
+    }
+
+    if (result.success) {
+      closeReplyComposer(true);
+      return;
+    }
+
+    replyError.value = result.error || t('prReview.replyFailed');
+  }
+);
 
 const splitSuggestionBody = (body: string): CommentBodyPart[] => {
   const parts: CommentBodyPart[] = [];
@@ -1001,5 +1115,75 @@ html.dark .review-item__thread-toggle {
 .review-item__dismissal-message :deep(*:last-child),
 .review-item__comment-body :deep(*:last-child) {
   margin-bottom: 0;
+}
+
+.review-item__reply {
+  margin-top: 0.75rem;
+}
+
+.review-item__reply-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--nekogit-info);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.review-item__reply-trigger:hover {
+  text-decoration: underline;
+}
+
+.review-item__reply-trigger:focus-visible {
+  outline: 2px solid var(--nekogit-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.review-item__reply-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.review-item__reply-input {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--nekogit-border-strong);
+  border-radius: 6px;
+  background: var(--nekogit-surface);
+  color: var(--nekogit-text-strong);
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.review-item__reply-input:focus {
+  outline: 2px solid var(--nekogit-focus-ring);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.review-item__reply-input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.review-item__reply-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.review-item__reply-error {
+  margin: 0;
+  color: var(--nekogit-danger);
+  font-size: 0.75rem;
 }
 </style>

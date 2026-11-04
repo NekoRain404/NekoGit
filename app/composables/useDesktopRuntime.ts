@@ -38,8 +38,10 @@ import {
   pullLocalRepository,
   pushLocalRepository,
   rememberLocalRepository,
+  stageLocalRepositoryPath,
   stashLocalRepositoryChanges,
   switchLocalRepositoryBranch,
+  unstageLocalRepositoryPath,
 } from './desktop-runtime/localRepositoryCommands';
 import type {
   DesktopAutostartStatus,
@@ -184,6 +186,8 @@ export function useDesktopRuntime() {
     commitLocalRepositoryChanges,
     stashLocalRepositoryChanges,
     popLocalRepositoryStash,
+    stageLocalRepositoryPath,
+    unstageLocalRepositoryPath,
     openLocalRepository,
     openLocalRepositoryTerminal,
     openLocalRepositoryPath,

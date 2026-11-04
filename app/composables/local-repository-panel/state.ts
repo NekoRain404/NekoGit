@@ -48,6 +48,9 @@ export const useLocalRepositoryPanelState = () => {
   const desktopCommitHistoryError = ref('');
   const desktopChangedFilesLoading = ref(false);
   const desktopChangedFilesError = ref('');
+  const desktopChangedFileActionError = ref('');
+  const desktopStagingChangedFilePaths = ref<Record<string, boolean>>({});
+  const desktopUnstagingChangedFilePaths = ref<Record<string, boolean>>({});
   const desktopStashesLoading = ref(false);
   const desktopStashesError = ref('');
   const desktopStashPoppingIndex = ref<number | null>(null);
@@ -118,6 +121,9 @@ export const useLocalRepositoryPanelState = () => {
     desktopLocalRepositoryChangedFiles.value = null;
     desktopChangedFilesLoading.value = false;
     desktopChangedFilesError.value = '';
+    desktopChangedFileActionError.value = '';
+    desktopStagingChangedFilePaths.value = {};
+    desktopUnstagingChangedFilePaths.value = {};
     resetDesktopLocalRepositoryFileDiff();
   };
 
@@ -135,6 +141,7 @@ export const useLocalRepositoryPanelState = () => {
     desktopBranchToDelete,
     desktopBranchesError,
     desktopBranchesLoading,
+    desktopChangedFileActionError,
     desktopChangedFilesError,
     desktopChangedFilesLoading,
     desktopCheckoutRemoteBranchLoading,
@@ -163,11 +170,13 @@ export const useLocalRepositoryPanelState = () => {
     desktopNewBranchName,
     desktopRemoteBranchName,
     desktopSelectedChangedFilePath,
+    desktopStagingChangedFilePaths,
     desktopStashPoppingIndex,
     desktopStashesError,
     desktopStashesLoading,
     desktopStatusError,
     desktopStatusLoading,
+    desktopUnstagingChangedFilePaths,
     requestSerials,
     resetDesktopLocalRepositoryBranches,
     resetDesktopLocalRepositoryChangedFiles,

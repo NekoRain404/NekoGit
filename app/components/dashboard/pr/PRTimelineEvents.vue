@@ -27,7 +27,10 @@
           :repo-owner="repoOwner"
           :repo-name="repoName"
           :resolving-review-thread-id="resolvingReviewThreadId"
+          :replying-review-thread-id="replyingReviewThreadId"
+          :review-thread-reply-result="reviewThreadReplyResult"
           @toggle-review-thread="emit('toggle-review-thread', $event.threadId, $event.resolved)"
+          @reply-to-review-thread="emit('reply-to-review-thread', $event)"
         />
 
         <PRTimelineCommitCard
@@ -101,6 +104,13 @@ import TimelineEventActorRow from '~/components/dashboard/timeline/TimelineEvent
 import LoadingIcon from '~/components/ui/LoadingIcon.vue';
 import { usePRTimelineEvents, type PRTimelineItem } from '~/composables/usePRTimelineEvents';
 
+/** Result of a review thread reply submission. */
+interface ReviewThreadReplyResult {
+  threadId: string;
+  success: boolean;
+  error?: string;
+}
+
 const props = defineProps<{
   timeline: PRTimelineItem[];
   loading: boolean;
@@ -110,6 +120,8 @@ const props = defineProps<{
   hasNextPage?: boolean;
   loadingMore?: boolean;
   resolvingReviewThreadId?: string | null;
+  replyingReviewThreadId?: string | null;
+  reviewThreadReplyResult?: ReviewThreadReplyResult | null;
 }>();
 
 const emit = defineEmits<{
@@ -118,6 +130,7 @@ const emit = defineEmits<{
   (e: 'comment-created', item: PRTimelineItem): void;
   (e: 'load-more'): void;
   (e: 'toggle-review-thread', threadId: string, resolved: boolean): void;
+  (e: 'reply-to-review-thread', payload: { threadId: string; body: string }): void;
 }>();
 
 const { t } = useI18n();
