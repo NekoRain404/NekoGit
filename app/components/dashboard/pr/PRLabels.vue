@@ -99,6 +99,13 @@
                   {{ t('issueDetail.noLabelsAvailable') }}
                 </div>
               </div>
+
+              <LabelCreateForm
+                v-if="repoInfo"
+                :owner="repoInfo.owner"
+                :repo="repoInfo.repo"
+                @created="handleLabelCreated"
+              />
             </div>
 
             <div class="label-editor-footer">
@@ -133,6 +140,7 @@ import {
 import { onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import LabelCreateForm from '~/components/dashboard/issue/LabelCreateForm.vue';
 import getFetchErrorMessage from '~/utils/getFetchErrorMessage';
 import getTextColorFromBackground from '~/utils/getTextColorFromBackground';
 
@@ -234,6 +242,15 @@ const fetchRepoLabels = async () => {
     console.error('Error fetching repository labels:', err);
   } finally {
     loadingLabels.value = false;
+  }
+};
+
+const handleLabelCreated = (label: DashboardLabel) => {
+  if (!repoLabels.value.some((existing) => existing.name === label.name)) {
+    repoLabels.value = [...repoLabels.value, label];
+  }
+  if (!selectedLabels.value.includes(label.name)) {
+    selectedLabels.value = [...selectedLabels.value, label.name];
   }
 };
 

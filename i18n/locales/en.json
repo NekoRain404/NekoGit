@@ -95,6 +95,14 @@
     "personalModeLocked": "Locked"
   },
   "issueDetail": {
+    "createLabel": "Create label",
+    "cancelCreateLabel": "Cancel",
+    "labelName": "Label name",
+    "labelColor": "Label color",
+    "labelDescription": "Description (optional)",
+    "labelNameRequired": "Label name is required",
+    "creatingLabel": "Creating...",
+    "createLabelFailed": "Failed to create label",
     "newIssue": "New issue",
     "createIssue": "Create issue",
     "creatingIssue": "Creating...",

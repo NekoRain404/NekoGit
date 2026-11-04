@@ -95,6 +95,14 @@
     "personalModeLocked": "已锁定"
   },
   "issueDetail": {
+    "createLabel": "创建标签",
+    "cancelCreateLabel": "取消",
+    "labelName": "标签名称",
+    "labelColor": "标签颜色",
+    "labelDescription": "描述（可选）",
+    "labelNameRequired": "标签名称不能为空",
+    "creatingLabel": "创建中…",
+    "createLabelFailed": "创建标签失败",
     "newIssue": "新建 Issue",
     "createIssue": "创建 Issue",
     "creatingIssue": "创建中…",

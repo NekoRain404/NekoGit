@@ -148,7 +148,7 @@
 
 **GitHub 写操作**
 
-- Issue：创建 label UI（创建/关闭/重开/编辑/指派/里程碑/label 创建 API 已支持）
+- Issue：创建 label（创建/关闭/重开/编辑/指派/里程碑/label 创建已支持）
 - PR：dismiss review（draft/ready、merge 方式、review thread 回复、编辑标题/正文已支持）
 - Discussion：创建（标记 answer、upvote、lock/unlock 已支持）
 
@@ -273,7 +273,7 @@
 - Discussion 写操作：mark/unmark answer、讨论/评论 upvote、lock/unlock（GraphQL + UI）。
 - 本地 Git：rebase / abort rebase（含冲突检测与明确提示）。
 - 通知：线程退订（REST + UI）。
-- Label：创建 label 的后端 endpoint 与校验（UI 待接入）。
+- Label：创建 label 的 endpoint、校验与 label editor 内联创建 UI。
 - Issue 写操作：创建 issue（endpoint + modal）、assignees/milestone 编辑（endpoint + picker UI）。
 
 最终验证（2026-11-04）：
@@ -294,4 +294,4 @@
 - AUD-020：server route / 组件 / E2E 测试基线仍未建立（已新增纯逻辑测试）。
 - AUD-028 的“取消/进程组管理”部分（超时已完成）。
 - AUD-030：AppImage/rpm、自动更新、签名。
-- Notification “done”、远端 publish、label 创建 UI、Discussion 创建、组件/E2E 测试、AppImage/rpm 打包/签名等仍在 backlog。
+- Notification “done”、Discussion 创建、组件/E2E 测试、AppImage/rpm 打包/签名等仍在 backlog。
