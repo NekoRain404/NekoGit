@@ -158,7 +158,7 @@
 
 **仓库**
 
-- 组织/协作仓库列表、准确总数、仓库创建/删除/归档/设置入口
+- 仓库创建（组织/协作列表与准确总数、删除/归档/描述/主页设置已支持）
 
 **CI**
 
@@ -264,7 +264,7 @@
 - AUD-028：clone/fetch/pull/push 增加 120s 超时（`NEKOGIT_GIT_TIMEOUT_SECS` 可调），并发排空 stdout/stderr 防止管道死锁；新增 `desktop_cancel_local_repository_operation`，Unix 下以进程组 SIGKILL 终止 fetch/pull/push/clone/rebase。
 - AUD-029：reviewer summary 增加 45s 客户端 TTL 缓存、并发请求去重，并在 reviewer 增删后失效。
 - 额外功能：桌面端支持“接管已有本地 clone”（校验 Git work tree 与 origin 后记录），无需重新 clone。
-- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，并加入 `@vue/test-utils` + happy-dom 组件测试（PREditModal、LabelCreateForm），共 40 个测试文件 / 255 个用例；Rust 109 个测试。
+- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，并加入 `@vue/test-utils` + happy-dom 组件测试（PREditModal、LabelCreateForm），共 41 个测试文件 / 262 个用例；Rust 109 个测试。
 - 浏览器 E2E：新增 Playwright 配置与 `e2e/landing.spec.ts`，使用系统 Chrome（不下载浏览器）验证 landing 渲染、CSRF cookie 与未登录访问 `/dashboard` 的重定向；CI Build job 执行 `pnpm test:e2e`。
 - 本地 Git 补全：stash 列表/pop、非当前分支安全删除（`git branch -d`）。
 - Issue 写操作：关闭/重开、编辑标题/正文（PATCH route + modal + 权限 gating）。
@@ -278,15 +278,16 @@
 - 通知：线程退订（REST + UI）。
 - Label：创建 label 的 endpoint、校验与 label editor 内联创建 UI。
 - PR：review dismissal（endpoint + 时间线内联弹层）。
-- Discussion：讨论创建（categories endpoint + modal）。
+- Discussion：讨论创建（categories endpoint + modal；并修复 modal 未挂载导致入口无效的问题）。
+- 仓库管理：描述/主页编辑、归档/取消归档、按名称确认删除（PATCH/DELETE route + admin 权限入口 + modal）。
 - Issue 写操作：创建 issue（endpoint + modal）、assignees/milestone 编辑（endpoint + picker UI）。
 
 最终验证（2026-11-04）：
 
-- `pnpm fmt:check` ✅ 452 files
+- `pnpm fmt:check` ✅ 459 files
 - `pnpm typecheck` ✅
 - `pnpm lint` ✅（correctness 已启用）
-- `pnpm test` ✅ 40 files / 255 tests（含 2 个 Vue 组件测试）
+- `pnpm test` ✅ 41 files / 262 tests（含 Vue 组件测试与仓库设置校验）
 - `pnpm build` ✅（`taskset -c 0-3`，47.3 MB）
 - `node scripts/check-tauri-commands.mjs` ✅ 48 commands
 - `cargo fmt --check` ✅

@@ -905,5 +905,30 @@
     "footerHint": "或直接在输入框中输入字体名称",
     "close": "关闭",
     "closeAriaLabel": "关闭"
+  },
+  "repoSettings": {
+    "title": "仓库设置 — {repo}",
+    "description": "描述",
+    "descriptionPlaceholder": "简短的仓库描述",
+    "descriptionHint": "最多 350 个字符。留空可清除描述。",
+    "homepage": "主页",
+    "homepagePlaceholder": "https://example.com",
+    "homepageHint": "必须是有效的 http(s) URL。留空可清除主页。",
+    "save": "保存修改",
+    "saving": "保存中",
+    "saveFailed": "保存仓库设置失败。",
+    "archive": "归档仓库",
+    "unarchive": "取消归档",
+    "archiving": "正在更新归档状态",
+    "archiveFailed": "更新归档状态失败。",
+    "archiveHint": "已归档的仓库为只读状态。",
+    "dangerZone": "危险操作",
+    "deleteWarning": "这会永久删除 {repo} 及其所有 issue、pull request 与历史记录，且无法撤销。",
+    "confirmLabel": "输入 {repo} 以确认",
+    "delete": "删除仓库",
+    "deleting": "删除中",
+    "deleteFailed": "删除仓库失败。",
+    "cancel": "取消",
+    "open": "设置"
   }
 }

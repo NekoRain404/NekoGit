@@ -905,5 +905,30 @@
     "footerHint": "Or type a font name directly in the input field",
     "close": "Close",
     "closeAriaLabel": "Close"
+  },
+  "repoSettings": {
+    "title": "Repository settings — {repo}",
+    "description": "Description",
+    "descriptionPlaceholder": "Short repository description",
+    "descriptionHint": "Up to 350 characters. Leave empty to clear it.",
+    "homepage": "Homepage",
+    "homepagePlaceholder": "https://example.com",
+    "homepageHint": "Must be a valid http(s) URL. Leave empty to clear it.",
+    "save": "Save changes",
+    "saving": "Saving",
+    "saveFailed": "Failed to save repository settings.",
+    "archive": "Archive repository",
+    "unarchive": "Unarchive repository",
+    "archiving": "Updating archive state",
+    "archiveFailed": "Failed to update the archive state.",
+    "archiveHint": "Archived repositories are read-only.",
+    "dangerZone": "Danger zone",
+    "deleteWarning": "This permanently deletes {repo} and all of its issues, pull requests, and history. This cannot be undone.",
+    "confirmLabel": "Type {repo} to confirm",
+    "delete": "Delete repository",
+    "deleting": "Deleting",
+    "deleteFailed": "Failed to delete the repository.",
+    "cancel": "Cancel",
+    "open": "Settings"
   }
 }

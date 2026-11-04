@@ -13,6 +13,7 @@ import {
   Loader2Icon,
   MessageSquareIcon,
   PlusIcon,
+  SettingsIcon,
   StarIcon,
   XIcon,
 } from 'lucide-vue-next';
@@ -23,12 +24,18 @@ import type { LocationQueryRaw } from 'vue-router';
 import DiscussionCreateModal from '~/components/dashboard/discussion/DiscussionCreateModal.vue';
 import IssueCreateModal from '~/components/dashboard/issue/IssueCreateModal.vue';
 import LocalRepositoryPanel from '~/components/dashboard/repo/LocalRepositoryPanel.vue';
+import RepositorySettingsModal from '~/components/dashboard/repo/RepositorySettingsModal.vue';
 import getFetchErrorMessage from '~/utils/getFetchErrorMessage';
 
 const props = defineProps<{
   repository: any;
   owner: string;
   repo: string;
+}>();
+
+const emit = defineEmits<{
+  (e: 'repository-updated', repository: Record<string, unknown>): void;
+  (e: 'repository-deleted'): void;
 }>();
 
 /** Repo Detail Icon. */
@@ -363,6 +370,8 @@ const isIssueCreateModalOpen = ref(false);
 const creatingIssue = ref(false);
 const issueCreateError = ref('');
 const isDiscussionCreateModalOpen = ref(false);
+const isRepositorySettingsOpen = ref(false);
+const canManageRepository = ref(false);
 const creatingDiscussion = ref(false);
 const discussionCreateError = ref('');
 const loadingWatch = ref(false);
@@ -758,9 +767,38 @@ const createIssue = async (payload: { title: string; body: string }) => {
   }
 };
 
+const fetchRepositoryPermissions = async () => {
+  try {
+    const permissions = await apiFetch<{ admin?: boolean }>(
+      `/api/repos/${props.owner}/${props.repo}/permissions`
+    );
+    canManageRepository.value = Boolean(permissions?.admin);
+  } catch {
+    canManageRepository.value = false;
+  }
+};
+
+const openRepositorySettings = () => {
+  isRepositorySettingsOpen.value = true;
+};
+
+const closeRepositorySettings = () => {
+  isRepositorySettingsOpen.value = false;
+};
+
+const handleRepositoryUpdated = (updated: Record<string, unknown>) => {
+  emit('repository-updated', updated);
+};
+
+const handleRepositoryDeleted = () => {
+  isRepositorySettingsOpen.value = false;
+  emit('repository-deleted');
+};
+
 onMounted(() => {
   fetchStarState();
   fetchWatchState();
+  void fetchRepositoryPermissions();
 });
 
 watch(
@@ -861,6 +899,16 @@ onUnmounted(() => {
                   </button>
                 </div>
               </div>
+
+              <button
+                v-if="canManageRepository"
+                class="repo-action-btn"
+                type="button"
+                @click="openRepositorySettings"
+              >
+                <SettingsIcon :size="14" />
+                <span>{{ t('repoSettings.open') }}</span>
+              </button>
 
               <button
                 class="repo-action-btn"
@@ -1055,6 +1103,27 @@ onUnmounted(() => {
     :error="issueCreateError"
     @close="closeIssueCreateModal"
     @save="createIssue"
+  />
+
+  <DiscussionCreateModal
+    :is-visible="isDiscussionCreateModalOpen"
+    :owner="owner"
+    :repo="repo"
+    :loading="creatingDiscussion"
+    :error="discussionCreateError"
+    @close="closeDiscussionCreateModal"
+    @save="createDiscussion"
+  />
+
+  <RepositorySettingsModal
+    v-if="canManageRepository"
+    :is-visible="isRepositorySettingsOpen"
+    :owner="owner"
+    :repo="repo"
+    :repository="repository"
+    @close="closeRepositorySettings"
+    @updated="handleRepositoryUpdated"
+    @deleted="handleRepositoryDeleted"
   />
 </template>
 

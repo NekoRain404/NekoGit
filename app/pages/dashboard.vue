@@ -248,6 +248,8 @@
     @switch-discussion="handleSwitchDiscussion"
     @open-pull-request-review="handlePRReviewOpen"
     @close-pull-request-review="handlePRReviewClose"
+    @repository-updated="handleRepositoryUpdated"
+    @repository-deleted="handleRepositoryDeleted"
   />
 </template>
 
@@ -952,6 +954,18 @@ const markVisibleNotificationsAsReadSafely = async () => {
   } finally {
     markingVisibleNotificationsRead.value = false;
   }
+};
+
+const handleRepositoryUpdated = (updated: Record<string, unknown>) => {
+  if (currentRepo.value) {
+    currentRepo.value = { ...currentRepo.value, ...updated };
+  }
+  void refreshCurrentTabSafely();
+};
+
+const handleRepositoryDeleted = async () => {
+  await handleRepoDetailBack();
+  await refreshCurrentTabSafely();
 };
 
 const refreshCurrentTabSafely = async () => {
