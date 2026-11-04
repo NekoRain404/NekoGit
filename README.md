@@ -94,6 +94,18 @@ Common desktop shortcuts include `F5` for refreshing the current NekoGit view, `
 
 Installed Linux packages register `nekogit://` as a desktop URL handler. For example, `nekogit://open?url=https%3A%2F%2Fgithub.com%2Fowner%2Frepo%2Fissues%2F42` opens the matching GitHub target inside the running NekoGit window; only validated GitHub HTTPS URLs are accepted.
 
+To smoke-test the real desktop webview on Linux, build the app once and run the WebDriver-based landing check:
+
+```bash
+pnpm build
+cargo build --manifest-path src-tauri/Cargo.toml
+cargo install tauri-driver
+sudo apt-get install webkit2gtk-driver xvfb
+pnpm smoke:desktop
+```
+
+The script starts the built Nitro server, launches the Tauri client under `xvfb-run`, drives it through `tauri-driver`, and verifies the landing page renders. Set `NEKOGIT_DESKTOP_BINARY`, `NEKOGIT_TAURI_DRIVER`, or `NEKOGIT_WEBKIT_DRIVER` when the binaries live elsewhere. The **Desktop Smoke** GitHub Actions workflow runs the same check on demand.
+
 To point the client at an external/self-hosted instance instead, set:
 
 ```bash

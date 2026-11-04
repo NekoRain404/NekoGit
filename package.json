@@ -22,7 +22,8 @@
     "fmt:check": "oxfmt --check ./",
     "check:tauri-commands": "node scripts/check-tauri-commands.mjs",
     "smoke:server": "node scripts/smoke-server.mjs",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "smoke:desktop": "node scripts/smoke-desktop.mjs"
   },
   "dependencies": {
     "@comark/nuxt": "^0.4.0",

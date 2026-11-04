@@ -170,7 +170,7 @@
 
 **打包与测试**
 
-- 自动更新、签名（AppImage/rpm 打包工作流已添加）；server smoke、组件测试与浏览器 E2E 基线已建立，桌面集成/视觉测试仍缺
+- 自动更新、签名（AppImage/rpm 打包工作流已添加）；server smoke、组件测试、浏览器 E2E 与桌面 WebDriver smoke 已建立，视觉回归测试仍缺
 
 ---
 
@@ -266,6 +266,7 @@
 - 额外功能：桌面端支持“接管已有本地 clone”（校验 Git work tree 与 origin 后记录），无需重新 clone。
 - 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，并加入 `@vue/test-utils` + happy-dom 组件测试（PREditModal、LabelCreateForm、CreateRepositoryModal、RepositorySettingsModal），共 45 个测试文件 / 277 个用例；Rust 109 个测试。
 - 浏览器 E2E：新增 Playwright 配置与 `e2e/landing.spec.ts`，使用系统 Chrome（不下载浏览器）验证 landing 渲染、CSRF cookie 与未登录访问 `/dashboard` 的重定向；CI Build job 执行 `pnpm test:e2e`。
+- 桌面集成 smoke：新增 `scripts/smoke-desktop.mjs`，通过 `tauri-driver` + `WebKitWebDriver` + `xvfb-run` 启动真实 Tauri webview，验证 landing 标题与页面内容；本地已通过，并提供手动 `Desktop Smoke` GitHub Actions workflow。
 - 本地 Git 补全：stash 列表/pop、非当前分支安全删除（`git branch -d`）。
 - Issue 写操作：关闭/重开、编辑标题/正文（PATCH route + modal + 权限 gating）。
 - PR 编辑：标题/正文编辑 modal，复用 PATCH pull request endpoint。
@@ -284,7 +285,7 @@
 
 最终验证（2026-11-04）：
 
-- `pnpm fmt:check` ✅ 469 files
+- `pnpm fmt:check` ✅ 471 files
 - `pnpm typecheck` ✅
 - `pnpm lint` ✅（correctness 已启用）
 - `pnpm test` ✅ 45 files / 277 tests（含仓库创建/设置 modal 组件测试与校验单测）
@@ -295,6 +296,7 @@
 - `cargo clippy --jobs 4 --all-targets -- -D warnings` ✅
 - `pnpm smoke:server` ✅ 安全响应头、未认证 401（含仓库 POST/PATCH/DELETE/transfer 与组织列表路由）、缺失 CSRF 403、带 CSRF 空 token 400
 - `pnpm test:e2e` ✅ 2 tests（系统 Chrome，landing 与未登录路由守卫）
+- `pnpm smoke:desktop` ✅ Tauri webview landing 渲染（tauri-driver + xvfb）
 - server smoke：安全响应头生效；无 CSRF token → 403
 
 未完成（明确延后）：
