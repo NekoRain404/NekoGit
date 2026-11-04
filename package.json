@@ -21,7 +21,8 @@
     "fmt": "oxfmt ./",
     "fmt:check": "oxfmt --check ./",
     "check:tauri-commands": "node scripts/check-tauri-commands.mjs",
-    "smoke:server": "node scripts/smoke-server.mjs"
+    "smoke:server": "node scripts/smoke-server.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@comark/nuxt": "^0.4.0",
@@ -54,6 +55,7 @@
   },
   "devDependencies": {
     "@nuxtjs/i18n": "^10.4.0",
+    "@playwright/test": "^1.64.1",
     "@tauri-apps/cli": "2.11.2",
     "@types/node": "^25.9.2",
     "@vitejs/plugin-vue": "^6.0.10",

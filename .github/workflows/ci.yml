@@ -137,6 +137,9 @@ jobs:
       - name: Server smoke test
         run: pnpm smoke:server
 
+      - name: Browser E2E
+        run: pnpm test:e2e
+
   rust:
     name: Rust
     runs-on: ubuntu-latest

@@ -166,11 +166,11 @@
 
 **桌面本地 Git**
 
-- stash apply/clear、远端 publish、rebase、冲突处理、commit amend/undo、完整变更文件/历史、命令取消（接管已有 clone、stash list/pop、分支删除、按文件 stage/unstage、命令超时已支持）
+- stash apply/clear、远端 publish、rebase、冲突处理、commit amend/undo、完整变更文件/历史（接管已有 clone、stash list/pop、分支删除、按文件 stage/unstage、命令超时与取消已支持）
 
 **打包与测试**
 
-- AppImage/rpm、自动更新、签名、下载校验；server API 测试、组件测试、E2E/视觉测试、桌面集成测试
+- 自动更新、签名（AppImage/rpm 打包工作流已添加）；server smoke、组件测试与浏览器 E2E 基线已建立，桌面集成/视觉测试仍缺
 
 ---
 
@@ -205,11 +205,12 @@
 
 ### 第四阶段：测试与验证
 
-- [x] AUD-028 Git 网络命令超时（取消/进程组管理仍延后）
+- [x] AUD-028 Git 网络命令超时与取消（Unix 进程组）
 - [x] AUD-029 reviewer summary 客户端 TTL 缓存与并发去重
-- [ ] AUD-030 AppImage/rpm、自动更新、签名（延后到发布阶段）
+- [ ] AUD-030 自动更新、签名（deb/AppImage/rpm 打包与 release 工作流已添加）
 
-- [x] 新增行为的单测（32 个测试文件 / 214 个用例）
+- [x] 新增行为的单测（40 个测试文件 / 255 个用例）
+- [x] 浏览器 E2E 基线（Playwright + 系统 Chrome，接入 CI）
 - [x] `pnpm fmt:check` / `pnpm typecheck` / `pnpm lint` / `pnpm test` / `pnpm build`
 - [x] `cargo fmt --check` / `cargo check` / `cargo test` / `cargo clippy`
 - [ ] 手工冒烟：CSRF、登录、列表筛选、PR 详情、桌面菜单
@@ -260,10 +261,11 @@
 - AUD-022：新增安全响应头 middleware（不含 CSP）。
 - AUD-023/024/025/026：proxy/rate-limit 缓存上限、SSR autolink 缓存隔离、日志 0600、本地仓库 symlink 逃逸校验。
 - AUD-027：窗口状态写入 400ms debounce。
-- AUD-028：clone/fetch/pull/push 增加 120s 超时（`NEKOGIT_GIT_TIMEOUT_SECS` 可调），并发排空 stdout/stderr 防止管道死锁；取消/进程组管理仍延后。
+- AUD-028：clone/fetch/pull/push 增加 120s 超时（`NEKOGIT_GIT_TIMEOUT_SECS` 可调），并发排空 stdout/stderr 防止管道死锁；新增 `desktop_cancel_local_repository_operation`，Unix 下以进程组 SIGKILL 终止 fetch/pull/push/clone/rebase。
 - AUD-029：reviewer summary 增加 45s 客户端 TTL 缓存、并发请求去重，并在 reviewer 增删后失效。
 - 额外功能：桌面端支持“接管已有本地 clone”（校验 Git work tree 与 origin 后记录），无需重新 clone。
 - 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，并加入 `@vue/test-utils` + happy-dom 组件测试（PREditModal、LabelCreateForm），共 40 个测试文件 / 255 个用例；Rust 105 个测试。
+- 浏览器 E2E：新增 Playwright 配置与 `e2e/landing.spec.ts`，使用系统 Chrome（不下载浏览器）验证 landing 渲染、CSRF cookie 与未登录访问 `/dashboard` 的重定向；CI Build job 执行 `pnpm test:e2e`。
 - 本地 Git 补全：stash 列表/pop、非当前分支安全删除（`git branch -d`）。
 - Issue 写操作：关闭/重开、编辑标题/正文（PATCH route + modal + 权限 gating）。
 - PR 编辑：标题/正文编辑 modal，复用 PATCH pull request endpoint。
@@ -280,7 +282,7 @@
 
 最终验证（2026-11-04）：
 
-- `pnpm fmt:check` ✅ 450 files
+- `pnpm fmt:check` ✅ 452 files
 - `pnpm typecheck` ✅
 - `pnpm lint` ✅（correctness 已启用）
 - `pnpm test` ✅ 40 files / 255 tests（含 2 个 Vue 组件测试）
@@ -290,10 +292,10 @@
 - `cargo test --jobs 4` ✅ 105 tests
 - `cargo clippy --jobs 4 --all-targets -- -D warnings` ✅
 - `pnpm smoke:server` ✅ 安全响应头、未认证 401、缺失 CSRF 403、带 CSRF 空 token 400
+- `pnpm test:e2e` ✅ 2 tests（系统 Chrome，landing 与未登录路由守卫）
 - server smoke：安全响应头生效；无 CSRF token → 403
 
 未完成（明确延后）：
 
-- AUD-020：浏览器 E2E 测试（纯逻辑 + Vue 组件测试已建立）。
 - AUD-030：自动更新与代码签名需要发布密钥/基础设施；tag 触发的 deb/AppImage/rpm 发布工作流已添加。
 - Notification “done”：GitHub 未提供对应的公开 REST/GraphQL mutation。
