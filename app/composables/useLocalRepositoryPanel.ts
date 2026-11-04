@@ -31,17 +31,20 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     cloneRepository,
     commitLocalRepositoryChanges,
     createLocalRepositoryBranch,
+    deleteLocalRepositoryBranch,
     fetchLocalRepository,
     getLocalRepositoryBranches,
     getLocalRepositoryChangedFiles,
     getLocalRepositoryCommitHistory,
     getLocalRepositoryFileDiff,
     getLocalRepositoryGitStatus,
+    getLocalRepositoryStashes,
     getLocalRepositoryStatus,
     loadRuntimeInfo,
     openLocalRepository,
     openLocalRepositoryPath,
     openLocalRepositoryTerminal,
+    popLocalRepositoryStash,
     pullLocalRepository,
     pushLocalRepository,
     rememberLocalRepository,
@@ -54,6 +57,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
   const {
     desktopAction,
     desktopBranchAction,
+    desktopBranchToDelete,
     desktopBranchesError,
     desktopBranchesLoading,
     desktopChangedFilesError,
@@ -64,6 +68,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopCommitHistoryLoading,
     desktopCommitMessage,
     desktopCreateBranchLoading,
+    desktopDeleteBranchLoading,
     desktopFileDiffError,
     desktopFileDiffLoading,
     desktopGitStatusError,
@@ -73,10 +78,14 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopLocalRepositoryCommitHistory,
     desktopLocalRepositoryFileDiff,
     desktopLocalRepositoryGitStatus,
+    desktopLocalRepositoryStashes,
     desktopLocalRepositoryStatus,
     desktopNewBranchName,
     desktopRemoteBranchName,
     desktopSelectedChangedFilePath,
+    desktopStashPoppingIndex,
+    desktopStashesError,
+    desktopStashesLoading,
     desktopStatusError,
     desktopStatusLoading,
     associatedPullRequest,
@@ -137,6 +146,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     refreshDesktopLocalRepositoryCommitHistory,
     refreshDesktopLocalRepositoryGitStatus,
     refreshDesktopLocalRepositoryReadState,
+    refreshDesktopLocalRepositoryStashes,
     refreshDesktopLocalRepositoryStatus,
   } = useLocalRepositoryPanelRefreshers({
     commands: {
@@ -145,6 +155,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
       getLocalRepositoryCommitHistory,
       getLocalRepositoryFileDiff,
       getLocalRepositoryGitStatus,
+      getLocalRepositoryStashes,
       getLocalRepositoryStatus,
     },
     copy: options.copy,
@@ -363,6 +374,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
       );
       void refreshAssociatedPullRequest();
       await refreshDesktopLocalRepositoryChangedFiles();
+      await refreshDesktopLocalRepositoryStashes();
       await refreshDesktopLocalRepositoryCommitHistory();
     } catch (error) {
       desktopGitStatusError.value = getDesktopActionErrorMessage(
@@ -373,6 +385,93 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     } finally {
       desktopGitStatusLoading.value = false;
       desktopAction.value = null;
+    }
+  };
+
+  const popDesktopLocalRepositoryStash = async (index: number) => {
+    const repository = desktopRepository.value;
+    if (
+      !repository ||
+      !desktopLocalRepositoryStatus.value?.exists ||
+      desktopStashPoppingIndex.value !== null
+    ) {
+      return;
+    }
+
+    desktopStashPoppingIndex.value = index;
+    desktopGitStatusLoading.value = true;
+    desktopGitStatusError.value = '';
+
+    try {
+      desktopLocalRepositoryGitStatus.value = await popLocalRepositoryStash(
+        repository.cloneUrl,
+        index
+      );
+      void refreshAssociatedPullRequest();
+      await refreshDesktopLocalRepositoryChangedFiles();
+      await refreshDesktopLocalRepositoryStashes();
+      await refreshDesktopLocalRepositoryCommitHistory();
+    } catch (error) {
+      desktopGitStatusError.value = getDesktopActionErrorMessage(
+        error,
+        'Failed to pop local stash.'
+      );
+      await showDesktopMessage(desktopGitStatusError.value, 'error');
+      await refreshDesktopLocalRepositoryGitStatus();
+      await refreshDesktopLocalRepositoryChangedFiles();
+      await refreshDesktopLocalRepositoryStashes();
+      await refreshDesktopLocalRepositoryCommitHistory();
+    } finally {
+      desktopGitStatusLoading.value = false;
+      desktopStashPoppingIndex.value = null;
+    }
+  };
+
+  const deleteDesktopLocalRepositoryBranch = async () => {
+    const repository = desktopRepository.value;
+    const branchName = desktopBranchToDelete.value;
+    if (
+      !repository ||
+      !branchName ||
+      branchName === desktopLocalRepositoryGitStatus.value?.branch ||
+      !desktopLocalRepositoryStatus.value?.exists ||
+      desktopBranchAction.value ||
+      desktopDeleteBranchLoading.value
+    ) {
+      return;
+    }
+    if (
+      import.meta.client &&
+      !window.confirm(`${options.copy.value.confirmDeleteBranch} ${branchName}`)
+    ) {
+      return;
+    }
+
+    desktopDeleteBranchLoading.value = true;
+    desktopBranchAction.value = true;
+    desktopGitStatusLoading.value = true;
+    desktopGitStatusError.value = '';
+
+    try {
+      desktopLocalRepositoryGitStatus.value = await deleteLocalRepositoryBranch(
+        repository.cloneUrl,
+        branchName
+      );
+      void refreshAssociatedPullRequest();
+      desktopBranchToDelete.value = '';
+      await refreshDesktopLocalRepositoryBranches();
+      await refreshDesktopLocalRepositoryChangedFiles();
+      await refreshDesktopLocalRepositoryCommitHistory();
+    } catch (error) {
+      desktopGitStatusError.value = getDesktopActionErrorMessage(
+        error,
+        'Failed to delete local branch.'
+      );
+      await showDesktopMessage(desktopGitStatusError.value, 'error');
+    } finally {
+      desktopGitStatusLoading.value = false;
+      desktopBranchAction.value = false;
+      desktopDeleteBranchLoading.value = false;
     }
   };
 
@@ -607,6 +706,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopAction,
     desktopAvailable,
     desktopBranchAction,
+    desktopBranchToDelete,
     desktopBranchesError,
     desktopBranchesLoading,
     desktopCanCommitChanges,
@@ -622,6 +722,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopCommitMessage,
     desktopCheckoutRemoteBranchLoading,
     desktopCreateBranchLoading,
+    desktopDeleteBranchLoading,
     desktopFileDiffError,
     desktopFileDiffLoading,
     desktopFileDiffSections,
@@ -641,12 +742,16 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopLocalRepositoryFileDiff,
     desktopLocalRepositoryGitStatus,
     desktopLocalRepositoryLocation,
+    desktopLocalRepositoryStashes,
     desktopLocalRepositoryStatus,
     desktopLocalRepositoryStatusLabel,
     desktopLocalRepositoryStatusTone,
     desktopSelectedChangedFilePath,
     desktopNewBranchName,
     desktopRemoteBranchName,
+    desktopStashPoppingIndex,
+    desktopStashesError,
+    desktopStashesLoading,
     desktopRepository,
     associatedPullRequest,
     prLoading,
@@ -661,10 +766,12 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     commitDesktopLocalRepositoryChanges,
     copyDesktopCloneUrl,
     createDesktopLocalRepositoryBranch,
+    deleteDesktopLocalRepositoryBranch,
     fetchDesktopLocalRepository,
     openDesktopChangedFile,
     openDesktopLocalRepository,
     openDesktopLocalRepositoryTerminal,
+    popDesktopLocalRepositoryStash,
     previewDesktopChangedFileDiff,
     pullDesktopLocalRepository,
     pushDesktopLocalRepository,

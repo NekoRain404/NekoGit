@@ -43,7 +43,9 @@ export type LocalRepositoryCopy = {
   gitCopied: string;
   gitCreateBranch: string;
   gitCreatingBranch: string;
+  gitDeleteBranch: string;
   gitDeleted: string;
+  gitDeletingBranch: string;
   gitDiff: string;
   gitDiffEmpty: string;
   gitDiffTruncated: string;
@@ -60,7 +62,12 @@ export type LocalRepositoryCopy = {
   gitRenamed: string;
   gitStaged: string;
   gitStash: string;
+  gitStashes: string;
+  gitStashesUnavailable: string;
   gitStashing: string;
+  gitPopStash: string;
+  gitPoppingStash: string;
+  gitSelectBranchToDelete: string;
   gitSwitchBranch: string;
   gitUnstaged: string;
   gitUntracked: string;
@@ -84,6 +91,7 @@ export type LocalRepositoryCopy = {
   createPullRequestTitlePlaceholder: string;
   createPullRequestDescriptionPlaceholder: string;
   confirmCommit: string;
+  confirmDeleteBranch: string;
   confirmPush: string;
   creatingPullRequest: string;
   pullRequestCreated: string;

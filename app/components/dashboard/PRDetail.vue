@@ -31,6 +31,7 @@
           @merge="handleMerge"
           @close-pr="handleClosePr"
           @reopen-pr="handleReopenPr"
+          @edit-pr="openPrEditModal"
         />
 
         <hr />
@@ -94,6 +95,16 @@
             :pull-number="currentPullRequest?.number || 0"
           />
 
+          <PREditModal
+            :visible="isPrEditModalOpen"
+            :title="currentPullRequest?.title"
+            :body="currentPullRequest?.body"
+            :saving="savingPrEdit"
+            :error="prEditError"
+            @close="closePrEditModal"
+            @save="handleSavePrEdit"
+          />
+
           <PRReviewerRequestModal
             :is-visible="isReviewerPickerOpen"
             :candidates="reviewerCandidates"
@@ -152,6 +163,7 @@ import { computed, onMounted, ref, shallowRef, watch } from 'vue';
 
 import PRActions from '~/components/dashboard/pr/PRActions.vue';
 import PRChecksPanel from '~/components/dashboard/pr/PRChecksPanel.vue';
+import PREditModal from '~/components/dashboard/pr/PREditModal.vue';
 import PRHeader from '~/components/dashboard/pr/PRHeader.vue';
 import PRLabels from '~/components/dashboard/pr/PRLabels.vue';
 import PRReviewerRequestModal from '~/components/dashboard/pr/PRReviewerRequestModal.vue';
@@ -215,6 +227,9 @@ const reviewCommits = shallowRef<
 >([]);
 const reviewCommitsLoading = shallowRef(false);
 const isReviewerPickerOpen = shallowRef(false);
+const isPrEditModalOpen = shallowRef(false);
+const savingPrEdit = shallowRef(false);
+const prEditError = shallowRef('');
 const loadingReviewerCandidates = shallowRef(false);
 const submittingReviewerRequest = shallowRef(false);
 const reviewerRequestsAvailable = shallowRef<boolean | null>(null);
@@ -360,6 +375,42 @@ const handleRequestChanges = async () => {
     await fetchTimeline();
   } catch (err) {
     detailError.value = getFetchErrorMessage(err, 'Failed to request changes.');
+  }
+};
+
+const openPrEditModal = () => {
+  prEditError.value = '';
+  isPrEditModalOpen.value = true;
+};
+
+const closePrEditModal = () => {
+  if (savingPrEdit.value) return;
+  isPrEditModalOpen.value = false;
+  prEditError.value = '';
+};
+
+const handleSavePrEdit = async (payload: { title: string; body: string }) => {
+  if (!repoInfo.value || !currentPullRequest.value?.number || savingPrEdit.value) return;
+
+  savingPrEdit.value = true;
+  prEditError.value = '';
+  try {
+    const { owner, repo } = repoInfo.value;
+    const data = await apiFetch<Record<string, unknown>>(
+      `/api/repos/${owner}/${repo}/pulls/${currentPullRequest.value.number}`,
+      {
+        method: 'PATCH',
+        body: { title: payload.title, body: payload.body },
+      }
+    );
+    if (data) {
+      currentPullRequest.value = { ...currentPullRequest.value, ...data };
+    }
+    isPrEditModalOpen.value = false;
+  } catch (error) {
+    prEditError.value = getFetchErrorMessage(error, 'Failed to update pull request.');
+  } finally {
+    savingPrEdit.value = false;
   }
 };
 

@@ -77,6 +77,15 @@
       </div>
 
       <div class="pr-header__actions mb-4">
+        <button
+          v-if="pullRequest?.number"
+          class="button is-small is-light mr-2"
+          type="button"
+          @click="emit('edit-pr')"
+        >
+          <PencilIcon :size="14" class="mr-1" />
+          {{ t('prReview.editPr') }}
+        </button>
         <template v-if="displayState === 'open'">
           <button
             class="button is-small is-success is-light mr-2"
@@ -135,6 +144,7 @@ import {
   GitMergeIcon,
   GitPullRequestClosedIcon,
   GitPullRequestIcon,
+  PencilIcon,
   XCircleIcon,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -180,6 +190,7 @@ const emit = defineEmits<{
   (e: 'merge'): void;
   (e: 'close-pr'): void;
   (e: 'reopen-pr'): void;
+  (e: 'edit-pr'): void;
 }>();
 
 const displayState = computed(() => {

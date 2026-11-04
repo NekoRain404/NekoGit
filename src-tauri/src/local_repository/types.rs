@@ -6,6 +6,7 @@ pub(crate) const LOCAL_REPOSITORIES_FILE: &str = "local-repositories.json";
 pub(crate) const MAX_LOCAL_REPOSITORY_COMMIT_MESSAGE_CHARS: usize = 10_000;
 pub(crate) const MAX_LOCAL_REPOSITORY_DIFF_BYTES: u32 = 250_000;
 pub(crate) const MIN_LOCAL_REPOSITORY_DIFF_BYTES: u32 = 4_096;
+pub(crate) const MAX_LOCAL_REPOSITORY_STASH_INDEX: u32 = 9_999;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -139,6 +140,25 @@ pub(crate) struct DesktopLocalRepositoryCommitHistory {
     pub(crate) repository_url: String,
     pub(crate) repository_path: String,
     pub(crate) commits: Vec<DesktopLocalRepositoryGitCommit>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct DesktopLocalRepositoryStashes {
+    pub(crate) repository_url: String,
+    pub(crate) repository_path: String,
+    pub(crate) stashes: Vec<DesktopLocalRepositoryStash>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct DesktopLocalRepositoryStash {
+    pub(crate) index: u32,
+    pub(crate) reference: String,
+    pub(crate) sha: String,
+    pub(crate) message: String,
+    pub(crate) date: String,
+    pub(crate) committed_at: u64,
 }
 
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]

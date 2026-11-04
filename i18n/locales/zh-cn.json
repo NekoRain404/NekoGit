@@ -146,7 +146,22 @@
     "lockReasonSpamDesc": "此议题是垃圾内容或包含不适当的内容",
     "failedToLockIssue": "锁定议题失败",
     "failedToUnlockIssue": "解锁议题失败",
-    "failedToUpdateLabels": "更新标签失败"
+    "failedToUpdateLabels": "更新标签失败",
+    "closeIssue": "关闭议题",
+    "reopenIssue": "重新打开议题",
+    "editIssue": "编辑议题",
+    "editIssueTitle": "标题",
+    "editIssueBody": "描述",
+    "editIssueHint": "支持 Markdown 格式。",
+    "editIssueBodyPlaceholder": "留空以清除描述",
+    "saveIssueChanges": "保存更改",
+    "cancelEditIssue": "取消",
+    "confirmCloseIssue": "确定关闭此议题？",
+    "confirmReopenIssue": "确定重新打开此议题？",
+    "issueTitleRequired": "标题不能为空",
+    "failedToUpdateIssue": "更新议题失败",
+    "failedToCloseIssue": "关闭议题失败",
+    "failedToReopenIssue": "重新打开议题失败"
   },
   "discussionDetail": {
     "loading": "正在加载讨论...",
@@ -612,6 +627,13 @@
     "private": "私有"
   },
   "prReview": {
+    "editPr": "编辑 Pull Request",
+    "editTitle": "标题",
+    "editBody": "描述",
+    "editBodyPlaceholder": "留空以清除描述",
+    "save": "保存",
+    "saving": "保存中…",
+    "cancel": "取消",
     "openReview": "审查变更",
     "backToDetails": "返回拉取请求详情",
     "untitledPullRequest": "未命名拉取请求",

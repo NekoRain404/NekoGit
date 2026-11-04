@@ -7,6 +7,7 @@ import type {
   DesktopLocalRepositoryCommitHistory,
   DesktopLocalRepositoryFileDiff,
   DesktopLocalRepositoryGitStatus,
+  DesktopLocalRepositoryStashes,
   DesktopLocalRepositoryStatus,
 } from '~/composables/useDesktopRuntime';
 
@@ -35,6 +36,7 @@ export const useLocalRepositoryPanelState = () => {
   const desktopLocalRepositoryBranches = ref<DesktopLocalRepositoryBranches | null>(null);
   const desktopLocalRepositoryCommitHistory = ref<DesktopLocalRepositoryCommitHistory | null>(null);
   const desktopLocalRepositoryChangedFiles = ref<DesktopLocalRepositoryChangedFiles | null>(null);
+  const desktopLocalRepositoryStashes = ref<DesktopLocalRepositoryStashes | null>(null);
   const desktopLocalRepositoryFileDiff = ref<DesktopLocalRepositoryFileDiff | null>(null);
   const desktopStatusLoading = ref(false);
   const desktopStatusError = ref('');
@@ -46,6 +48,9 @@ export const useLocalRepositoryPanelState = () => {
   const desktopCommitHistoryError = ref('');
   const desktopChangedFilesLoading = ref(false);
   const desktopChangedFilesError = ref('');
+  const desktopStashesLoading = ref(false);
+  const desktopStashesError = ref('');
+  const desktopStashPoppingIndex = ref<number | null>(null);
   const desktopFileDiffLoading = ref(false);
   const desktopFileDiffError = ref('');
   const desktopSelectedChangedFilePath = ref('');
@@ -55,6 +60,8 @@ export const useLocalRepositoryPanelState = () => {
   const desktopRemoteBranchName = ref('');
   const desktopCreateBranchLoading = ref(false);
   const desktopCheckoutRemoteBranchLoading = ref(false);
+  const desktopBranchToDelete = ref('');
+  const desktopDeleteBranchLoading = ref(false);
   const desktopCommitMessage = ref('');
   const desktopCloneCopied = ref(false);
   const associatedPullRequest = shallowRef<{
@@ -73,6 +80,7 @@ export const useLocalRepositoryPanelState = () => {
     commitHistory: createRequestSerial(),
     fileDiff: createRequestSerial(),
     gitStatus: createRequestSerial(),
+    stashes: createRequestSerial(),
     status: createRequestSerial(),
   };
 
@@ -113,9 +121,18 @@ export const useLocalRepositoryPanelState = () => {
     resetDesktopLocalRepositoryFileDiff();
   };
 
+  const resetDesktopLocalRepositoryStashes = () => {
+    requestSerials.stashes.cancel();
+    desktopLocalRepositoryStashes.value = null;
+    desktopStashesLoading.value = false;
+    desktopStashesError.value = '';
+    desktopStashPoppingIndex.value = null;
+  };
+
   return {
     desktopAction,
     desktopBranchAction,
+    desktopBranchToDelete,
     desktopBranchesError,
     desktopBranchesLoading,
     desktopChangedFilesError,
@@ -131,6 +148,7 @@ export const useLocalRepositoryPanelState = () => {
     desktopCommitHistoryLoading,
     desktopCommitMessage,
     desktopCreateBranchLoading,
+    desktopDeleteBranchLoading,
     desktopFileDiffError,
     desktopFileDiffLoading,
     desktopGitStatusError,
@@ -140,10 +158,14 @@ export const useLocalRepositoryPanelState = () => {
     desktopLocalRepositoryCommitHistory,
     desktopLocalRepositoryFileDiff,
     desktopLocalRepositoryGitStatus,
+    desktopLocalRepositoryStashes,
     desktopLocalRepositoryStatus,
     desktopNewBranchName,
     desktopRemoteBranchName,
     desktopSelectedChangedFilePath,
+    desktopStashPoppingIndex,
+    desktopStashesError,
+    desktopStashesLoading,
     desktopStatusError,
     desktopStatusLoading,
     requestSerials,
@@ -152,6 +174,7 @@ export const useLocalRepositoryPanelState = () => {
     resetDesktopLocalRepositoryCommitHistory,
     resetDesktopLocalRepositoryFileDiff,
     resetDesktopLocalRepositoryGitStatus,
+    resetDesktopLocalRepositoryStashes,
   };
 };
 

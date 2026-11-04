@@ -6,7 +6,8 @@ use crate::{
     desktop_runtime::DesktopRuntime,
     local_repository::{
         checkout_remote_local_repository_branch, create_local_repository_branch,
-        switch_local_repository_branch, DesktopLocalRepositoryGitStatus,
+        delete_local_repository_branch, switch_local_repository_branch,
+        DesktopLocalRepositoryGitStatus,
     },
 };
 
@@ -53,4 +54,19 @@ pub(crate) async fn desktop_checkout_remote_local_repository_branch(
     })
     .await
     .map_err(|error| format!("failed to run git remote checkout task: {error}"))?
+}
+
+#[tauri::command]
+/// Deletes a local branch (safe delete) and returns the updated git status.
+pub(crate) async fn desktop_delete_local_repository_branch(
+    runtime: State<'_, DesktopRuntime>,
+    repository_url: String,
+    branch_name: String,
+) -> Result<DesktopLocalRepositoryGitStatus, String> {
+    let app_data_dir = runtime.app_data_dir.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        delete_local_repository_branch(&app_data_dir, &repository_url, &branch_name)
+    })
+    .await
+    .map_err(|error| format!("failed to run git branch delete task: {error}"))?
 }

@@ -2031,6 +2031,12 @@
           "markdownDescription": "Enables the desktop_create_local_repository_branch command without any pre-configured scope."
         },
         {
+          "description": "Enables the desktop_delete_local_repository_branch command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-delete-local-repository-branch",
+          "markdownDescription": "Enables the desktop_delete_local_repository_branch command without any pre-configured scope."
+        },
+        {
           "description": "Enables the desktop_diagnostics_report command without any pre-configured scope.",
           "type": "string",
           "const": "allow-desktop-diagnostics-report",
@@ -2071,6 +2077,12 @@
           "type": "string",
           "const": "allow-desktop-local-repository-git-status",
           "markdownDescription": "Enables the desktop_local_repository_git_status command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the desktop_local_repository_stashes command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-local-repository-stashes",
+          "markdownDescription": "Enables the desktop_local_repository_stashes command without any pre-configured scope."
         },
         {
           "description": "Enables the desktop_local_repository_status command without any pre-configured scope.",
@@ -2119,6 +2131,12 @@
           "type": "string",
           "const": "allow-desktop-open-server-log",
           "markdownDescription": "Enables the desktop_open_server_log command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the desktop_pop_local_repository_stash command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-pop-local-repository-stash",
+          "markdownDescription": "Enables the desktop_pop_local_repository_stash command without any pre-configured scope."
         },
         {
           "description": "Enables the desktop_pull_local_repository command without any pre-configured scope.",
@@ -2247,6 +2265,12 @@
           "markdownDescription": "Denies the desktop_create_local_repository_branch command without any pre-configured scope."
         },
         {
+          "description": "Denies the desktop_delete_local_repository_branch command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-delete-local-repository-branch",
+          "markdownDescription": "Denies the desktop_delete_local_repository_branch command without any pre-configured scope."
+        },
+        {
           "description": "Denies the desktop_diagnostics_report command without any pre-configured scope.",
           "type": "string",
           "const": "deny-desktop-diagnostics-report",
@@ -2287,6 +2311,12 @@
           "type": "string",
           "const": "deny-desktop-local-repository-git-status",
           "markdownDescription": "Denies the desktop_local_repository_git_status command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the desktop_local_repository_stashes command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-local-repository-stashes",
+          "markdownDescription": "Denies the desktop_local_repository_stashes command without any pre-configured scope."
         },
         {
           "description": "Denies the desktop_local_repository_status command without any pre-configured scope.",
@@ -2335,6 +2365,12 @@
           "type": "string",
           "const": "deny-desktop-open-server-log",
           "markdownDescription": "Denies the desktop_open_server_log command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the desktop_pop_local_repository_stash command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-pop-local-repository-stash",
+          "markdownDescription": "Denies the desktop_pop_local_repository_stash command without any pre-configured scope."
         },
         {
           "description": "Denies the desktop_pull_local_repository command without any pre-configured scope.",

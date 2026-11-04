@@ -11,6 +11,23 @@ import type {
   DesktopLocalRepositoryStatus,
 } from './types';
 
+/** A single stash entry as reported by `git stash list`. */
+export interface DesktopLocalRepositoryStash {
+  index: number;
+  reference: string;
+  sha: string;
+  message: string;
+  date: string;
+  committedAt: number;
+}
+
+/** Stash entries stored in a local repository. */
+export interface DesktopLocalRepositoryStashes {
+  repositoryUrl: string;
+  repositoryPath: string;
+  stashes: DesktopLocalRepositoryStash[];
+}
+
 /** Clone a remote repository into a local directory. */
 export const cloneRepository = async (repositoryUrl: string, destinationDirectory: string) => {
   return invokeDesktopCommand<DesktopCloneRepositoryResult>('desktop_clone_repository', {
@@ -49,6 +66,24 @@ export const getLocalRepositoryBranches = async (repositoryUrl: string) => {
   return invokeDesktopCommand<DesktopLocalRepositoryBranches>('desktop_local_repository_branches', {
     repositoryUrl,
   });
+};
+
+/** List stashes stored in a local repository. */
+export const getLocalRepositoryStashes = async (repositoryUrl: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryStashes>('desktop_local_repository_stashes', {
+    repositoryUrl,
+  });
+};
+
+/** Apply and remove a stash entry by index. */
+export const popLocalRepositoryStash = async (repositoryUrl: string, index: number) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_pop_local_repository_stash',
+    {
+      repositoryUrl,
+      index,
+    }
+  );
 };
 
 /** Fetch recent commit history for a repository. */
@@ -127,6 +162,17 @@ export const switchLocalRepositoryBranch = async (repositoryUrl: string, branchN
 export const createLocalRepositoryBranch = async (repositoryUrl: string, branchName: string) => {
   return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
     'desktop_create_local_repository_branch',
+    {
+      repositoryUrl,
+      branchName,
+    }
+  );
+};
+
+/** Delete a local branch using Git's safe delete mode. */
+export const deleteLocalRepositoryBranch = async (repositoryUrl: string, branchName: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_delete_local_repository_branch',
     {
       repositoryUrl,
       branchName,

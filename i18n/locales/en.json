@@ -146,7 +146,22 @@
     "lockReasonSpamDesc": "The issue is spam or contains inappropriate content",
     "failedToLockIssue": "Failed to lock issue",
     "failedToUnlockIssue": "Failed to unlock issue",
-    "failedToUpdateLabels": "Failed to update labels"
+    "failedToUpdateLabels": "Failed to update labels",
+    "closeIssue": "Close issue",
+    "reopenIssue": "Reopen issue",
+    "editIssue": "Edit issue",
+    "editIssueTitle": "Title",
+    "editIssueBody": "Description",
+    "editIssueHint": "Markdown is supported.",
+    "editIssueBodyPlaceholder": "Leave empty to clear the description",
+    "saveIssueChanges": "Save changes",
+    "cancelEditIssue": "Cancel",
+    "confirmCloseIssue": "Close this issue?",
+    "confirmReopenIssue": "Reopen this issue?",
+    "issueTitleRequired": "Title is required",
+    "failedToUpdateIssue": "Failed to update issue",
+    "failedToCloseIssue": "Failed to close issue",
+    "failedToReopenIssue": "Failed to reopen issue"
   },
   "discussionDetail": {
     "loading": "Loading discussion...",
@@ -612,6 +627,13 @@
     "private": "Private"
   },
   "prReview": {
+    "editPr": "Edit pull request",
+    "editTitle": "Title",
+    "editBody": "Description",
+    "editBodyPlaceholder": "Leave empty to clear the description",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
     "openReview": "Review changes",
     "backToDetails": "Back to PR details",
     "untitledPullRequest": "Untitled pull request",

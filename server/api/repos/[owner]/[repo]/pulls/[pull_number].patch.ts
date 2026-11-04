@@ -37,6 +37,8 @@ export default defineEventHandler(async (event) => {
           repo,
           pull_number: pullNumber,
           state: action.state,
+          title: action.title,
+          body: action.body,
         }
       );
       return pr;

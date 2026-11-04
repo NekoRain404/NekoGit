@@ -22,16 +22,19 @@ import {
   cloneRepository,
   commitLocalRepositoryChanges,
   createLocalRepositoryBranch,
+  deleteLocalRepositoryBranch,
   fetchLocalRepository,
   getLocalRepositoryBranches,
   getLocalRepositoryChangedFiles,
   getLocalRepositoryCommitHistory,
   getLocalRepositoryFileDiff,
   getLocalRepositoryGitStatus,
+  getLocalRepositoryStashes,
   getLocalRepositoryStatus,
   openLocalRepository,
   openLocalRepositoryPath,
   openLocalRepositoryTerminal,
+  popLocalRepositoryStash,
   pullLocalRepository,
   pushLocalRepository,
   rememberLocalRepository,
@@ -43,6 +46,11 @@ import type {
   DesktopRuntimeInfo,
   DesktopServerStatus,
 } from './desktop-runtime/types';
+
+export type {
+  DesktopLocalRepositoryStash,
+  DesktopLocalRepositoryStashes,
+} from './desktop-runtime/localRepositoryCommands';
 
 export type {
   DesktopAutostartStatus,
@@ -164,6 +172,7 @@ export function useDesktopRuntime() {
     getLocalRepositoryCommitHistory,
     getLocalRepositoryChangedFiles,
     getLocalRepositoryFileDiff,
+    getLocalRepositoryStashes,
     fetchLocalRepository,
     pullLocalRepository,
     pushLocalRepository,
@@ -171,8 +180,10 @@ export function useDesktopRuntime() {
     switchLocalRepositoryBranch,
     createLocalRepositoryBranch,
     checkoutRemoteLocalRepositoryBranch,
+    deleteLocalRepositoryBranch,
     commitLocalRepositoryChanges,
     stashLocalRepositoryChanges,
+    popLocalRepositoryStash,
     openLocalRepository,
     openLocalRepositoryTerminal,
     openLocalRepositoryPath,

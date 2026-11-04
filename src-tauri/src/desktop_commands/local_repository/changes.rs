@@ -5,8 +5,8 @@ use tauri::State;
 use crate::{
     desktop_runtime::DesktopRuntime,
     local_repository::{
-        commit_local_repository_changes, stash_local_repository_changes,
-        DesktopLocalRepositoryGitStatus,
+        commit_local_repository_changes, pop_local_repository_stash,
+        stash_local_repository_changes, DesktopLocalRepositoryGitStatus,
     },
 };
 
@@ -37,4 +37,19 @@ pub(crate) async fn desktop_stash_local_repository_changes(
     })
     .await
     .map_err(|error| format!("failed to run git stash task: {error}"))?
+}
+
+#[tauri::command]
+/// Applies and removes a stash entry, returning the updated git status.
+pub(crate) async fn desktop_pop_local_repository_stash(
+    runtime: State<'_, DesktopRuntime>,
+    repository_url: String,
+    index: u32,
+) -> Result<DesktopLocalRepositoryGitStatus, String> {
+    let app_data_dir = runtime.app_data_dir.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        pop_local_repository_stash(&app_data_dir, &repository_url, index)
+    })
+    .await
+    .map_err(|error| format!("failed to run git stash pop task: {error}"))?
 }

@@ -8,6 +8,7 @@ import type {
   DesktopLocalRepositoryCommitHistory,
   DesktopLocalRepositoryFileDiff,
   DesktopLocalRepositoryGitStatus,
+  DesktopLocalRepositoryStashes,
   DesktopLocalRepositoryStatus,
 } from '~/composables/useDesktopRuntime';
 import type { CurrentGitHubRepository } from '~/utils/current-github-url-utils';
@@ -33,6 +34,7 @@ type LocalRepositoryPanelRefreshCommands = {
     maxBytes?: number
   ) => Promise<DesktopLocalRepositoryFileDiff>;
   getLocalRepositoryGitStatus: (repositoryUrl: string) => Promise<DesktopLocalRepositoryGitStatus>;
+  getLocalRepositoryStashes: (repositoryUrl: string) => Promise<DesktopLocalRepositoryStashes>;
   getLocalRepositoryStatus: (repositoryUrl: string) => Promise<DesktopLocalRepositoryStatus>;
 };
 
@@ -69,8 +71,11 @@ export const useLocalRepositoryPanelRefreshers = ({
     desktopLocalRepositoryCommitHistory,
     desktopLocalRepositoryFileDiff,
     desktopLocalRepositoryGitStatus,
+    desktopLocalRepositoryStashes,
     desktopLocalRepositoryStatus,
     desktopSelectedChangedFilePath,
+    desktopStashesError,
+    desktopStashesLoading,
     desktopStatusError,
     desktopStatusLoading,
     prLoading,
@@ -80,6 +85,7 @@ export const useLocalRepositoryPanelRefreshers = ({
     resetDesktopLocalRepositoryCommitHistory,
     resetDesktopLocalRepositoryFileDiff,
     resetDesktopLocalRepositoryGitStatus,
+    resetDesktopLocalRepositoryStashes,
   } = state;
 
   const resetDesktopLocalRepositoryReadState = () => {
@@ -87,6 +93,7 @@ export const useLocalRepositoryPanelRefreshers = ({
     resetDesktopLocalRepositoryBranches();
     resetDesktopLocalRepositoryChangedFiles();
     resetDesktopLocalRepositoryCommitHistory();
+    resetDesktopLocalRepositoryStashes();
   };
 
   const refreshDesktopLocalRepositoryGitStatus = async () => {
@@ -178,6 +185,39 @@ export const useLocalRepositoryPanelRefreshers = ({
     } finally {
       if (requestSerials.branches.isCurrent(requestId)) {
         desktopBranchesLoading.value = false;
+      }
+    }
+  };
+
+  const refreshDesktopLocalRepositoryStashes = async () => {
+    const repository = desktopRepository.value;
+    if (!repository || !desktopAvailable.value || !desktopLocalRepositoryStatus.value?.exists) {
+      resetDesktopLocalRepositoryStashes();
+      return null;
+    }
+
+    const requestId = requestSerials.stashes.next();
+    desktopStashesLoading.value = true;
+    desktopStashesError.value = '';
+
+    try {
+      const stashes = await commands.getLocalRepositoryStashes(repository.cloneUrl);
+      if (!requestSerials.stashes.isCurrent(requestId)) return stashes;
+
+      desktopLocalRepositoryStashes.value = stashes;
+      return stashes;
+    } catch (error) {
+      if (requestSerials.stashes.isCurrent(requestId)) {
+        desktopLocalRepositoryStashes.value = null;
+        desktopStashesError.value = getDesktopActionErrorMessage(
+          error,
+          copy.value.gitStashesUnavailable
+        );
+      }
+      return null;
+    } finally {
+      if (requestSerials.stashes.isCurrent(requestId)) {
+        desktopStashesLoading.value = false;
       }
     }
   };
@@ -320,6 +360,7 @@ export const useLocalRepositoryPanelRefreshers = ({
         void refreshDesktopLocalRepositoryBranches();
         void refreshDesktopLocalRepositoryChangedFiles();
         void refreshDesktopLocalRepositoryCommitHistory();
+        void refreshDesktopLocalRepositoryStashes();
       } else {
         resetDesktopLocalRepositoryReadState();
       }
@@ -348,6 +389,7 @@ export const useLocalRepositoryPanelRefreshers = ({
     refreshDesktopLocalRepositoryChangedFiles,
     refreshDesktopLocalRepositoryCommitHistory,
     refreshDesktopLocalRepositoryGitStatus,
+    refreshDesktopLocalRepositoryStashes,
     refreshDesktopLocalRepositoryReadState: resetDesktopLocalRepositoryReadState,
     refreshDesktopLocalRepositoryStatus,
   };
