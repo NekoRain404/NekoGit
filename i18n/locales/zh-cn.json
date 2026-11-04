@@ -604,7 +604,12 @@
     "openLocal": "打开本地文件",
     "checkingLocalRepository": "正在检查本地仓库",
     "download": "下载",
-    "copied": "已复制"
+    "copied": "已复制",
+    "fileTooLarge": "文件过大，无法预览",
+    "fileTooLargeHint": "此文件过大，无法预览。请下载完整文件。"
+  },
+  "repoItem": {
+    "private": "私有"
   },
   "prReview": {
     "openReview": "审查变更",

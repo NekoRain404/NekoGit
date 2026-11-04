@@ -1,5 +1,7 @@
 # CI Checks Integration 实现计划
 
+> **Status (2026-11-04):** shipped. Step checkboxes below are retained as the original implementation record; see `docs/audit/2026-11-04-code-audit.md` for follow-up fixes and known gaps.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 在 PR 详情中集成 GitHub Actions / Checks API，显示检查状态、重跑失败任务、查看日志。
@@ -23,9 +25,11 @@
 ### Task 1: 服务端 API — `GET /api/repos/[owner]/[repo]/pulls/[pull_number]/checks` (获取 check runs)
 
 **Files:**
+
 - Create: `server/api/repos/[owner]/[repo]/pulls/[pull_number]/checks.get.ts`
 
 **Interfaces:**
+
 - Consumes: `extractPullRouteParams(event)` → `{ owner, repo, pullNumber }`, `getGitHubSessionContext(event)` → `{ octokit, userLogin }`
 - Produces: `GET /api/repos/:owner/:repo/pulls/:pull_number/checks` endpoint, returns `{ check_runs: CheckRun[], total_count: number, combined_status: { state: string, statuses: any[] } }`
 
@@ -62,11 +66,14 @@ export default definePrivateApiCoalescedEventHandler(async (event) => {
     const { octokit } = await getGitHubSessionContext(event);
 
     // Get the PR to find the head commit SHA
-    const { data: pullRequest } = await octokit.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
-      owner,
-      repo,
-      pull_number: pullNumber,
-    });
+    const { data: pullRequest } = await octokit.request(
+      'GET /repos/{owner}/{repo}/pulls/{pull_number}',
+      {
+        owner,
+        repo,
+        pull_number: pullNumber,
+      }
+    );
 
     const headSha = pullRequest.head?.sha;
     if (!headSha) {
@@ -78,19 +85,25 @@ export default definePrivateApiCoalescedEventHandler(async (event) => {
     }
 
     // Fetch check runs for the head commit
-    const { data: checkRunsData } = await octokit.request('GET /repos/{owner}/{repo}/commits/{ref}/check-runs', {
-      owner,
-      repo,
-      ref: headSha,
-      per_page: 100,
-    });
+    const { data: checkRunsData } = await octokit.request(
+      'GET /repos/{owner}/{repo}/commits/{ref}/check-runs',
+      {
+        owner,
+        repo,
+        ref: headSha,
+        per_page: 100,
+      }
+    );
 
     // Fetch combined status for the head commit
-    const { data: combinedStatusData } = await octokit.request('GET /repos/{owner}/{repo}/commits/{ref}/status', {
-      owner,
-      repo,
-      ref: headSha,
-    });
+    const { data: combinedStatusData } = await octokit.request(
+      'GET /repos/{owner}/{repo}/commits/{ref}/status',
+      {
+        owner,
+        repo,
+        ref: headSha,
+      }
+    );
 
     return {
       check_runs: checkRunsData.check_runs as CheckRun[],
@@ -127,9 +140,11 @@ git commit -m "feat(api): add GET /repos/:owner/:repo/pulls/:pull_number/checks 
 ### Task 2: 服务端 API — `POST /api/repos/[owner]/[repo]/pulls/[pull_number]/checks/[run_id]/rerun` (重跑 check run)
 
 **Files:**
+
 - Create: `server/api/repos/[owner]/[repo]/pulls/[pull_number]/checks/[run_id]/rerun.post.ts`
 
 **Interfaces:**
+
 - Consumes: `extractRepoParams(event)`, `extractPullNumber(event)` (or inline extraction), `executeGitHubRequest(event, fn, errorMsg)`
 - Produces: `POST /api/repos/:owner/:repo/pulls/:pull_number/checks/:run_id/rerun` endpoint, returns updated check run
 
@@ -137,7 +152,11 @@ git commit -m "feat(api): add GET /repos/:owner/:repo/pulls/:pull_number/checks 
 
 ```typescript
 // server/api/repos/[owner]/[repo]/pulls/[pull_number]/checks/[run_id]/rerun.post.ts
-import { extractRepoParams, extractPullNumber, executeGitHubRequest } from '#server/utils/repo-route-utils';
+import {
+  extractRepoParams,
+  extractPullNumber,
+  executeGitHubRequest,
+} from '#server/utils/repo-route-utils';
 
 export default defineEventHandler(async (event) => {
   const { owner, repo } = extractRepoParams(event);
@@ -155,11 +174,14 @@ export default defineEventHandler(async (event) => {
   return executeGitHubRequest(
     event,
     async (octokit) => {
-      const { data: checkRun } = await octokit.request('POST /repos/{owner}/{repo}/check-runs/{run_id}/rerun', {
-        owner,
-        repo,
-        run_id: runId,
-      });
+      const { data: checkRun } = await octokit.request(
+        'POST /repos/{owner}/{repo}/check-runs/{run_id}/rerun',
+        {
+          owner,
+          repo,
+          run_id: runId,
+        }
+      );
       return checkRun;
     },
     'Failed to rerun check run'
@@ -187,10 +209,12 @@ git commit -m "feat(api): add POST /repos/:owner/:repo/pulls/:pull_number/checks
 ### Task 3: 前端 — CI 状态面板组件 (PRChecksPanel.vue)
 
 **Files:**
+
 - Create: `app/components/dashboard/pr/PRChecksPanel.vue`
 - Modify: `app/components/dashboard/PRDetail.vue` (集成到侧栏)
 
 **Interfaces:**
+
 - Consumes: `owner`, `repo`, `pullNumber` props, `apiFetch` from `useNekoGitApiFetch()`
 - Produces: 侧栏卡片展示 check runs 摘要与列表，含总览行、各 check run 状态图标与名称
 
@@ -199,7 +223,15 @@ git commit -m "feat(api): add POST /repos/:owner/:repo/pulls/:pull_number/checks
 ```vue
 <!-- PRChecksPanel — NekoGit dashboard component. -->
 <script setup lang="ts">
-import { AlertCircleIcon, CheckCircleIcon, ClockIcon, ExternalLinkIcon, Loader2Icon, PlayIcon, XCircleIcon } from 'lucide-vue-next';
+import {
+  AlertCircleIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  ExternalLinkIcon,
+  Loader2Icon,
+  PlayIcon,
+  XCircleIcon,
+} from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -250,16 +282,19 @@ const summary = computed(() => {
   const failing = checkRuns.value.filter(
     (r) => r.status === 'completed' && r.conclusion && r.conclusion !== 'success'
   ).length;
-  const pending = checkRuns.value.filter(
-    (r) => r.status !== 'completed'
-  ).length;
+  const pending = checkRuns.value.filter((r) => r.status !== 'completed').length;
   return { total, passing, failing, pending };
 });
 
 const getCheckIcon = (run: CheckRun) => {
   if (run.status !== 'completed') return ClockIcon;
   if (run.conclusion === 'success') return CheckCircleIcon;
-  if (run.conclusion === 'failure' || run.conclusion === 'timed_out' || run.conclusion === 'cancelled') return XCircleIcon;
+  if (
+    run.conclusion === 'failure' ||
+    run.conclusion === 'timed_out' ||
+    run.conclusion === 'cancelled'
+  )
+    return XCircleIcon;
   if (run.conclusion === 'skipped' || run.conclusion === 'neutral') return AlertCircleIcon;
   return ClockIcon;
 };
@@ -267,13 +302,21 @@ const getCheckIcon = (run: CheckRun) => {
 const getCheckIconClass = (run: CheckRun) => {
   if (run.status !== 'completed') return 'check-icon--pending';
   if (run.conclusion === 'success') return 'check-icon--success';
-  if (run.conclusion === 'failure' || run.conclusion === 'timed_out' || run.conclusion === 'cancelled') return 'check-icon--failure';
+  if (
+    run.conclusion === 'failure' ||
+    run.conclusion === 'timed_out' ||
+    run.conclusion === 'cancelled'
+  )
+    return 'check-icon--failure';
   if (run.conclusion === 'skipped' || run.conclusion === 'neutral') return 'check-icon--skipped';
   return 'check-icon--pending';
 };
 
 const getConclusionLabel = (run: CheckRun) => {
-  if (run.status !== 'completed') return run.status === 'queued' ? t('prReview.ciChecks.queued') : t('prReview.ciChecks.inProgress');
+  if (run.status !== 'completed')
+    return run.status === 'queued'
+      ? t('prReview.ciChecks.queued')
+      : t('prReview.ciChecks.inProgress');
   if (run.conclusion === 'success') return t('prReview.ciChecks.passed');
   if (run.conclusion === 'failure') return t('prReview.ciChecks.failed');
   if (run.conclusion === 'timed_out') return t('prReview.ciChecks.timedOut');
@@ -284,7 +327,13 @@ const getConclusionLabel = (run: CheckRun) => {
 };
 
 const canRerun = (run: CheckRun) => {
-  return run.status === 'completed' && run.conclusion && run.conclusion !== 'success' && run.conclusion !== 'skipped' && run.conclusion !== 'neutral';
+  return (
+    run.status === 'completed' &&
+    run.conclusion &&
+    run.conclusion !== 'success' &&
+    run.conclusion !== 'skipped' &&
+    run.conclusion !== 'neutral'
+  );
 };
 
 const rerunCheck = async (run: CheckRun) => {
@@ -372,23 +421,18 @@ watch(
           <span v-if="summary.failing > 0" class="checks-summary__item checks-summary__item--fail">
             {{ summary.failing }} {{ t('prReview.ciChecks.failing') }}
           </span>
-          <span v-if="summary.pending > 0" class="checks-summary__item checks-summary__item--pending">
+          <span
+            v-if="summary.pending > 0"
+            class="checks-summary__item checks-summary__item--pending"
+          >
             {{ summary.pending }} {{ t('prReview.ciChecks.pending') }}
           </span>
         </div>
 
         <div class="checks-list">
-          <div
-            v-for="run in checkRuns"
-            :key="run.id"
-            class="check-item"
-          >
+          <div v-for="run in checkRuns" :key="run.id" class="check-item">
             <div class="check-item__icon">
-              <component
-                :is="getCheckIcon(run)"
-                :size="14"
-                :class="getCheckIconClass(run)"
-              />
+              <component :is="getCheckIcon(run)" :size="14" :class="getCheckIconClass(run)" />
             </div>
             <div class="check-item__body">
               <span class="check-item__name">{{ run.name }}</span>
@@ -640,8 +684,12 @@ watch(
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
 ```
@@ -659,11 +707,7 @@ import PRChecksPanel from '~/components/dashboard/pr/PRChecksPanel.vue';
 Add in the template sidebar, after `PRActions` block (after `</PRActions>` closing tag, around line 79) and before `PRReviewerRequestModal` (line 81):
 
 ```vue
-          <PRChecksPanel
-            :owner="repoOwner"
-            :repo="repoName"
-            :pull-number="currentPullRequest?.number || 0"
-          />
+<PRChecksPanel :owner="repoOwner" :repo="repoName" :pull-number="currentPullRequest?.number || 0" />
 ```
 
 - [ ] **Step 3: Verify compilation**
@@ -688,9 +732,11 @@ git commit -m "feat: add PRChecksPanel component with CI status display"
 > Note: The rerun button and view logs link are already implemented in `PRChecksPanel.vue` in Task 3. This task verifies the integration works correctly.
 
 **Files:**
+
 - Already created: `app/components/dashboard/pr/PRChecksPanel.vue`
 
 **Interfaces:**
+
 - Consumes: Existing `rerunCheck` method in `PRChecksPanel.vue` calls `POST /api/repos/:owner/:repo/pulls/:pull_number/checks/:run_id/rerun`
 - Produces: Rerun button on failed check runs, view logs link on all check runs
 
@@ -705,7 +751,16 @@ import { RotateCcwIcon } from 'lucide-vue-next';
 Add `RotateCcwIcon` to the import list in `PRChecksPanel.vue` (line 1 currently imports `AlertCircleIcon, CheckCircleIcon, ClockIcon, ExternalLinkIcon, Loader2Icon, PlayIcon, XCircleIcon` — add `RotateCcwIcon`):
 
 ```typescript
-import { AlertCircleIcon, CheckCircleIcon, ClockIcon, ExternalLinkIcon, Loader2Icon, PlayIcon, RotateCcwIcon, XCircleIcon } from 'lucide-vue-next';
+import {
+  AlertCircleIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  ExternalLinkIcon,
+  Loader2Icon,
+  PlayIcon,
+  RotateCcwIcon,
+  XCircleIcon,
+} from 'lucide-vue-next';
 ```
 
 - [ ] **Step 2: Verify compilation**
@@ -728,6 +783,7 @@ git commit -m "feat: add rerun and view logs buttons to PRChecksPanel"
 ### Task 5: 国际化 — 更新 i18n 文件
 
 **Files:**
+
 - Modify: `i18n/locales/en.json`
 - Modify: `i18n/locales/zh-cn.json`
 

@@ -1,18 +1,5 @@
 /// CRUD management for custom dashboard tabs: creation, updates, deletion, normalization, and persistence.
-import type {
-  CustomTab,
-  CustomTabArchived,
-  CustomTabDraft,
-  CustomTabOrder,
-  CustomTabQuery,
-  CustomTabReview,
-  CustomTabSearchScope,
-  CustomTabSearchType,
-  CustomTabSort,
-  CustomTabSource,
-  CustomTabState,
-  CustomTabVisibility,
-} from '#shared/types/custom-search';
+import type { CustomTab, CustomTabQuery, CustomTabSource } from '#shared/types/custom-search';
 import { cloneCustomTabs, normalizeCustomTabs } from '#shared/utils/user-settings';
 
 export type {

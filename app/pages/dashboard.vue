@@ -277,6 +277,7 @@ import type { LocationQueryRaw } from 'vue-router';
 
 import type { DashboardIssueSearchItem } from '#shared/types/dashboard';
 import type { DashboardNotification } from '#shared/types/notifications';
+import { resolveIssueListFilter, resolvePullListFilter } from '#shared/utils/dashboard-list-filter';
 import ActivityBar from '~/components/dashboard/activity-bar/ActivityBar.vue';
 import DashboardLayout from '~/components/dashboard/DashboardLayout.vue';
 import DashboardLoadingList from '~/components/dashboard/DashboardLoadingList.vue';
@@ -448,6 +449,7 @@ const {
   loading,
   error,
   notifications,
+  unreadNotificationCount: exactNotificationUnreadCount,
   issues,
   pulls,
   repos,
@@ -486,14 +488,18 @@ const notificationReadActionPending = computed(
 
 const { customTabs, getCustomTabById } = useCustomTabs();
 
+const quickFilters = ref<QuickFilterMap>({});
+
 const {
   currentTab: currentBuiltinTab,
   refreshCurrentTab,
   switchTab,
 } = useDashboardTabs({
   fetchNotifications,
-  fetchIssues,
-  fetchPulls,
+  fetchIssues: (page, options) =>
+    fetchIssues(page, options, resolveIssueListFilter(quickFilters.value.issues)),
+  fetchPulls: (page, options) =>
+    fetchPulls(page, options, resolvePullListFilter(quickFilters.value.pulls)),
   fetchRepos,
   initialTab: parseDashboardTab(route.query.tab),
 });
@@ -630,7 +636,7 @@ realtimeNotifications.onNewNotifications((newNotifications) => {
 
 const currentPagination = computed(() => pagination.value[currentTab.value]);
 
-const notificationUnreadCount = computed(() => {
+const pageNotificationUnreadCount = computed(() => {
   let unread = 0;
 
   for (const item of notifications.value) {
@@ -641,6 +647,10 @@ const notificationUnreadCount = computed(() => {
 
   return unread;
 });
+
+const notificationUnreadCount = computed(
+  () => exactNotificationUnreadCount.value ?? pageNotificationUnreadCount.value
+);
 
 const visibleNotificationUnreadCount = computed(() => {
   let unread = 0;
@@ -658,8 +668,6 @@ const showPagination = computed(() => {
   const activePagination = currentPagination.value;
   return activePagination.totalPages !== 1 || activePagination.hasPrev || activePagination.hasNext;
 });
-
-const quickFilters = ref<QuickFilterMap>({});
 
 const currentTabFilters = computed(() => {
   return quickFilters.value[currentTab.value] ?? {};
@@ -716,7 +724,7 @@ const filteredPulls = computed(() => {
 
 const currentTabStats = computed((): Record<string, number> => {
   if (currentTab.value === 'notifications') {
-    const total = notifications.value.length;
+    const total = Math.max(notifications.value.length, notificationUnreadCount.value);
     return {
       unread: notificationUnreadCount.value,
       read: Math.max(total - notificationUnreadCount.value, 0),
@@ -1164,11 +1172,36 @@ const persistQuickFilters = () => {
 };
 
 const handleFilterChange = (filters: Record<string, boolean>) => {
+  const activeTab = currentTab.value;
+
   quickFilters.value = {
     ...quickFilters.value,
-    [currentTab.value]: filters,
+    [activeTab]: filters,
   };
   persistQuickFilters();
+
+  if (selectedCustomTab.value || (activeTab !== 'issues' && activeTab !== 'pulls')) {
+    return;
+  }
+
+  if (currentPage.value !== 1) {
+    void router.replace({
+      path: localePath('/dashboard'),
+      query: buildDashboardQuery({
+        ...route.query,
+        tab: currentRouteTabId.value,
+        page: 1,
+      }),
+    });
+    return;
+  }
+
+  if (activeTab === 'issues') {
+    void fetchIssues(1, { force: true }, resolveIssueListFilter(filters));
+    return;
+  }
+
+  void fetchPulls(1, { force: true }, resolvePullListFilter(filters));
 };
 
 const hydrateQuickFilters = () => {
@@ -1188,6 +1221,29 @@ const hydrateQuickFilters = () => {
   }
 };
 
+const refreshActiveListForQuickFilters = () => {
+  if (!sessionReady.value || !loggedIn.value || selectedCustomTab.value) {
+    return;
+  }
+
+  const activeTab = currentTab.value;
+
+  if (activeTab === 'issues') {
+    const filter = resolveIssueListFilter(currentTabFilters.value);
+    if (filter.state !== 'open') {
+      void fetchIssues(1, { force: true }, filter);
+    }
+    return;
+  }
+
+  if (activeTab === 'pulls') {
+    const filter = resolvePullListFilter(currentTabFilters.value);
+    if (filter.state !== 'open' || filter.merged) {
+      void fetchPulls(1, { force: true }, filter);
+    }
+  }
+};
+
 const syncWindowFocusState = () => {
   if (!import.meta.client) {
     return;
@@ -1198,6 +1254,7 @@ const syncWindowFocusState = () => {
 
 onMounted(() => {
   hydrateQuickFilters();
+  refreshActiveListForQuickFilters();
   syncWindowFocusState();
   window.addEventListener('focus', syncWindowFocusState);
   window.addEventListener('blur', syncWindowFocusState);

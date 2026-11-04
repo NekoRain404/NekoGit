@@ -101,3 +101,48 @@ export function normalizeCheckRunId(value: unknown): number {
 
   return runId;
 }
+
+const gitHubActionsJobPathPattern = /^\/([^/]+)\/([^/]+)\/actions\/runs\/\d+\/job\/(\d+)\/?$/;
+
+/**
+ * Extract a GitHub Actions job id from a check run details URL.
+ * Returns null unless the URL points at github.com for the expected repository.
+ */
+export function extractActionsJobId(
+  detailsUrl: unknown,
+  owner: string,
+  repo: string
+): number | null {
+  if (typeof detailsUrl !== 'string' || !detailsUrl || !owner || !repo) {
+    return null;
+  }
+
+  let url: URL;
+  try {
+    url = new URL(detailsUrl);
+  } catch {
+    return null;
+  }
+
+  if (url.hostname.toLowerCase() !== 'github.com') {
+    return null;
+  }
+
+  const match = url.pathname.match(gitHubActionsJobPathPattern);
+  if (!match) {
+    return null;
+  }
+
+  const [, urlOwner = '', urlRepo = '', jobIdText = ''] = match;
+  if (
+    !urlOwner ||
+    !urlRepo ||
+    urlOwner.toLowerCase() !== owner.toLowerCase() ||
+    urlRepo.toLowerCase() !== repo.toLowerCase()
+  ) {
+    return null;
+  }
+
+  const jobId = Number(jobIdText);
+  return Number.isSafeInteger(jobId) && jobId > 0 ? jobId : null;
+}

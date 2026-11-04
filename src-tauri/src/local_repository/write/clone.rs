@@ -1,12 +1,10 @@
 //! Repository cloning for Local git repository operations / Write git operations.
 
-use std::{
-    path::Path,
-    process::{Command, Stdio},
-};
+use std::{path::Path, process::Command};
 
 use crate::local_repository::{
     parse::git_command_failure_details,
+    process::{git_network_timeout, run_command_with_timeout},
     storage::{path_to_display_string, remember_local_repository},
     types::DesktopCloneRepositoryResult,
     url::{clone_destination_path, normalize_github_repository_clone_url},
@@ -33,14 +31,13 @@ pub(crate) fn clone_github_repository(
         ));
     }
 
-    let output = Command::new("git")
+    let mut command = Command::new("git");
+    command
         .arg("clone")
         .arg(&normalized_url)
         .arg(&destination_path)
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .stdin(Stdio::null())
-        .output()
-        .map_err(|error| format!("failed to start git clone: {error}"))?;
+        .env("GIT_TERMINAL_PROMPT", "0");
+    let output = run_command_with_timeout(&mut command, "git clone", git_network_timeout())?;
 
     if !output.status.success() {
         let details = git_command_failure_details(&output);

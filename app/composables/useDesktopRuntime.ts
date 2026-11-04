@@ -34,6 +34,7 @@ import {
   openLocalRepositoryTerminal,
   pullLocalRepository,
   pushLocalRepository,
+  rememberLocalRepository,
   stashLocalRepositoryChanges,
   switchLocalRepositoryBranch,
 } from './desktop-runtime/localRepositoryCommands';
@@ -166,6 +167,7 @@ export function useDesktopRuntime() {
     fetchLocalRepository,
     pullLocalRepository,
     pushLocalRepository,
+    rememberLocalRepository,
     switchLocalRepositoryBranch,
     createLocalRepositoryBranch,
     checkoutRemoteLocalRepositoryBranch,

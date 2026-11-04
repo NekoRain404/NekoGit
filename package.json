@@ -19,7 +19,8 @@
     "lint": "oxlint ./ --type-aware",
     "lint:fix": "oxlint ./ --fix --type-aware",
     "fmt": "oxfmt ./",
-    "fmt:check": "oxfmt --check ./"
+    "fmt:check": "oxfmt --check ./",
+    "check:tauri-commands": "node scripts/check-tauri-commands.mjs"
   },
   "dependencies": {
     "@comark/nuxt": "^0.4.0",

@@ -2,6 +2,7 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+  extractActionsJobId,
   normalizeCheckRun,
   normalizeCheckRunId,
   summarizeCheckRuns,
@@ -137,5 +138,66 @@ describe('check run summary', () => {
       pending: 1,
       skipped: 0,
     });
+  });
+});
+
+describe('extractActionsJobId', () => {
+  test('extracts the job id from a same-repo Actions details URL', () => {
+    expect(
+      extractActionsJobId('https://github.com/owner/repo/actions/runs/123/job/456', 'owner', 'repo')
+    ).toBe(456);
+
+    expect(
+      extractActionsJobId(
+        'https://github.com/Owner/Repo/actions/runs/123/job/789?pr=1#step:2:3',
+        'owner',
+        'repo'
+      )
+    ).toBe(789);
+
+    expect(
+      extractActionsJobId('https://github.com/owner/repo/actions/runs/9/job/10/', 'OWNER', 'REPO')
+    ).toBe(10);
+  });
+
+  test('rejects details URLs for a different repository', () => {
+    expect(
+      extractActionsJobId('https://github.com/other/repo/actions/runs/1/job/2', 'owner', 'repo')
+    ).toBeNull();
+
+    expect(
+      extractActionsJobId('https://github.com/owner/other/actions/runs/1/job/2', 'owner', 'repo')
+    ).toBeNull();
+  });
+
+  test('rejects non-github.com hosts', () => {
+    for (const url of [
+      'https://example.com/owner/repo/actions/runs/1/job/2',
+      'https://api.github.com/owner/repo/actions/runs/1/job/2',
+      'https://github.com.example.com/owner/repo/actions/runs/1/job/2',
+    ]) {
+      expect(extractActionsJobId(url, 'owner', 'repo')).toBeNull();
+    }
+  });
+
+  test('rejects malformed details URLs', () => {
+    for (const url of [
+      '',
+      'not a url',
+      'https://github.com/owner/repo/actions/runs/123/job/abc',
+      'https://github.com/owner/repo/actions/runs/abc/job/456',
+      'https://github.com/owner/repo/pull/1',
+    ]) {
+      expect(extractActionsJobId(url, 'owner', 'repo')).toBeNull();
+    }
+
+    expect(extractActionsJobId(null, 'owner', 'repo')).toBeNull();
+    expect(extractActionsJobId(undefined, 'owner', 'repo')).toBeNull();
+  });
+
+  test('rejects Actions URLs without a job id', () => {
+    expect(
+      extractActionsJobId('https://github.com/owner/repo/actions/runs/123', 'owner', 'repo')
+    ).toBeNull();
   });
 });

@@ -49,8 +49,8 @@ pub(super) fn generate_readiness_challenge() -> Result<String, String> {
 
 /// HMAC-SHA256 proof matching `shared/utils/desktop-readiness.ts`.
 pub(super) fn build_desktop_readiness_proof(token: &str, challenge: &str) -> String {
-    let mut mac = HmacSha256::new_from_slice(token.as_bytes())
-        .expect("HMAC accepts keys of any size");
+    let mut mac =
+        HmacSha256::new_from_slice(token.as_bytes()).expect("HMAC accepts keys of any size");
     mac.update(READINESS_PROOF_DOMAIN.as_bytes());
     mac.update(challenge.as_bytes());
     hex_encode(&mac.finalize().into_bytes())
@@ -340,7 +340,9 @@ mod tests {
     #[test]
     fn builds_readiness_request_with_challenge_not_secret() {
         let request = build_readiness_http_request("127.0.0.1:43210", "aabbccddeeff0011");
-        assert!(request.starts_with("GET /__nekogit/health?challenge=aabbccddeeff0011 HTTP/1.1\r\n"));
+        assert!(
+            request.starts_with("GET /__nekogit/health?challenge=aabbccddeeff0011 HTTP/1.1\r\n")
+        );
         assert!(request.contains("Host: 127.0.0.1:43210\r\n"));
         assert!(!request.to_ascii_lowercase().contains("deadbeef"));
         assert!(!request.contains("x-nekogit-readiness"));
@@ -350,8 +352,12 @@ mod tests {
     fn accepts_only_http_200_status_lines() {
         assert!(is_successful_http_status_line("HTTP/1.1 200 OK\r\n\r\n"));
         assert!(is_successful_http_status_line("HTTP/1.0 200 OK\n"));
-        assert!(!is_successful_http_status_line("HTTP/1.1 404 Not Found\r\n\r\n"));
-        assert!(!is_successful_http_status_line("HTTP/1.1 401 Unauthorized\r\n\r\n"));
+        assert!(!is_successful_http_status_line(
+            "HTTP/1.1 404 Not Found\r\n\r\n"
+        ));
+        assert!(!is_successful_http_status_line(
+            "HTTP/1.1 401 Unauthorized\r\n\r\n"
+        ));
         assert!(!is_successful_http_status_line(""));
     }
 
@@ -365,15 +371,24 @@ mod tests {
         );
         assert!(is_valid_readiness_response(&good, token, challenge));
 
-        let forged_200 = "HTTP/1.1 200 OK\r\n\r\n{\"ok\":true,\"service\":\"nekogit-desktop\",\"proof\":\"00\"}";
+        let forged_200 =
+            "HTTP/1.1 200 OK\r\n\r\n{\"ok\":true,\"service\":\"nekogit-desktop\",\"proof\":\"00\"}";
         assert!(!is_valid_readiness_response(forged_200, token, challenge));
 
         let wrong_service = format!(
             "HTTP/1.1 200 OK\r\n\r\n{{\"ok\":true,\"service\":\"other\",\"proof\":\"{proof}\"}}"
         );
-        assert!(!is_valid_readiness_response(&wrong_service, token, challenge));
+        assert!(!is_valid_readiness_response(
+            &wrong_service,
+            token,
+            challenge
+        ));
 
         let status_only_200 = "HTTP/1.1 200 OK\r\n\r\n";
-        assert!(!is_valid_readiness_response(status_only_200, token, challenge));
+        assert!(!is_valid_readiness_response(
+            status_only_200,
+            token,
+            challenge
+        ));
     }
 }

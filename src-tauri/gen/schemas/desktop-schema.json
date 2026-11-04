@@ -2139,6 +2139,12 @@
           "markdownDescription": "Enables the desktop_read_github_cli_token command without any pre-configured scope."
         },
         {
+          "description": "Enables the desktop_remember_local_repository command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-remember-local-repository",
+          "markdownDescription": "Enables the desktop_remember_local_repository command without any pre-configured scope."
+        },
+        {
           "description": "Enables the desktop_restart_bundled_server command without any pre-configured scope.",
           "type": "string",
           "const": "allow-desktop-restart-bundled-server",
@@ -2163,10 +2169,22 @@
           "markdownDescription": "Enables the desktop_set_autostart_enabled command without any pre-configured scope."
         },
         {
+          "description": "Enables the desktop_set_current_github_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-set-current-github-state",
+          "markdownDescription": "Enables the desktop_set_current_github_state command without any pre-configured scope."
+        },
+        {
           "description": "Enables the desktop_set_navigation_state command without any pre-configured scope.",
           "type": "string",
           "const": "allow-desktop-set-navigation-state",
           "markdownDescription": "Enables the desktop_set_navigation_state command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the desktop_set_review_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-set-review-state",
+          "markdownDescription": "Enables the desktop_set_review_state command without any pre-configured scope."
         },
         {
           "description": "Enables the desktop_set_unread_count command without any pre-configured scope.",
@@ -2337,6 +2355,12 @@
           "markdownDescription": "Denies the desktop_read_github_cli_token command without any pre-configured scope."
         },
         {
+          "description": "Denies the desktop_remember_local_repository command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-remember-local-repository",
+          "markdownDescription": "Denies the desktop_remember_local_repository command without any pre-configured scope."
+        },
+        {
           "description": "Denies the desktop_restart_bundled_server command without any pre-configured scope.",
           "type": "string",
           "const": "deny-desktop-restart-bundled-server",
@@ -2361,10 +2385,22 @@
           "markdownDescription": "Denies the desktop_set_autostart_enabled command without any pre-configured scope."
         },
         {
+          "description": "Denies the desktop_set_current_github_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-set-current-github-state",
+          "markdownDescription": "Denies the desktop_set_current_github_state command without any pre-configured scope."
+        },
+        {
           "description": "Denies the desktop_set_navigation_state command without any pre-configured scope.",
           "type": "string",
           "const": "deny-desktop-set-navigation-state",
           "markdownDescription": "Denies the desktop_set_navigation_state command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the desktop_set_review_state command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-set-review-state",
+          "markdownDescription": "Denies the desktop_set_review_state command without any pre-configured scope."
         },
         {
           "description": "Denies the desktop_set_unread_count command without any pre-configured scope.",

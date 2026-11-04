@@ -604,7 +604,12 @@
     "openLocal": "Open local file",
     "checkingLocalRepository": "Checking local repository",
     "download": "Download",
-    "copied": "Copied"
+    "copied": "Copied",
+    "fileTooLarge": "File too large to preview",
+    "fileTooLargeHint": "This file is too large to preview. Use download to get the full file."
+  },
+  "repoItem": {
+    "private": "Private"
   },
   "prReview": {
     "openReview": "Review changes",

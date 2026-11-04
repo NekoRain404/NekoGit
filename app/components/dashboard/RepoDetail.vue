@@ -75,6 +75,8 @@ const copy = computed(() => {
       issues: '开放问题',
       language: '语言',
       license: '许可证',
+      adoptLocal: '使用已有本地克隆',
+      adoptingLocal: '正在关联本地克隆…',
       clone: '克隆',
       copied: '已复制',
       copyCloneUrl: '复制 Clone URL',
@@ -149,6 +151,14 @@ const copy = computed(() => {
       watching: '关注',
       watchers: '关注者',
       createPullRequest: '创建 Pull Request',
+      createPullRequestHeadBranch: '源分支',
+      createPullRequestBaseBranch: '目标分支',
+      createPullRequestTitle: 'PR 标题',
+      createPullRequestDescription: '描述',
+      createPullRequestTitlePlaceholder: 'PR 标题',
+      createPullRequestDescriptionPlaceholder: 'PR 描述（可选）',
+      confirmCommit: '确认提交当前所有改动？',
+      confirmPush: '确认推送到远程仓库？',
       creatingPullRequest: '创建中',
       cancel: '取消',
       pullRequestCreated: 'Pull Request 已创建',
@@ -172,6 +182,8 @@ const copy = computed(() => {
     issues: 'Open issues',
     language: 'Language',
     license: 'License',
+    adoptLocal: 'Use existing local clone',
+    adoptingLocal: 'Adopting local clone…',
     clone: 'Clone',
     copied: 'Copied',
     copyCloneUrl: 'Copy clone URL',
@@ -246,6 +258,14 @@ const copy = computed(() => {
     watching: 'Watching',
     watchers: 'Watchers',
     createPullRequest: 'Create Pull Request',
+    createPullRequestHeadBranch: 'Head branch',
+    createPullRequestBaseBranch: 'Base branch',
+    createPullRequestTitle: 'PR title',
+    createPullRequestDescription: 'Description',
+    createPullRequestTitlePlaceholder: 'PR title',
+    createPullRequestDescriptionPlaceholder: 'PR description (optional)',
+    confirmCommit: 'Commit all current changes?',
+    confirmPush: 'Push to the remote repository?',
     creatingPullRequest: 'Creating',
     cancel: 'Cancel',
     pullRequestCreated: 'Pull Request created',
@@ -531,9 +551,7 @@ const fetchReadme = async () => {
       readmeContent.value = null;
       readmePath.value = null;
       readmeError.value =
-        error instanceof Error && error.message
-          ? error.message
-          : t('repoDetail.readmeLoadFailed');
+        error instanceof Error && error.message ? error.message : t('repoDetail.readmeLoadFailed');
     }
   } finally {
     if (requestId === readmeRequestId.value) {

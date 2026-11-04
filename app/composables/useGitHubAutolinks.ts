@@ -136,8 +136,40 @@ function enforceReferenceCacheLimit() {
   }
 }
 
+/** Resolve one reference via the internal API without consulting the shared cache. */
+async function fetchReferenceResolution(
+  target: GitHubAutolinkTarget
+): Promise<GitHubAutolinkResolution> {
+  try {
+    const issue = await $fetch<GitHubIssueReferencePayload>(
+      `/api/issues/${target.owner}/${target.repo}/${target.number}`,
+      {
+        method: 'GET',
+      }
+    );
+
+    if (!issue?.html_url) {
+      return { exists: false };
+    }
+
+    return {
+      exists: true,
+      href: issue.html_url,
+    };
+  } catch {
+    return { exists: false };
+  }
+}
+
 /** Resolve a reference target against the API with LRU caching and dedup. */
 async function resolveReference(target: GitHubAutolinkTarget): Promise<GitHubAutolinkResolution> {
+  // The module cache is process-global on the server, while the internal API
+  // response depends on the requesting session. Never share it across SSR
+  // requests; client-side caching remains enabled.
+  if (import.meta.server) {
+    return fetchReferenceResolution(target);
+  }
+
   const cacheKey = `${target.owner}/${target.repo}#${target.number}`;
   pruneExpiredReferenceCache();
 
@@ -174,31 +206,12 @@ async function resolveReference(target: GitHubAutolinkTarget): Promise<GitHubAut
     resolvePending(resolution);
   };
 
-  void (async () => {
-    try {
-      const issue = await $fetch<GitHubIssueReferencePayload>(
-        `/api/issues/${target.owner}/${target.repo}/${target.number}`,
-        {
-          method: 'GET',
-        }
-      );
-
-      if (!issue?.html_url) {
-        settleResolution({ exists: false }, REFERENCE_CACHE_FAILURE_TTL_MS);
-        return;
-      }
-
-      settleResolution(
-        {
-          exists: true,
-          href: issue.html_url,
-        },
-        REFERENCE_CACHE_SUCCESS_TTL_MS
-      );
-    } catch {
-      settleResolution({ exists: false }, REFERENCE_CACHE_FAILURE_TTL_MS);
-    }
-  })();
+  void fetchReferenceResolution(target).then((resolution) => {
+    settleResolution(
+      resolution,
+      resolution.exists ? REFERENCE_CACHE_SUCCESS_TTL_MS : REFERENCE_CACHE_FAILURE_TTL_MS
+    );
+  });
 
   return resolutionPromise;
 }

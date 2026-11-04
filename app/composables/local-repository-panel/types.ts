@@ -3,6 +3,7 @@ import type { ComputedRef } from 'vue';
 
 /** All possible user actions in the local repository panel toolbar. */
 export type DesktopRepositoryAction =
+  | 'adopt'
   | 'clone'
   | 'commit'
   | 'copy'
@@ -20,6 +21,8 @@ export type DesktopRepositoryGitAction = 'fetch' | 'pull' | 'push';
 
 /** Localized string keys used throughout the local repository panel UI. */
 export type LocalRepositoryCopy = {
+  adoptLocal: string;
+  adoptingLocal: string;
   clone: string;
   copied: string;
   copyCloneUrl: string;
@@ -74,6 +77,14 @@ export type LocalRepositoryCopy = {
   openTerminal: string;
   cancel: string;
   createPullRequest: string;
+  createPullRequestHeadBranch: string;
+  createPullRequestBaseBranch: string;
+  createPullRequestTitle: string;
+  createPullRequestDescription: string;
+  createPullRequestTitlePlaceholder: string;
+  createPullRequestDescriptionPlaceholder: string;
+  confirmCommit: string;
+  confirmPush: string;
   creatingPullRequest: string;
   pullRequestCreated: string;
   noPullRequest: string;

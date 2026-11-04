@@ -1,7 +1,17 @@
 <!-- PRChecksPanel — Sidebar panel listing PR check runs with status, duration, logs link and re-run. -->
 <script setup lang="ts">
-import { AlertCircleIcon, CheckCircleIcon, ClockIcon, ExternalLinkIcon, Loader2Icon, PlayIcon, RefreshCwIcon, RotateCcwIcon, XCircleIcon } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import {
+  AlertCircleIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  ExternalLinkIcon,
+  Loader2Icon,
+  PlayIcon,
+  RefreshCwIcon,
+  RotateCcwIcon,
+  XCircleIcon,
+} from 'lucide-vue-next';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import getFetchErrorMessage from '~/utils/getFetchErrorMessage';
@@ -18,9 +28,16 @@ interface CheckRun {
   app: { name: string };
 }
 
+interface CombinedStatusEntry {
+  context: string;
+  state: string;
+  description: string | null;
+  target_url?: string | null;
+}
+
 interface CombinedStatus {
   state: string;
-  statuses: Array<{ context: string; state: string; description: string }>;
+  statuses: CombinedStatusEntry[];
 }
 
 interface ChecksResponse {
@@ -43,7 +60,11 @@ const loading = ref(false);
 const error = ref('');
 const rerunningRunId = ref<number | null>(null);
 const totalCount = ref(0);
+const refreshing = ref(false);
 const combinedStatus = ref<CombinedStatus | null>(null);
+
+const statuses = computed(() => combinedStatus.value?.statuses ?? []);
+const displayTotalCount = computed(() => totalCount.value + statuses.value.length);
 
 const summary = computed(() => {
   const total = checkRuns.value.length;
@@ -61,9 +82,7 @@ const summary = computed(() => {
       r.conclusion !== 'skipped' &&
       r.conclusion !== 'neutral'
   ).length;
-  const pending = checkRuns.value.filter(
-    (r) => r.status !== 'completed'
-  ).length;
+  const pending = checkRuns.value.filter((r) => r.status !== 'completed').length;
   return { total, passing, failing, pending, skipped };
 });
 
@@ -85,7 +104,12 @@ const combinedStateClass = computed(() => {
 const getCheckIcon = (run: CheckRun) => {
   if (run.status !== 'completed') return ClockIcon;
   if (run.conclusion === 'success') return CheckCircleIcon;
-  if (run.conclusion === 'failure' || run.conclusion === 'timed_out' || run.conclusion === 'cancelled') return XCircleIcon;
+  if (
+    run.conclusion === 'failure' ||
+    run.conclusion === 'timed_out' ||
+    run.conclusion === 'cancelled'
+  )
+    return XCircleIcon;
   if (run.conclusion === 'skipped' || run.conclusion === 'neutral') return AlertCircleIcon;
   return ClockIcon;
 };
@@ -93,13 +117,21 @@ const getCheckIcon = (run: CheckRun) => {
 const getCheckIconClass = (run: CheckRun) => {
   if (run.status !== 'completed') return 'check-icon--pending';
   if (run.conclusion === 'success') return 'check-icon--success';
-  if (run.conclusion === 'failure' || run.conclusion === 'timed_out' || run.conclusion === 'cancelled') return 'check-icon--failure';
+  if (
+    run.conclusion === 'failure' ||
+    run.conclusion === 'timed_out' ||
+    run.conclusion === 'cancelled'
+  )
+    return 'check-icon--failure';
   if (run.conclusion === 'skipped' || run.conclusion === 'neutral') return 'check-icon--skipped';
   return 'check-icon--pending';
 };
 
 const getConclusionLabel = (run: CheckRun) => {
-  if (run.status !== 'completed') return run.status === 'queued' ? t('prReview.ciChecks.queued') : t('prReview.ciChecks.inProgress');
+  if (run.status !== 'completed')
+    return run.status === 'queued'
+      ? t('prReview.ciChecks.queued')
+      : t('prReview.ciChecks.inProgress');
   if (run.conclusion === 'success') return t('prReview.ciChecks.passed');
   if (run.conclusion === 'failure') return t('prReview.ciChecks.failed');
   if (run.conclusion === 'timed_out') return t('prReview.ciChecks.timedOut');
@@ -109,8 +141,44 @@ const getConclusionLabel = (run: CheckRun) => {
   return run.conclusion || '';
 };
 
+const getStatusIcon = (status: CombinedStatusEntry) => {
+  if (status.state === 'success') return CheckCircleIcon;
+  if (status.state === 'failure' || status.state === 'error') return XCircleIcon;
+  return ClockIcon;
+};
+
+const getStatusIconClass = (status: CombinedStatusEntry) => {
+  if (status.state === 'success') return 'check-icon--success';
+  if (status.state === 'failure' || status.state === 'error') return 'check-icon--failure';
+  return 'check-icon--pending';
+};
+
+const getStatusStateLabel = (status: CombinedStatusEntry) => {
+  if (status.state === 'success') return t('prReview.ciChecks.passed');
+  if (status.state === 'failure' || status.state === 'error') return t('prReview.ciChecks.failed');
+  if (status.state === 'pending') return t('prReview.ciChecks.pending');
+  return status.state;
+};
+
+const getStatusDescription = (status: CombinedStatusEntry) => {
+  const stateLabel = getStatusStateLabel(status);
+  return status.description ? `${stateLabel} · ${status.description}` : stateLabel;
+};
+
+const openStatusTarget = (status: CombinedStatusEntry) => {
+  if (status.target_url) {
+    window.open(status.target_url, '_blank', 'noopener,noreferrer');
+  }
+};
+
 const canRerun = (run: CheckRun) => {
-  return run.status === 'completed' && run.conclusion && run.conclusion !== 'success' && run.conclusion !== 'skipped' && run.conclusion !== 'neutral';
+  return (
+    run.status === 'completed' &&
+    run.conclusion &&
+    run.conclusion !== 'success' &&
+    run.conclusion !== 'skipped' &&
+    run.conclusion !== 'neutral'
+  );
 };
 
 const rerunCheck = async (run: CheckRun) => {
@@ -135,10 +203,15 @@ const openLogs = (run: CheckRun) => {
   }
 };
 
-const fetchChecks = async () => {
+const fetchChecks = async (silent = false) => {
   if (!props.owner || !props.repo || !props.pullNumber) return;
 
-  loading.value = true;
+  if (silent) {
+    if (refreshing.value || loading.value) return;
+    refreshing.value = true;
+  } else {
+    loading.value = true;
+  }
   error.value = '';
 
   try {
@@ -156,7 +229,11 @@ const fetchChecks = async () => {
     totalCount.value = 0;
     combinedStatus.value = null;
   } finally {
-    loading.value = false;
+    if (silent) {
+      refreshing.value = false;
+    } else {
+      loading.value = false;
+    }
   }
 };
 
@@ -167,6 +244,21 @@ watch(
   },
   { immediate: true }
 );
+
+let refreshTimer: ReturnType<typeof setInterval> | null = null;
+
+onMounted(() => {
+  refreshTimer = setInterval(() => {
+    fetchChecks(true);
+  }, 30000);
+});
+
+onBeforeUnmount(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+});
 </script>
 
 <template>
@@ -177,13 +269,13 @@ watch(
         <span class="sidebar-card__title">{{ t('prReview.ciChecks.checks') }}</span>
       </div>
       <div class="sidebar-card__header-actions">
-        <span v-if="!loading" class="sidebar-badge">{{ totalCount }}</span>
+        <span v-if="!loading" class="sidebar-badge">{{ displayTotalCount }}</span>
         <button
           class="checks-refresh"
           type="button"
           :disabled="loading"
           :title="t('prReview.ciChecks.refresh')"
-          @click="fetchChecks"
+          @click="fetchChecks()"
         >
           <RefreshCwIcon :size="13" />
         </button>
@@ -199,7 +291,7 @@ watch(
         {{ error }}
       </div>
 
-      <div v-else-if="checkRuns.length === 0" class="sidebar-card__empty">
+      <div v-else-if="checkRuns.length === 0 && statuses.length === 0" class="sidebar-card__empty">
         {{ t('prReview.ciChecks.noChecks') }}
       </div>
 
@@ -217,26 +309,24 @@ watch(
           <span v-if="summary.failing > 0" class="checks-summary__item checks-summary__item--fail">
             {{ summary.failing }} {{ t('prReview.ciChecks.failing') }}
           </span>
-          <span v-if="summary.pending > 0" class="checks-summary__item checks-summary__item--pending">
+          <span
+            v-if="summary.pending > 0"
+            class="checks-summary__item checks-summary__item--pending"
+          >
             {{ summary.pending }} {{ t('prReview.ciChecks.pending') }}
           </span>
-          <span v-if="summary.skipped > 0" class="checks-summary__item checks-summary__item--skipped">
+          <span
+            v-if="summary.skipped > 0"
+            class="checks-summary__item checks-summary__item--skipped"
+          >
             {{ summary.skipped }} {{ t('prReview.ciChecks.skipped') }}
           </span>
         </div>
 
         <div class="checks-list">
-          <div
-            v-for="run in checkRuns"
-            :key="run.id"
-            class="check-item"
-          >
+          <div v-for="run in checkRuns" :key="run.id" class="check-item">
             <div class="check-item__icon">
-              <component
-                :is="getCheckIcon(run)"
-                :size="14"
-                :class="getCheckIconClass(run)"
-              />
+              <component :is="getCheckIcon(run)" :size="14" :class="getCheckIconClass(run)" />
             </div>
             <div class="check-item__body">
               <span class="check-item__name">{{ run.name }}</span>
@@ -260,6 +350,35 @@ watch(
                 type="button"
                 :title="t('prReview.ciChecks.viewLogs')"
                 @click="openLogs(run)"
+              >
+                <ExternalLinkIcon :size="13" />
+              </button>
+            </div>
+          </div>
+
+          <div
+            v-for="(status, index) in statuses"
+            :key="`${status.context}-${index}`"
+            class="check-item"
+          >
+            <div class="check-item__icon">
+              <component
+                :is="getStatusIcon(status)"
+                :size="14"
+                :class="getStatusIconClass(status)"
+              />
+            </div>
+            <div class="check-item__body">
+              <span class="check-item__name">{{ status.context }}</span>
+              <span class="check-item__conclusion">{{ getStatusDescription(status) }}</span>
+            </div>
+            <div class="check-item__actions">
+              <button
+                v-if="status.target_url"
+                class="check-item__action"
+                type="button"
+                :title="t('prReview.ciChecks.viewLogs')"
+                @click="openStatusTarget(status)"
               >
                 <ExternalLinkIcon :size="13" />
               </button>
@@ -519,7 +638,11 @@ watch(
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

@@ -2,6 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
+use super::resolve::ensure_repository_path_within_root;
 use crate::local_repository::{
     paths::normalize::{normalize_repository_relative_path, repository_relative_path_string},
     storage::{local_repository_status, path_to_display_string},
@@ -33,6 +34,8 @@ pub(crate) fn local_repository_path_status(
     if !local_path.starts_with(&repository_root) {
         return Err("repository path must stay inside the local repository".to_owned());
     }
+
+    ensure_repository_path_within_root(&repository_root, &local_path)?;
 
     let exists = local_path.exists();
     let is_directory = exists && local_path.is_dir();

@@ -7,6 +7,8 @@ Start here when maintaining NekoGit:
 - [Desktop Git Workflow Notes](desktop-git-workflow.md): detailed Rust/Tauri
   and frontend boundaries for local repository workflows.
 
+- [Code Audit 2026-11-04](audit/2026-11-04-code-audit.md): full code audit, defect IDs, missing-feature inventory, and remediation checklist.
+
 Keep new documentation focused on one operational purpose. Put release,
 verification, and ownership notes in the handoff document; put Git command and
 local repository workflow details in the desktop workflow notes.

@@ -76,11 +76,12 @@ export default definePrivateApiCoalescedEventHandler(async (event) => {
     // "pending" here; derive the overall state from the check runs instead.
     if (!Array.isArray(combinedStatusData.statuses) || combinedStatusData.statuses.length === 0) {
       const summary = summarizeCheckRuns(normalizedRuns);
-      overallState = summary.failing > 0
-        ? 'failure'
-        : summary.passing === summary.total && summary.total > 0
-          ? 'success'
-          : 'pending';
+      overallState =
+        summary.failing > 0
+          ? 'failure'
+          : summary.passing === summary.total && summary.total > 0
+            ? 'success'
+            : 'pending';
     }
 
     return {

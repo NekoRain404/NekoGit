@@ -19,6 +19,14 @@ export const cloneRepository = async (repositoryUrl: string, destinationDirector
   });
 };
 
+/** Associate an existing local Git clone with the current GitHub repository. */
+export const rememberLocalRepository = async (repositoryUrl: string, directory: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryStatus>('desktop_remember_local_repository', {
+    repositoryUrl,
+    directory,
+  });
+};
+
 /** Check whether a local repository exists on disk. */
 export const getLocalRepositoryStatus = async (repositoryUrl: string) => {
   return invokeDesktopCommand<DesktopLocalRepositoryStatus>('desktop_local_repository_status', {

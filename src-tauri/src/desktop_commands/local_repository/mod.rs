@@ -1,5 +1,6 @@
 //! Tauri IPC commands that delegate local Git repository operations to blocking tasks.
 
+mod adopt;
 mod branches;
 mod changes;
 mod clone;
@@ -7,6 +8,7 @@ mod open;
 mod read;
 mod sync;
 
+pub(crate) use adopt::desktop_remember_local_repository;
 pub(crate) use branches::{
     desktop_checkout_remote_local_repository_branch, desktop_create_local_repository_branch,
     desktop_switch_local_repository_branch,

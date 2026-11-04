@@ -10,7 +10,7 @@ Track notifications, issues, pull requests, and repositories from one focused wo
 
 ### 📬 Notifications
 
-Grouped by reason — `mention`, `review_requested`, `ci_activity`, `security_alert`, `assign`, `state_change`, `subscribed` and more. Unread items have a blue indicator. Click **Mark as read** to dismiss, or let the 60-second auto-refresh catch new ones without reloading the page.
+Reason icons for `mention`, `review_requested`, `ci_activity`, `security_alert`, `assign`, `state_change`, `subscribed` and more make activity easy to scan. Unread items have a blue indicator. Click **Mark as read** to dismiss, or let the 60-second auto-refresh catch new ones without reloading the page.
 
 ### 🎯 Issues & Pull Requests
 

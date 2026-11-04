@@ -6,6 +6,8 @@ mod status;
 mod time;
 
 pub(crate) use display::path_to_display_string;
-pub(crate) use status::{local_repository_status, remember_local_repository};
+pub(crate) use status::{
+    local_repository_status, remember_existing_local_repository, remember_local_repository,
+};
 #[cfg(test)]
 pub(crate) use time::unix_timestamp_secs;

@@ -59,11 +59,7 @@ function resetBucketWindow(bucket: AuthRateLimitBucket, nowMs: number): void {
   bucket.lockedUntil = 0;
 }
 
-function isWindowExpired(
-  bucket: AuthRateLimitBucket,
-  nowMs: number,
-  windowMs: number
-): boolean {
+function isWindowExpired(bucket: AuthRateLimitBucket, nowMs: number, windowMs: number): boolean {
   return bucket.failures > 0 && nowMs - bucket.windowStart > windowMs;
 }
 

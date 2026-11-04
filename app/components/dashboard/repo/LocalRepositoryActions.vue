@@ -6,6 +6,7 @@ import {
   CopyIcon,
   DownloadIcon,
   FolderOpenIcon,
+  FolderSearchIcon,
   GitPullRequestArrowIcon,
   GitPullRequestIcon,
   Loader2Icon,
@@ -49,6 +50,21 @@ const handlePRCreated = async (pull: any) => {
       <Loader2Icon v-if="state.desktopAction.value === 'clone'" :size="14" class="spin-animation" />
       <DownloadIcon v-else :size="14" />
       <span>{{ copy.clone }}</span>
+    </button>
+
+    <button
+      v-if="
+        state.desktopLocalRepositoryStatus.value && !state.desktopLocalRepositoryStatus.value.exists
+      "
+      class="local-repo-link local-repo-panel__action"
+      :disabled="Boolean(state.desktopAction.value)"
+      @click="state.adoptDesktopLocalRepository"
+    >
+      <Loader2Icon v-if="state.desktopAction.value === 'adopt'" :size="14" class="spin-animation" />
+      <FolderSearchIcon v-else :size="14" />
+      <span>{{
+        state.desktopAction.value === 'adopt' ? copy.adoptingLocal : copy.adoptLocal
+      }}</span>
     </button>
     <button
       class="local-repo-link local-repo-panel__action local-repo-panel__action--wide"
@@ -132,7 +148,10 @@ const handlePRCreated = async (pull: any) => {
       </span>
     </button>
     <template
-      v-if="state.desktopLocalRepositoryGitStatus.value?.upstream && state.desktopLocalRepositoryGitStatus.value?.clean"
+      v-if="
+        state.desktopLocalRepositoryGitStatus.value?.upstream &&
+        state.desktopLocalRepositoryGitStatus.value?.clean
+      "
     >
       <button
         v-if="!state.associatedPullRequest.value"

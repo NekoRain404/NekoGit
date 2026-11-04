@@ -9,6 +9,7 @@ import { buildCurrentGitHubRepository } from '~/utils/current-github-url-utils';
 
 import {
   chooseCloneDestinationDirectory,
+  chooseExistingLocalRepositoryDirectory,
   getDesktopActionErrorMessage,
   showDesktopMessage,
 } from './local-repository-panel/desktopDialogs';
@@ -16,7 +17,6 @@ import { useLocalRepositoryPanelRefreshers } from './local-repository-panel/refr
 import { useLocalRepositoryPanelState } from './local-repository-panel/state';
 import type {
   DesktopRepositoryGitAction,
-  LocalRepositoryCopy,
   UseLocalRepositoryPanelOptions,
 } from './local-repository-panel/types';
 import { useLocalRepositoryPanelViewModel } from './local-repository-panel/viewModel';
@@ -44,6 +44,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     openLocalRepositoryTerminal,
     pullLocalRepository,
     pushLocalRepository,
+    rememberLocalRepository,
     stashLocalRepositoryChanges,
     switchLocalRepositoryBranch,
   } = useDesktopRuntime();
@@ -183,6 +184,32 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     }
   };
 
+  const adoptDesktopLocalRepository = async () => {
+    const repository = desktopRepository.value;
+    if (!repository || desktopAction.value) return;
+
+    desktopAction.value = 'adopt';
+    try {
+      const directory = await chooseExistingLocalRepositoryDirectory(repository.fullName);
+      if (typeof directory !== 'string') return;
+
+      desktopLocalRepositoryStatus.value = await rememberLocalRepository(
+        repository.cloneUrl,
+        directory
+      );
+      await refreshDesktopLocalRepositoryStatus();
+      await refreshDesktopLocalRepositoryGitStatus();
+      await refreshDesktopLocalRepositoryBranches();
+      await refreshDesktopLocalRepositoryChangedFiles();
+      await refreshDesktopLocalRepositoryCommitHistory();
+    } catch (error) {
+      const message = getDesktopActionErrorMessage(error, 'Failed to adopt local repository.');
+      await showDesktopMessage(message, 'error');
+    } finally {
+      desktopAction.value = null;
+    }
+  };
+
   const openDesktopLocalRepository = async () => {
     const repository = desktopRepository.value;
     if (!repository || !desktopLocalRepositoryStatus.value?.exists || desktopAction.value) return;
@@ -227,10 +254,12 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
   const runDesktopLocalRepositoryGitAction = async (
     action: DesktopRepositoryGitAction,
     command: (repositoryUrl: string) => Promise<DesktopLocalRepositoryGitStatus>,
-    fallbackError: string
+    fallbackError: string,
+    confirmMessage?: string
   ) => {
     const repository = desktopRepository.value;
     if (!repository || !desktopLocalRepositoryStatus.value?.exists || desktopAction.value) return;
+    if (confirmMessage && import.meta.client && !window.confirm(confirmMessage)) return;
 
     desktopAction.value = action;
     desktopGitStatusLoading.value = true;
@@ -238,6 +267,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
 
     try {
       desktopLocalRepositoryGitStatus.value = await command(repository.cloneUrl);
+      void refreshAssociatedPullRequest();
       void refreshDesktopLocalRepositoryBranches();
       void refreshDesktopLocalRepositoryChangedFiles();
       void refreshDesktopLocalRepositoryCommitHistory();
@@ -270,7 +300,8 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     await runDesktopLocalRepositoryGitAction(
       'push',
       pushLocalRepository,
-      'Failed to push local repository.'
+      'Failed to push local repository.',
+      options.copy.value.confirmPush
     );
   };
 
@@ -285,6 +316,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     ) {
       return;
     }
+    if (import.meta.client && !window.confirm(options.copy.value.confirmCommit)) return;
 
     desktopAction.value = 'commit';
     desktopGitStatusLoading.value = true;
@@ -295,6 +327,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
         repository.cloneUrl,
         commitMessage
       );
+      void refreshAssociatedPullRequest();
       desktopCommitMessage.value = '';
       await refreshDesktopLocalRepositoryChangedFiles();
       await refreshDesktopLocalRepositoryCommitHistory();
@@ -328,6 +361,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
       desktopLocalRepositoryGitStatus.value = await stashLocalRepositoryChanges(
         repository.cloneUrl
       );
+      void refreshAssociatedPullRequest();
       await refreshDesktopLocalRepositoryChangedFiles();
       await refreshDesktopLocalRepositoryCommitHistory();
     } catch (error) {
@@ -365,6 +399,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
         repository.cloneUrl,
         branchName
       );
+      void refreshAssociatedPullRequest();
       await refreshDesktopLocalRepositoryBranches();
       await refreshDesktopLocalRepositoryChangedFiles();
       await refreshDesktopLocalRepositoryCommitHistory();
@@ -403,6 +438,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
         repository.cloneUrl,
         branchName
       );
+      void refreshAssociatedPullRequest();
       desktopNewBranchName.value = '';
       await refreshDesktopLocalRepositoryBranches();
       await refreshDesktopLocalRepositoryChangedFiles();
@@ -443,6 +479,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
         repository.cloneUrl,
         remoteBranchName
       );
+      void refreshAssociatedPullRequest();
       desktopRemoteBranchName.value = '';
       await refreshDesktopLocalRepositoryBranches();
       await refreshDesktopLocalRepositoryChangedFiles();
@@ -520,25 +557,21 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopAction.value = 'createPR';
     try {
       const apiFetch = useNekoGitApiFetch();
-      const pull = await apiFetch(
-        `/api/repos/${repository.owner}/${repository.repo}/pulls`,
-        {
-          method: 'POST',
-          body: {
-            head: branch,
-            base,
-            title,
-            body: createPullRequestBody.value.trim() || undefined,
-          },
-        }
-      );
+      const pull = await apiFetch(`/api/repos/${repository.owner}/${repository.repo}/pulls`, {
+        method: 'POST',
+        body: {
+          head: branch,
+          base,
+          title,
+          body: createPullRequestBody.value.trim() || undefined,
+        },
+      });
       createPullRequestTitle.value = '';
       createPullRequestBody.value = '';
       void refreshAssociatedPullRequest();
       return pull;
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to create pull request.';
+      const message = error instanceof Error ? error.message : 'Failed to create pull request.';
       await showDesktopMessage(message, 'error');
       throw error;
     } finally {
@@ -622,6 +655,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     createPullRequestBaseBranch,
     refreshAssociatedPullRequest,
     submitCreatePullRequest,
+    adoptDesktopLocalRepository,
     checkoutDesktopRemoteLocalRepositoryBranch,
     cloneDesktopRepository,
     commitDesktopLocalRepositoryChanges,

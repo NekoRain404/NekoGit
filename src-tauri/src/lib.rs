@@ -1,9 +1,17 @@
 //! NekoGit desktop application core.
 //! Wires together the Tauri shell, bundled server, system tray, menus, and local Git operations.
 
-use std::fs;
+use std::{
+    fs,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    thread,
+    time::Duration,
+};
 
-use tauri::{Manager, Url, WebviewUrl, WebviewWindowBuilder, WindowEvent};
+use tauri::{Manager, Runtime, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
 
 mod desktop_autostart;
 mod desktop_commands;
@@ -43,6 +51,28 @@ use desktop_window_state::{
 };
 
 const DEFAULT_DEV_CLIENT_URL: &str = "http://127.0.0.1:3000";
+
+const WINDOW_STATE_SAVE_DEBOUNCE: Duration = Duration::from_millis(400);
+
+/// Saves window bounds after a short debounce so resize/move drags do not write on every event.
+fn schedule_window_state_save<R: Runtime>(
+    app_handle: tauri::AppHandle<R>,
+    window: WebviewWindow<R>,
+    pending: Arc<AtomicBool>,
+) {
+    if pending.swap(true, Ordering::SeqCst) {
+        return;
+    }
+
+    thread::spawn(move || {
+        thread::sleep(WINDOW_STATE_SAVE_DEBOUNCE);
+        pending.store(false, Ordering::SeqCst);
+
+        if let Some(store) = app_handle.try_state::<DesktopWindowStateStore>() {
+            save_window_state(store.inner(), &window, None);
+        }
+    });
+}
 
 /// Builds and launches the Tauri application, initializing the bundled server,
 /// system tray, app menu, window state, and all IPC command handlers.
@@ -181,9 +211,11 @@ pub fn run() {
                 }
             }
 
+            let window_state_save_pending = Arc::new(AtomicBool::new(false));
             window.on_window_event({
                 let window = window.clone();
                 let app_handle = app.handle().clone();
+                let window_state_save_pending = window_state_save_pending.clone();
                 move |event| {
                     let store = app_handle.try_state::<DesktopWindowStateStore>();
 
@@ -192,9 +224,11 @@ pub fn run() {
                         | WindowEvent::Resized(_)
                         | WindowEvent::ScaleFactorChanged { .. }
                         | WindowEvent::Focused(false) => {
-                            if let Some(store) = store {
-                                save_window_state(store.inner(), &window, None);
-                            }
+                            schedule_window_state_save(
+                                app_handle.clone(),
+                                window.clone(),
+                                window_state_save_pending.clone(),
+                            );
                         }
                         WindowEvent::CloseRequested { api, .. } => {
                             if let Some(store) = store {
@@ -232,6 +266,7 @@ pub fn run() {
             desktop_open_github,
             desktop_open_github_url,
             desktop_clone_repository,
+            desktop_remember_local_repository,
             desktop_local_repository_status,
             desktop_local_repository_git_status,
             desktop_local_repository_branches,

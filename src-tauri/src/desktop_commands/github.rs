@@ -12,7 +12,7 @@ use crate::{
 
 /// Opens the main GitHub page in the system browser.
 #[tauri::command]
-/// Opens the user's GitHub profile in the default browser.
+/// Opens the GitHub homepage in the default browser.
 pub(crate) fn desktop_open_github() -> Result<(), String> {
     open_github_url("https://github.com")
 }

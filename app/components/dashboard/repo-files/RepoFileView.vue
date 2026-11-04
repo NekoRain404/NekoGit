@@ -214,6 +214,8 @@ const fileBytes = computed(() => {
   return decodeRepositoryFileBase64(fileContent.value?.content);
 });
 
+const isFileTooLarge = computed(() => Boolean(fileContent.value?.tooLarge));
+
 const decodedContent = computed(() => {
   return decodeRepositoryFileText(fileBytes.value);
 });
@@ -240,6 +242,18 @@ const rawFileUrl = computed(() => {
   if (!fileContent.value?.download_url) return null;
 
   return normalizeCurrentGitHubUrl(fileContent.value.download_url);
+});
+
+/** Same-origin raw endpoint used to download files too large to inline for preview. */
+const rawDownloadUrl = computed(() => {
+  if (!currentPath.value) return null;
+
+  const encodedPath = currentPath.value.split('/').map(encodeURIComponent).join('/');
+  const refQuery = currentBranch.value ? `?ref=${encodeURIComponent(currentBranch.value)}` : '';
+  const owner = encodeURIComponent(props.owner);
+  const repo = encodeURIComponent(props.repo);
+
+  return `/api/repos/${owner}/${repo}/raw/${encodedPath}${refQuery}`;
 });
 
 const sortedDirectoryContents = computed(() => {
@@ -291,7 +305,7 @@ const initHighlighter = async (
 };
 
 const highlightCode = async () => {
-  if (!fileContent.value || isBinaryFile.value) {
+  if (!fileContent.value || isBinaryFile.value || isFileTooLarge.value) {
     highlightedHtml.value = '';
     return;
   }
@@ -449,6 +463,30 @@ const openCurrentLocalPath = async () => {
 
 const downloadFile = async () => {
   if (!fileContent.value) return;
+
+  // Inline previews only contain bytes for files GitHub returns as base64.
+  // For larger files, stream the full content from the raw endpoint instead of
+  // saving an empty placeholder.
+  if (isFileTooLarge.value) {
+    const url = rawDownloadUrl.value;
+    if (!url || !import.meta.client) return;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Raw download failed with HTTP ${response.status}`);
+      }
+
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      await saveFile(fileName.value, bytes, {
+        title: 'Save repository file',
+      });
+    } catch (error) {
+      console.error('Failed to download large repository file:', error);
+    }
+    return;
+  }
+
   await saveFile(fileName.value, fileBytes.value, {
     title: 'Save repository file',
   });
@@ -798,7 +836,10 @@ onBeforeUnmount(clearCopyResetTimer);
         <span v-if="fileContent && !loading" class="repo-file-view__summary-pill">
           {{ formatRepositoryFileSize(fileContent.size) }}
         </span>
-        <span v-if="!isBinaryFile && lineCount > 0" class="repo-file-view__summary-pill">
+        <span
+          v-if="!isBinaryFile && !isFileTooLarge && lineCount > 0"
+          class="repo-file-view__summary-pill"
+        >
           {{ t('repoFileView.lines', { count: lineCount }) }}
         </span>
         <span v-if="!fileContent && !loading" class="repo-file-view__summary-pill">
@@ -1048,7 +1089,7 @@ onBeforeUnmount(clearCopyResetTimer);
                 <FolderOpenIcon v-else :size="14" aria-hidden="true" />
               </button>
               <button
-                v-if="!isBinaryFile"
+                v-if="!isBinaryFile && !isFileTooLarge"
                 type="button"
                 class="repo-file-view__toolbar-button"
                 :class="{ 'repo-file-view__toolbar-button--active': wordWrap }"
@@ -1059,6 +1100,7 @@ onBeforeUnmount(clearCopyResetTimer);
                 <WrapTextIcon :size="14" aria-hidden="true" />
               </button>
               <button
+                v-if="!isFileTooLarge"
                 type="button"
                 class="repo-file-view__toolbar-button"
                 :aria-label="t('repoFileView.copyContent')"
@@ -1086,7 +1128,21 @@ onBeforeUnmount(clearCopyResetTimer);
             </div>
           </div>
 
-          <div v-if="isBinaryFile" class="repo-file-view__binary">
+          <div v-if="isFileTooLarge" class="repo-file-view__binary">
+            <FileIcon :size="32" aria-hidden="true" />
+            <p class="repo-file-view__binary-title">{{ t('repoFileView.fileTooLarge') }}</p>
+            <p class="repo-file-view__binary-hint">{{ t('repoFileView.fileTooLargeHint') }}</p>
+            <button
+              type="button"
+              class="button is-small is-link is-light mt-3"
+              @click="downloadFile"
+            >
+              <DownloadIcon :size="14" aria-hidden="true" />
+              <span>{{ t('repoFileView.download') }}</span>
+            </button>
+          </div>
+
+          <div v-else-if="isBinaryFile" class="repo-file-view__binary">
             <FileIcon :size="32" aria-hidden="true" />
             <p class="repo-file-view__binary-title">{{ t('repoFileView.binaryFile') }}</p>
             <p class="repo-file-view__binary-hint">{{ t('repoFileView.binaryFileHint') }}</p>

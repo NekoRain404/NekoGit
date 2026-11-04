@@ -3,6 +3,7 @@
 mod diff;
 mod parse;
 mod paths;
+mod process;
 mod read;
 mod storage;
 mod types;
@@ -15,7 +16,7 @@ pub(crate) use read::{
     local_repository_branches, local_repository_changed_files, local_repository_commit_history,
     local_repository_git_status,
 };
-pub(crate) use storage::local_repository_status;
+pub(crate) use storage::{local_repository_status, remember_existing_local_repository};
 pub(crate) use types::{
     DesktopCloneRepositoryResult, DesktopLocalRepositoryBranches,
     DesktopLocalRepositoryChangedFiles, DesktopLocalRepositoryCommitHistory,

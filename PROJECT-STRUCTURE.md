@@ -8,18 +8,18 @@ NekoGit 是一个单页 GitHub 工作台：以 **Nuxt 4 + Vue 3 + TypeScript** �
 
 ## 顶层目录总览
 
-| 目录 | 用途 |
-|------|------|
-| `app/` | Vue 前端（组件 / composables / 页面 / 工具函数 / 布局 / 插件 / 中间件） |
-| `server/` | Nitro 服务端（API 路由 / 非 API 路由 / 工具 / 中间件 / 插件） |
-| `shared/` | 前后端共享的类型定义与跨端工具（CSRF、代理 URL、速率限制等） |
-| `src-tauri/` | Rust/Tauri 桌面客户端（Rust 模块、权限、打包配置） |
-| `tests/` | Vitest 单元测试 |
-| `scripts/` | 构建脚本（Tauri/Nuxt 集成、Node 运行时与 Nitro 输出打包） |
-| `i18n/` | 国际化文案（`en.json` / `zh-cn.json`） |
-| `docs/` | 项目文档（handoff、桌面 Git 工作流） |
-| `public/` | 静态资源（favicon、图标、robots.txt） |
-| `release/` | Linux 发布产物（`.deb`、portable tar.gz） |
+| 目录         | 用途                                                                    |
+| ------------ | ----------------------------------------------------------------------- |
+| `app/`       | Vue 前端（组件 / composables / 页面 / 工具函数 / 布局 / 插件 / 中间件） |
+| `server/`    | Nitro 服务端（API 路由 / 非 API 路由 / 工具 / 中间件 / 插件）           |
+| `shared/`    | 前后端共享的类型定义与跨端工具（CSRF、代理 URL、速率限制等）            |
+| `src-tauri/` | Rust/Tauri 桌面客户端（Rust 模块、权限、打包配置）                      |
+| `tests/`     | Vitest 单元测试                                                         |
+| `scripts/`   | 构建脚本（Tauri/Nuxt 集成、Node 运行时与 Nitro 输出打包）               |
+| `i18n/`      | 国际化文案（`i18n/locales/en.json` / `i18n/locales/zh-cn.json`）        |
+| `docs/`      | 项目文档（handoff、桌面 Git 工作流）                                    |
+| `public/`    | 静态资源（favicon、图标、robots.txt）                                   |
+| `release/`   | Linux 发布产物（`.deb`、portable tar.gz）                               |
 
 其他根文件：`nuxt.config.ts`（Nuxt/Nitro 配置，含认证、存储、字体、i18n）、`package.json`（脚本与依赖）、`tsconfig.json`（Nuxt 生成的三方 tsconfig 引用）、`pnpm-workspace.yaml` / `.npmrc`（pnpm 配置，registry 固定为 npmmirror）、`LICENSE`、`README.md` / `README.zh-CN.md`。
 
@@ -76,14 +76,14 @@ Nuxt 4 的 `app/` 目录。视图组件位于 `components/`，状态化工作流
 
 ### app/pages/ — 路由页面
 
-| 路由 | 文件 | 说明 |
-|------|------|------|
-| `/` | `pages/index.vue` | 登录 / 落地页 |
-| `/dashboard` | `pages/dashboard.vue` | 主工作台（通知/Issue/PR/仓库四个 Tab） |
-| `/dashboard/repos/[owner]/[repo]` | `pages/dashboard/repos/[owner]/[repo].vue` | 仓库详情页 |
-| `/dashboard/settings` | `pages/dashboard/settings.vue` | 设置页 |
-| `/dashboard/settings/tabs` | `pages/dashboard/settings/tabs.vue` | Tab 编辑器 |
-| `/dashboard/tabs` | `pages/dashboard/tabs.vue` | 自定义 Tab 视图 |
+| 路由                              | 文件                                       | 说明                                   |
+| --------------------------------- | ------------------------------------------ | -------------------------------------- |
+| `/`                               | `pages/index.vue`                          | 登录 / 落地页                          |
+| `/dashboard`                      | `pages/dashboard.vue`                      | 主工作台（通知/Issue/PR/仓库四个 Tab） |
+| `/dashboard/repos/[owner]/[repo]` | `pages/dashboard/repos/[owner]/[repo].vue` | 仓库详情页                             |
+| `/dashboard/settings`             | `pages/dashboard/settings.vue`             | 设置页                                 |
+| `/dashboard/settings/tabs`        | `pages/dashboard/settings/tabs.vue`        | Tab 编辑器                             |
+| `/dashboard/tabs`                 | `pages/dashboard/tabs.vue`                 | 自定义 Tab 视图                        |
 
 布局通过 `nuxt.config.ts` 的 `routeRules` 指定（`/` 用 landing，`/dashboard*` 用 dashboard）。
 
@@ -162,21 +162,21 @@ Rust/Tauri 桌面客户端（Linux 打包为 `.deb`）。关键配置：
 
 `lib.rs` 是唯一入口，负责 Tauri 启动/setup、插件注册、窗口创建、应用状态与命令注册。其余模块按职责拆分：
 
-| 模块 | 职责 |
-|------|------|
-| `desktop_commands/` | Tauri 命令处理器与命令到领域层的桥接。`runtime.rs`（运行时/服务/自启动/日志命令）、`github.rs`（GitHub URL 与 CLI token）、`local_repository/`（按 clone/read/sync/branch/change/open 命令族拆分）、`window_menu.rs`（菜单/窗口/托盘状态） |
-| `desktop_runtime/` | 运行时元数据与诊断：`types.rs`（运行时状态、前端 DTO、未托管服务回退）、`paths.rs`（数据目录解析）、`diagnostics.rs`（诊断报告） |
-| `desktop_server/` | 内置 Nuxt/Nitro 服务生命周期：`paths.rs`、`config.rs`、`log.rs`、`process.rs`（启动/健康检查/重启/崩溃监控）、`types.rs`、`lifecycle.rs`（公共 spawn/restart API） |
-| `desktop_window/` | 主窗口行为：`constants.rs`、`visibility.rs`、`title.rs`、`navigation.rs`（GitHub 启动导航与 webview 导航拦截） |
-| `desktop_instance/` | 单实例生命周期：`lock.rs`（实例锁文件）、`args.rs`（隐藏启动参数）、`activation.rs`（激活端口、二次实例交接）、`types.rs`、`lifecycle.rs` |
-| `desktop_menu/` | 菜单构建：`ids.rs`、`accelerators.rs`、`items.rs`、`state.rs`、`app/`（File/Navigate/Review/View/Help 分组）、`tray.rs` |
-| `desktop_menu_actions/` | 菜单项执行：`mod.rs`（稳定入口 `handle_menu_event`）、`window.rs`、`frontend.rs`（菜单到前端事件）、`system.rs`（数据/日志打开、外部 GitHub、服务重启） |
-| `desktop_url/` | URL 安全与路由契约：`github.rs`（GitHub URL 白名单与 dashboard 目标判定）、`deep_link.rs`（`nekogit://open` 解析）、`activation.rs`、`dashboard.rs` |
-| `desktop_events/` | 前端可见的事件契约：`names.rs`、`payloads.rs`、`emit.rs`（类型化 emit） |
-| `desktop_tray.rs` / `desktop_autostart.rs` | 托盘（图标、未读徽标、tooltip）；Linux 自启动（`.desktop` 条目生成） |
-| `desktop_github_cli.rs` / `desktop_open.rs` / `desktop_session.rs` | `gh auth token` 读取；原生打开（URL/文件/终端）；会话密钥解析（`NUXT_SESSION_PASSWORD`、生成回退、受限权限的密钥文件写入） |
-| `desktop_window_state/` | 持久化窗口位置/最大化：`constants.rs`、`validation.rs`、`store.rs`、`capture.rs` |
-| `local_repository/` | **本地 Git 与文件系统安全层**。路径校验统一放在 `paths/`。子模块：`read/`（只读：status、branch、changed-files、commit）、`diff/`（diff 生成、pathspec、截断、未跟踪预览）、`parse/`（纯 Git 输出解析；`parse/status/` 细分 porcelain 状态/冲突/计数）、`write/`（写操作：clone、sync、branch、change）、`storage/`（记住的本地仓库 JSON 索引）、`url/`（克隆 URL 规范化与目标推导）、`types.rs` |
+| 模块                                                               | 职责                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `desktop_commands/`                                                | Tauri 命令处理器与命令到领域层的桥接。`runtime.rs`（运行时/服务/自启动/日志命令）、`github.rs`（GitHub URL 与 CLI token）、`local_repository/`（按 clone/read/sync/branch/change/open 命令族拆分）、`window_menu.rs`（菜单/窗口/托盘状态）                                                                                                                                                       |
+| `desktop_runtime/`                                                 | 运行时元数据与诊断：`types.rs`（运行时状态、前端 DTO、未托管服务回退）、`paths.rs`（数据目录解析）、`diagnostics.rs`（诊断报告）                                                                                                                                                                                                                                                                 |
+| `desktop_server/`                                                  | 内置 Nuxt/Nitro 服务生命周期：`paths.rs`、`config.rs`、`log.rs`、`process.rs`（启动/健康检查/重启/崩溃监控）、`types.rs`、`lifecycle.rs`（公共 spawn/restart API）                                                                                                                                                                                                                               |
+| `desktop_window/`                                                  | 主窗口行为：`constants.rs`、`visibility.rs`、`title.rs`、`navigation.rs`（GitHub 启动导航与 webview 导航拦截）                                                                                                                                                                                                                                                                                   |
+| `desktop_instance/`                                                | 单实例生命周期：`lock.rs`（实例锁文件）、`args.rs`（隐藏启动参数）、`activation.rs`（激活端口、二次实例交接）、`types.rs`、`lifecycle.rs`                                                                                                                                                                                                                                                        |
+| `desktop_menu/`                                                    | 菜单构建：`ids.rs`、`accelerators.rs`、`items.rs`、`state.rs`、`app/`（File/Navigate/Review/View/Help 分组）、`tray.rs`                                                                                                                                                                                                                                                                          |
+| `desktop_menu_actions/`                                            | 菜单项执行：`mod.rs`（稳定入口 `handle_menu_event`）、`window.rs`、`frontend.rs`（菜单到前端事件）、`system.rs`（数据/日志打开、外部 GitHub、服务重启）                                                                                                                                                                                                                                          |
+| `desktop_url/`                                                     | URL 安全与路由契约：`github.rs`（GitHub URL 白名单与 dashboard 目标判定）、`deep_link.rs`（`nekogit://open` 解析）、`activation.rs`、`dashboard.rs`                                                                                                                                                                                                                                              |
+| `desktop_events/`                                                  | 前端可见的事件契约：`names.rs`、`payloads.rs`、`emit.rs`（类型化 emit）                                                                                                                                                                                                                                                                                                                          |
+| `desktop_tray.rs` / `desktop_autostart.rs`                         | 托盘（图标、未读徽标、tooltip）；Linux 自启动（`.desktop` 条目生成）                                                                                                                                                                                                                                                                                                                             |
+| `desktop_github_cli.rs` / `desktop_open.rs` / `desktop_session.rs` | `gh auth token` 读取；原生打开（URL/文件/终端）；会话密钥解析（`NUXT_SESSION_PASSWORD`、生成回退、受限权限的密钥文件写入）                                                                                                                                                                                                                                                                       |
+| `desktop_window_state/`                                            | 持久化窗口位置/最大化：`constants.rs`、`validation.rs`、`store.rs`、`capture.rs`                                                                                                                                                                                                                                                                                                                 |
+| `local_repository/`                                                | **本地 Git 与文件系统安全层**。路径校验统一放在 `paths/`。子模块：`read/`（只读：status、branch、changed-files、commit）、`diff/`（diff 生成、pathspec、截断、未跟踪预览）、`parse/`（纯 Git 输出解析；`parse/status/` 细分 porcelain 状态/冲突/计数）、`write/`（写操作：clone、sync、branch、change）、`storage/`（记住的本地仓库 JSON 索引）、`url/`（克隆 URL 规范化与目标推导）、`types.rs` |
 
 模块边界详见 `docs/project-handoff.md` 的 Ownership Boundaries 一节与 `docs/desktop-git-workflow.md`。
 
@@ -195,16 +195,16 @@ Vitest 单元测试，按被测对象命名。覆盖：认证（`auth-client-ip`
 
 在仓库根目录使用 pnpm（`.npmrc` 已固定 npmmirror registry）：
 
-| 命令 | 说明 |
-|------|------|
-| `pnpm dev` | 启动 Nuxt 开发服务器（Web 模式） |
-| `pnpm build` | 构建 Nuxt 生产输出（`.output/`） |
-| `pnpm client:dev` | Tauri 桌面开发模式（自动拉起本地 Nuxt） |
-| `pnpm client:build` | 构建 Linux `.deb`（产物在 `src-tauri/target/release/bundle/deb/`） |
-| `pnpm client:release-linux` | 构建并打包 Linux 发布包 |
-| `pnpm test` | 运行 Vitest 单元测试 |
-| `pnpm typecheck` | Nuxt + vue-tsc 类型检查 |
-| `pnpm lint` / `pnpm lint:fix` | oxlint 检查 / 自动修复 |
-| `pnpm fmt` / `pnpm fmt:check` | oxfmt 格式化 / 检查 |
+| 命令                          | 说明                                                               |
+| ----------------------------- | ------------------------------------------------------------------ |
+| `pnpm dev`                    | 启动 Nuxt 开发服务器（Web 模式）                                   |
+| `pnpm build`                  | 构建 Nuxt 生产输出（`.output/`）                                   |
+| `pnpm client:dev`             | Tauri 桌面开发模式（自动拉起本地 Nuxt）                            |
+| `pnpm client:build`           | 构建 Linux `.deb`（产物在 `src-tauri/target/release/bundle/deb/`） |
+| `pnpm client:release-linux`   | 构建并打包 Linux 发布包                                            |
+| `pnpm test`                   | 运行 Vitest 单元测试                                               |
+| `pnpm typecheck`              | Nuxt + vue-tsc 类型检查                                            |
+| `pnpm lint` / `pnpm lint:fix` | oxlint 检查 / 自动修复                                             |
+| `pnpm fmt` / `pnpm fmt:check` | oxfmt 格式化 / 检查                                                |
 
 Rust 侧（在 `src-tauri/` 目录或指定 manifest）：`cargo check`、`cargo test`、`cargo clippy --all-targets -- -D warnings`、`cargo fmt --check`。完整验证清单见 `docs/project-handoff.md`。

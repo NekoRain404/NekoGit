@@ -131,7 +131,9 @@
               >
                 <Loader2Icon v-if="checkoutPRLoading" :size="14" class="spin-animation" />
                 <GitBranchIcon v-else :size="14" />
-                <span>{{ checkoutPRLoading ? t('prReview.checkingOut') : t('prReview.checkoutLocally') }}</span>
+                <span>{{
+                  checkoutPRLoading ? t('prReview.checkingOut') : t('prReview.checkoutLocally')
+                }}</span>
               </button>
               <p v-if="checkoutPRError" class="sidebar-card__error mt-2">
                 {{ checkoutPRError }}
@@ -146,13 +148,13 @@
 
 <script setup lang="ts">
 import { EyeIcon, GitBranchIcon, Loader2Icon } from 'lucide-vue-next';
-import { computed, ref, shallowRef, watch } from 'vue';
+import { computed, onMounted, ref, shallowRef, watch } from 'vue';
 
 import PRActions from '~/components/dashboard/pr/PRActions.vue';
+import PRChecksPanel from '~/components/dashboard/pr/PRChecksPanel.vue';
 import PRHeader from '~/components/dashboard/pr/PRHeader.vue';
 import PRLabels from '~/components/dashboard/pr/PRLabels.vue';
 import PRReviewerRequestModal from '~/components/dashboard/pr/PRReviewerRequestModal.vue';
-import PRChecksPanel from '~/components/dashboard/pr/PRChecksPanel.vue';
 import PRReviewWorkspace from '~/components/dashboard/pr/PRReviewWorkspace.vue';
 import PRTimelineEvents from '~/components/dashboard/pr/PRTimelineEvents.vue';
 import { useDesktopRuntime } from '~/composables/useDesktopRuntime';
@@ -208,7 +210,9 @@ const currentTimelinePage = ref(1);
 const hasNextTimelinePage = ref(false);
 const loadingMoreTimeline = ref(false);
 const isReviewWindowOpen = shallowRef(false);
-const reviewCommits = shallowRef<Array<{ sha: string; shortSha: string; message: string; authorName: string; date: string }>>([]);
+const reviewCommits = shallowRef<
+  Array<{ sha: string; shortSha: string; message: string; authorName: string; date: string }>
+>([]);
 const reviewCommitsLoading = shallowRef(false);
 const isReviewerPickerOpen = shallowRef(false);
 const loadingReviewerCandidates = shallowRef(false);
@@ -225,11 +229,25 @@ const { fetchReviewerSummary, fetchReviewerCandidates, requestReviewers, removeR
 
 const {
   available: desktopAvailable,
+  loadRuntimeInfo,
   checkoutRemoteLocalRepositoryBranch,
   getLocalRepositoryStatus,
 } = useDesktopRuntime();
 const checkoutPRLoading = shallowRef(false);
 const checkoutPRError = shallowRef('');
+
+onMounted(() => {
+  void loadRuntimeInfo();
+});
+
+/** Confirms a destructive action; SSR never prompts and proceeds. */
+const confirmDestructiveAction = (message: string) => {
+  if (!import.meta.client) {
+    return true;
+  }
+
+  return window.confirm(message);
+};
 
 const { isScrolling: isSidebarScrolling, onScroll: onSidebarScroll } = useAutoHideScrollState();
 
@@ -347,19 +365,36 @@ const handleRequestChanges = async () => {
 
 const handleMerge = async () => {
   if (!repoInfo.value || !currentPullRequest.value?.number) return;
+  if (!confirmDestructiveAction(`${t('prReview.mergePr')}?`)) return;
   try {
     const { owner, repo } = repoInfo.value;
-    const data = await apiFetch<Record<string, unknown>>(
+    const data = await apiFetch<{ merged?: boolean; sha?: string; message?: string }>(
       `/api/repos/${owner}/${repo}/pulls/${currentPullRequest.value.number}`,
       {
         method: 'PATCH',
         body: { merge: true, merge_method: 'merge' },
       }
     );
-    if (data) {
-      currentPullRequest.value = { ...currentPullRequest.value, ...data };
-      await fetchTimeline();
+    if (!data) {
+      return;
     }
+
+    // The merge endpoint only returns { sha, merged, message }. Apply a local
+    // fallback first, then refetch authoritative details; if the refetch fails
+    // the fallback state below remains visible.
+    currentPullRequest.value = {
+      ...currentPullRequest.value,
+      ...data,
+      ...(data.merged
+        ? {
+            state: 'closed',
+            merged_at: currentPullRequest.value?.merged_at ?? new Date().toISOString(),
+          }
+        : {}),
+    };
+
+    await fetchPullRequestDetails();
+    await fetchTimeline();
   } catch (err) {
     detailError.value = getFetchErrorMessage(err, 'Failed to merge pull request.');
   }
@@ -367,6 +402,7 @@ const handleMerge = async () => {
 
 const handleClosePr = async () => {
   if (!repoInfo.value || !currentPullRequest.value?.number) return;
+  if (!confirmDestructiveAction(`${t('prReview.closePr')}?`)) return;
   try {
     const { owner, repo } = repoInfo.value;
     const data = await apiFetch<Record<string, unknown>>(

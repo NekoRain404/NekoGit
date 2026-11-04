@@ -2,7 +2,7 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": [],
   "categories": {
-    "correctness": "off"
+    "correctness": "error"
   },
   "env": {
     "builtin": true
@@ -18,6 +18,16 @@
         "unicorn/number-literal-case": "off"
       },
       "plugins": ["unicorn"]
+    },
+    {
+      "files": [
+        "app/utils/file-download-utils.ts",
+        "app/utils/desktop-window-title-utils.ts",
+        "app/utils/current-github-url-utils.ts"
+      ],
+      "rules": {
+        "no-control-regex": "off"
+      }
     }
   ]
 }

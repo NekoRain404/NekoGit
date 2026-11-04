@@ -161,6 +161,16 @@ jobs:
         with:
           workspaces: src-tauri -> target
 
+      - name: Check Tauri command permissions
+        run: node scripts/check-tauri-commands.mjs
+
+      - name: Cargo fmt
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+
+      - name: Prepare Tauri resources
+        run: |
+          mkdir -p .output .node-runtime
+
       - name: Cargo test
         run: cargo test --manifest-path src-tauri/Cargo.toml
 

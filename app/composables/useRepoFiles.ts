@@ -28,11 +28,13 @@ export interface RepoContentItem {
   _links: RepoContentLinks;
 }
 
-/** A file entry with decoded base64 content. */
+/** A file entry with decoded base64 content, or metadata for files too large to inline. */
 export interface RepoFileContent extends RepoContentItem {
   type: 'file';
   content: string;
-  encoding: 'base64';
+  encoding: 'base64' | 'none';
+  /** True when GitHub omitted inline content (1–100 MB files); preview is unavailable. */
+  tooLarge: boolean;
 }
 
 /** A branch with its HEAD SHA and protection flag. */
@@ -40,10 +42,6 @@ export interface RepoBranch {
   name: string;
   sha: string;
   protected: boolean;
-}
-
-interface DefaultBranchResponse {
-  default_branch: string;
 }
 
 interface RepoTarget {

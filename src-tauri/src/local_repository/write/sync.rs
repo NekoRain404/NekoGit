@@ -4,6 +4,7 @@ use std::path::Path;
 
 use crate::local_repository::{
     parse::{git_command_failure_details, normalize_local_branch_name},
+    process::{git_network_timeout, run_command_with_timeout},
     read::local_repository_git_status,
     storage::local_repository_status,
     types::DesktopLocalRepositoryGitStatus,
@@ -21,10 +22,9 @@ pub(crate) fn fetch_local_repository(
         return Err("local repository is not available".to_owned());
     };
 
-    let output = git_command(repository_path)
-        .args(["fetch", "--prune"])
-        .output()
-        .map_err(|error| format!("failed to start git fetch: {error}"))?;
+    let mut command = git_command(repository_path);
+    command.args(["fetch", "--prune"]);
+    let output = run_command_with_timeout(&mut command, "git fetch", git_network_timeout())?;
 
     if !output.status.success() {
         let details = git_command_failure_details(&output);
@@ -44,10 +44,9 @@ pub(crate) fn pull_local_repository(
         return Err("local repository is not available".to_owned());
     };
 
-    let output = git_command(repository_path)
-        .args(["pull", "--ff-only"])
-        .output()
-        .map_err(|error| format!("failed to start git pull: {error}"))?;
+    let mut command = git_command(repository_path);
+    command.args(["pull", "--ff-only"]);
+    let output = run_command_with_timeout(&mut command, "git pull", git_network_timeout())?;
 
     if !output.status.success() {
         let details = git_command_failure_details(&output);
@@ -80,18 +79,15 @@ pub(crate) fn push_local_repository(
         return Err("local repository has no commits to push".to_owned());
     }
 
-    let output = if git_status.upstream.is_some() {
-        git_command(&git_status.repository_path)
-            .arg("push")
-            .output()
-            .map_err(|error| format!("failed to start git push: {error}"))?
+    let mut command = git_command(&git_status.repository_path);
+    if git_status.upstream.is_some() {
+        command.arg("push");
     } else {
-        git_command(&git_status.repository_path)
+        command
             .args(["push", "--set-upstream", "origin"])
-            .arg(&branch_name)
-            .output()
-            .map_err(|error| format!("failed to start git push: {error}"))?
-    };
+            .arg(&branch_name);
+    }
+    let output = run_command_with_timeout(&mut command, "git push", git_network_timeout())?;
 
     if !output.status.success() {
         let details = git_command_failure_details(&output);

@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { GitPullRequestIcon, Loader2Icon, XIcon } from 'lucide-vue-next';
 import { onMounted } from 'vue';
+
 import { useLocalRepositoryPanelContext } from './localRepositoryPanelContext';
 
 const emit = defineEmits<{
@@ -55,7 +56,7 @@ const handleSubmit = async () => {
       </div>
       <div class="card-content">
         <div class="field">
-          <label class="label">{{ copy.gitSwitchBranch }}</label>
+          <label class="label">{{ copy.createPullRequestHeadBranch }}</label>
           <input
             class="input"
             :value="state.desktopLocalRepositoryGitStatus.value?.branch"
@@ -63,50 +64,58 @@ const handleSubmit = async () => {
           />
         </div>
         <div class="field">
-          <label class="label">Base</label>
+          <label class="label">{{ copy.createPullRequestBaseBranch }}</label>
           <input
             v-model="state.createPullRequestBaseBranch.value"
             class="input"
             type="text"
-            :placeholder="copy.gitBranch"
+            :placeholder="copy.createPullRequestBaseBranch"
           />
         </div>
         <div class="field">
-          <label class="label">{{ copy.gitCommitMessage }}</label>
+          <label class="label">{{ copy.createPullRequestTitle }}</label>
           <input
             v-model="state.createPullRequestTitle.value"
             class="input"
             type="text"
-            placeholder="PR title"
+            :placeholder="copy.createPullRequestTitlePlaceholder"
             required
           />
         </div>
         <div class="field">
-          <label class="label">Description</label>
+          <label class="label">{{ copy.createPullRequestDescription }}</label>
           <textarea
             v-model="state.createPullRequestBody.value"
             class="textarea"
             rows="4"
-            placeholder="PR description (optional)"
+            :placeholder="copy.createPullRequestDescriptionPlaceholder"
           />
         </div>
         <div class="create-pr-form__actions">
-          <button
-            class="button is-light"
-            type="button"
-            @click="emit('close')"
-          >
+          <button class="button is-light" type="button" @click="emit('close')">
             {{ copy.cancel }}
           </button>
           <button
             class="button is-primary"
             type="button"
-            :disabled="!state.createPullRequestTitle.value.trim() || !state.createPullRequestBaseBranch.value.trim() || state.desktopAction.value === 'createPR'"
+            :disabled="
+              !state.createPullRequestTitle.value.trim() ||
+              !state.createPullRequestBaseBranch.value.trim() ||
+              state.desktopAction.value === 'createPR'
+            "
             @click="handleSubmit"
           >
-            <Loader2Icon v-if="state.desktopAction.value === 'createPR'" :size="14" class="spin-animation" />
+            <Loader2Icon
+              v-if="state.desktopAction.value === 'createPR'"
+              :size="14"
+              class="spin-animation"
+            />
             <GitPullRequestIcon v-else :size="14" />
-            <span>{{ state.desktopAction.value === 'createPR' ? copy.creatingPullRequest : copy.createPullRequest }}</span>
+            <span>{{
+              state.desktopAction.value === 'createPR'
+                ? copy.creatingPullRequest
+                : copy.createPullRequest
+            }}</span>
           </button>
         </div>
       </div>

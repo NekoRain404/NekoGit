@@ -3,6 +3,10 @@ import { onUnmounted, ref, toValue } from 'vue';
 import type { MaybeRefOrGetter, Ref } from 'vue';
 
 import type { DashboardNotification } from '#shared/types/notifications';
+import {
+  collectNotificationActivitySignatures,
+  selectNewUnreadNotifications,
+} from '#shared/utils/notification-activity';
 import type { DashboardFetchOptions } from '~/composables/useGithubData';
 
 interface UseRealtimeNotificationsOptions {
@@ -35,7 +39,7 @@ export function useRealtimeNotifications(options: UseRealtimeNotificationsOption
 
   const isPolling = ref(false);
   const hasInitialized = ref(false);
-  const previousNotificationIds = ref<Set<string>>(new Set());
+  const previousNotificationSignatures = ref<Set<string>>(new Set());
   const listeners = ref<Set<RealtimeNotificationsEvents['onNewNotifications']>>(new Set());
 
   let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -43,24 +47,12 @@ export function useRealtimeNotifications(options: UseRealtimeNotificationsOption
   let startGeneration = 0;
   let isDisposed = false;
 
-  const toNotificationId = (notification: DashboardNotification, fallbackIndex: number) => {
-    if (notification.id === undefined || notification.id === null) {
-      return `fallback-${fallbackIndex}`;
-    }
-
-    return String(notification.id);
-  };
-
   const emitNewNotifications = (newNotifications: DashboardNotification[]) => {
     if (newNotifications.length === 0) return;
 
     for (const listener of listeners.value) {
       listener(newNotifications);
     }
-  };
-
-  const captureNotificationIds = (items: DashboardNotification[]) => {
-    return new Set(items.map((item, index) => toNotificationId(item, index)));
   };
 
   const resolvePage = () => {
@@ -81,24 +73,24 @@ export function useRealtimeNotifications(options: UseRealtimeNotificationsOption
     const result = await fetchNotifications(resolvePage(), { force: true, silent: true });
 
     const currentNotifications = getFetchedNotifications(result);
-    const currentIds = captureNotificationIds(currentNotifications);
+    const currentSignatures = collectNotificationActivitySignatures(currentNotifications);
 
     if (!hasInitialized.value) {
-      previousNotificationIds.value = currentIds;
+      previousNotificationSignatures.value = currentSignatures;
       hasInitialized.value = true;
       return;
     }
 
-    const newNotifications = currentNotifications.filter((item, index) => {
-      const id = toNotificationId(item, index);
-      return item.unread !== false && !previousNotificationIds.value.has(id);
-    });
+    const newNotifications = selectNewUnreadNotifications(
+      currentNotifications,
+      previousNotificationSignatures.value
+    );
 
     if (newNotifications.length > 0) {
       emitNewNotifications(newNotifications);
     }
 
-    previousNotificationIds.value = currentIds;
+    previousNotificationSignatures.value = currentSignatures;
   };
 
   const runPoll = async () => {
@@ -146,7 +138,7 @@ export function useRealtimeNotifications(options: UseRealtimeNotificationsOption
 
     isPolling.value = false;
     hasInitialized.value = false;
-    previousNotificationIds.value = new Set();
+    previousNotificationSignatures.value = new Set();
   };
 
   const onNewNotifications = (callback: RealtimeNotificationsEvents['onNewNotifications']) => {
