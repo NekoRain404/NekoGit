@@ -261,6 +261,7 @@
     @close-pull-request-review="handlePRReviewClose"
     @repository-updated="handleRepositoryUpdated"
     @repository-deleted="handleRepositoryDeleted"
+    @repository-transferred="handleRepositoryTransferred"
   />
 
   <CreateRepositoryModal
@@ -985,6 +986,15 @@ const handleRepositoryUpdated = (updated: Record<string, unknown>) => {
 
 const handleRepositoryDeleted = async () => {
   await handleRepoDetailBack();
+  await refreshCurrentTabSafely();
+};
+
+const handleRepositoryTransferred = async (newOwner: string) => {
+  await handleRepoDetailBack();
+  setDashboardActionMessage({
+    tone: 'success',
+    text: t('repoSettings.transferred', { owner: newOwner }),
+  });
   await refreshCurrentTabSafely();
 };
 

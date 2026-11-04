@@ -15,8 +15,18 @@ const emit = defineEmits<{
   (e: 'created', repository: Record<string, unknown>): void;
 }>();
 
+interface OrganizationOption {
+  login: string;
+  avatar_url?: string;
+  description?: string | null;
+}
+
 const { t } = useI18n();
 const apiFetch = useNekoGitApiFetch();
+const organizations = ref<OrganizationOption[]>([]);
+const selectedOwner = ref('');
+const loadingOrganizations = ref(false);
+const organizationsError = ref('');
 const name = ref('');
 const description = ref('');
 const homepage = ref('');
@@ -48,8 +58,24 @@ watch(
     isPrivate.value = false;
     autoInit.value = true;
     error.value = '';
+    selectedOwner.value = '';
+    void loadOrganizations();
   }
 );
+
+const loadOrganizations = async () => {
+  loadingOrganizations.value = true;
+  organizationsError.value = '';
+  try {
+    const data = await apiFetch<{ items?: OrganizationOption[] }>('/api/user/orgs');
+    organizations.value = Array.isArray(data?.items) ? data.items : [];
+  } catch {
+    organizations.value = [];
+    organizationsError.value = t('repoCreate.orgsLoadFailed');
+  } finally {
+    loadingOrganizations.value = false;
+  }
+};
 
 const handleClose = () => {
   if (creating.value) return;
@@ -66,6 +92,7 @@ const createRepository = async () => {
       method: 'POST',
       body: {
         name: normalizedName.value,
+        owner: selectedOwner.value || undefined,
         description: description.value,
         homepage: homepage.value,
         private: isPrivate.value,
@@ -99,6 +126,30 @@ const createRepository = async () => {
       <section class="modal-card-body">
         <div v-if="error" class="notification is-danger is-light is-size-7 py-2 px-3 mb-4">
           {{ error }}
+        </div>
+
+        <div v-if="loadingOrganizations || organizations.length > 0" class="field">
+          <label class="label is-size-7" for="create-repo-owner">{{ t('repoCreate.owner') }}</label>
+          <div class="control">
+            <div class="select is-fullwidth" :class="{ 'is-loading': loadingOrganizations }">
+              <select
+                id="create-repo-owner"
+                v-model="selectedOwner"
+                :disabled="creating || loadingOrganizations"
+              >
+                <option value="">{{ t('repoCreate.personalOwner') }}</option>
+                <option
+                  v-for="organization in organizations"
+                  :key="organization.login"
+                  :value="organization.login"
+                >
+                  {{ organization.login }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <p v-if="organizationsError" class="help is-danger">{{ organizationsError }}</p>
+          <p v-else class="help">{{ t('repoCreate.ownerHint') }}</p>
         </div>
 
         <div class="field">

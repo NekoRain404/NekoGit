@@ -929,7 +929,14 @@
     "deleting": "Deleting",
     "deleteFailed": "Failed to delete the repository.",
     "cancel": "Cancel",
-    "open": "Settings"
+    "open": "Settings",
+    "transferHint": "Move {repo} to another personal account or organization you can administer.",
+    "transferPlaceholder": "Target owner login",
+    "transfer": "Transfer repository",
+    "transferring": "Transferring",
+    "transferFailed": "Failed to transfer the repository.",
+    "transferConfirm": "Transfer {repo} to {owner}? You may lose access unless the new owner grants it.",
+    "transferred": "Repository transferred to {owner}."
   },
   "repoCreate": {
     "title": "New repository",
@@ -948,6 +955,10 @@
     "creating": "Creating",
     "createFailed": "Failed to create the repository.",
     "created": "Created repository {name}.",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "owner": "Owner",
+    "personalOwner": "Personal account",
+    "ownerHint": "Choose a personal account or an organization you belong to.",
+    "orgsLoadFailed": "Could not load organizations. Personal repository creation is still available."
   }
 }

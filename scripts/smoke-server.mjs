@@ -87,6 +87,30 @@ try {
     `Expected repository PATCH to be 401, got ${unauthorizedRepoUpdate.status}`
   );
 
+  const unauthorizedOrgs = await fetch(`${baseUrl}/api/user/orgs`);
+  assert(
+    unauthorizedOrgs.status === 401,
+    `Expected /api/user/orgs to be 401, got ${unauthorizedOrgs.status}`
+  );
+
+  const unauthorizedRepoTransfer = await fetch(
+    `${baseUrl}/api/repos/nekogit-smoke/repository/transfer`,
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        origin: baseUrl,
+        cookie: `nekogit_csrf=${csrfToken}`,
+        'x-csrf-token': csrfToken,
+      },
+      body: JSON.stringify({ new_owner: 'nekogit-org' }),
+    }
+  );
+  assert(
+    unauthorizedRepoTransfer.status === 401,
+    `Expected repository transfer to be 401, got ${unauthorizedRepoTransfer.status}`
+  );
+
   const unauthorizedRepoCreate = await fetch(`${baseUrl}/api/repos`, {
     method: 'POST',
     headers: {

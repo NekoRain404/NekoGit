@@ -60,6 +60,7 @@ const emit = defineEmits<{
   (e: 'close-pull-request-review'): void;
   (e: 'repository-updated', repository: Record<string, unknown>): void;
   (e: 'repository-deleted'): void;
+  (e: 'repository-transferred', owner: string): void;
 }>();
 
 const { t } = useI18n();
@@ -235,6 +236,7 @@ watch(activeDetailKey, () => {
               :repo="repositoryName"
               @repository-updated="emit('repository-updated', $event)"
               @repository-deleted="emit('repository-deleted')"
+              @repository-transferred="emit('repository-transferred', $event)"
             />
           </div>
         </Transition>

@@ -929,7 +929,14 @@
     "deleting": "删除中",
     "deleteFailed": "删除仓库失败。",
     "cancel": "取消",
-    "open": "设置"
+    "open": "设置",
+    "transferHint": "将 {repo} 转移到你管理的其他个人账户或组织。",
+    "transferPlaceholder": "目标所有者登录名",
+    "transfer": "转移仓库",
+    "transferring": "转移中",
+    "transferFailed": "转移仓库失败。",
+    "transferConfirm": "将 {repo} 转移给 {owner}？除非新所有者重新授权，否则你可能会失去访问权限。",
+    "transferred": "仓库已转移给 {owner}。"
   },
   "repoCreate": {
     "title": "新建仓库",
@@ -948,6 +955,10 @@
     "creating": "创建中",
     "createFailed": "创建仓库失败。",
     "created": "已创建仓库 {name}。",
-    "cancel": "取消"
+    "cancel": "取消",
+    "owner": "所有者",
+    "personalOwner": "个人账户",
+    "ownerHint": "选择个人账户或你所属的组织。",
+    "orgsLoadFailed": "无法加载组织列表，仍可创建个人仓库。"
   }
 }

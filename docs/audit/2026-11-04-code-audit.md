@@ -158,7 +158,7 @@
 
 **仓库**
 
-- 组织仓库创建/转移（个人仓库创建、删除/归档、描述/主页设置、组织/协作列表与准确总数已支持）
+- 无（个人/组织仓库创建、转移、删除/归档、描述/主页设置、组织/协作列表与准确总数均已支持）
 
 **CI**
 
@@ -264,7 +264,7 @@
 - AUD-028：clone/fetch/pull/push 增加 120s 超时（`NEKOGIT_GIT_TIMEOUT_SECS` 可调），并发排空 stdout/stderr 防止管道死锁；新增 `desktop_cancel_local_repository_operation`，Unix 下以进程组 SIGKILL 终止 fetch/pull/push/clone/rebase。
 - AUD-029：reviewer summary 增加 45s 客户端 TTL 缓存、并发请求去重，并在 reviewer 增删后失效。
 - 额外功能：桌面端支持“接管已有本地 clone”（校验 Git work tree 与 origin 后记录），无需重新 clone。
-- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，并加入 `@vue/test-utils` + happy-dom 组件测试（PREditModal、LabelCreateForm），共 42 个测试文件 / 267 个用例；Rust 109 个测试。
+- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，并加入 `@vue/test-utils` + happy-dom 组件测试（PREditModal、LabelCreateForm），共 43 个测试文件 / 272 个用例；Rust 109 个测试。
 - 浏览器 E2E：新增 Playwright 配置与 `e2e/landing.spec.ts`，使用系统 Chrome（不下载浏览器）验证 landing 渲染、CSRF cookie 与未登录访问 `/dashboard` 的重定向；CI Build job 执行 `pnpm test:e2e`。
 - 本地 Git 补全：stash 列表/pop、非当前分支安全删除（`git branch -d`）。
 - Issue 写操作：关闭/重开、编辑标题/正文（PATCH route + modal + 权限 gating）。
@@ -279,21 +279,21 @@
 - Label：创建 label 的 endpoint、校验与 label editor 内联创建 UI。
 - PR：review dismissal（endpoint + 时间线内联弹层）。
 - Discussion：讨论创建（categories endpoint + modal；并修复 modal 未挂载导致入口无效的问题）。
-- 仓库管理：个人仓库创建（可选 README 初始化）、描述/主页编辑、归档/取消归档、按名称确认删除（POST/PATCH/DELETE route + admin 权限入口 + modal），创建后自动刷新列表并打开详情。
+- 仓库管理：个人/组织仓库创建（可选 README 初始化）、仓库转移、描述/主页编辑、归档/取消归档、按名称确认删除（POST/PATCH/DELETE route + admin 权限入口 + modal），创建后自动刷新列表并打开详情。
 - Issue 写操作：创建 issue（endpoint + modal）、assignees/milestone 编辑（endpoint + picker UI）。
 
 最终验证（2026-11-04）：
 
-- `pnpm fmt:check` ✅ 463 files
+- `pnpm fmt:check` ✅ 467 files
 - `pnpm typecheck` ✅
 - `pnpm lint` ✅（correctness 已启用）
-- `pnpm test` ✅ 42 files / 267 tests（含 Vue 组件测试与仓库创建/设置校验）
+- `pnpm test` ✅ 43 files / 272 tests（含 Vue 组件测试与仓库创建/转移/设置校验）
 - `pnpm build` ✅（`taskset -c 0-3`，47.3 MB）
 - `node scripts/check-tauri-commands.mjs` ✅ 48 commands
 - `cargo fmt --check` ✅
 - `cargo test --jobs 4` ✅ 109 tests
 - `cargo clippy --jobs 4 --all-targets -- -D warnings` ✅
-- `pnpm smoke:server` ✅ 安全响应头、未认证 401（含仓库 POST/PATCH/DELETE 路由）、缺失 CSRF 403、带 CSRF 空 token 400
+- `pnpm smoke:server` ✅ 安全响应头、未认证 401（含仓库 POST/PATCH/DELETE/transfer 与组织列表路由）、缺失 CSRF 403、带 CSRF 空 token 400
 - `pnpm test:e2e` ✅ 2 tests（系统 Chrome，landing 与未登录路由守卫）
 - server smoke：安全响应头生效；无 CSRF token → 403
 

@@ -1,6 +1,12 @@
 <!-- Repository Settings Modal — Edits description/homepage, toggles archive state, and deletes a repository. -->
 <script setup lang="ts">
-import { ArchiveIcon, Loader2Icon, SaveIcon, Trash2Icon } from 'lucide-vue-next';
+import {
+  ArchiveIcon,
+  ArrowRightLeftIcon,
+  Loader2Icon,
+  SaveIcon,
+  Trash2Icon,
+} from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -17,6 +23,7 @@ const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'updated', repository: Record<string, unknown>): void;
   (e: 'deleted'): void;
+  (e: 'transferred', owner: string): void;
 }>();
 
 const { t } = useI18n();
@@ -24,14 +31,27 @@ const apiFetch = useNekoGitApiFetch();
 const description = ref('');
 const homepage = ref('');
 const confirmation = ref('');
+const transferOwner = ref('');
 const error = ref('');
 const saving = ref(false);
 const archiving = ref(false);
 const deleting = ref(false);
+const transferring = ref(false);
 
 const repositoryPath = computed(() => `/api/repos/${props.owner}/${props.repo}`);
 const isArchived = computed(() => Boolean(props.repository.archived));
-const isBusy = computed(() => saving.value || archiving.value || deleting.value);
+const isBusy = computed(
+  () => saving.value || archiving.value || deleting.value || transferring.value
+);
+const ownerLoginPattern = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
+const canTransfer = computed(() => {
+  const target = transferOwner.value.trim();
+  return (
+    !isBusy.value &&
+    ownerLoginPattern.test(target) &&
+    target.toLowerCase() !== props.owner.toLowerCase()
+  );
+});
 const canDelete = computed(
   () => confirmation.value === props.repo && !isBusy.value && Boolean(props.repo)
 );
@@ -44,6 +64,7 @@ watch(
       typeof props.repository.description === 'string' ? props.repository.description : '';
     homepage.value = typeof props.repository.homepage === 'string' ? props.repository.homepage : '';
     confirmation.value = '';
+    transferOwner.value = '';
     error.value = '';
   }
 );
@@ -88,6 +109,32 @@ const toggleArchive = async () => {
     error.value = getFetchErrorMessage(err, t('repoSettings.archiveFailed'));
   } finally {
     archiving.value = false;
+  }
+};
+
+const transferRepository = async () => {
+  if (!canTransfer.value) return;
+  if (
+    import.meta.client &&
+    !window.confirm(
+      t('repoSettings.transferConfirm', { repo: props.repo, owner: transferOwner.value.trim() })
+    )
+  ) {
+    return;
+  }
+
+  transferring.value = true;
+  error.value = '';
+  try {
+    await apiFetch(`/api/repos/${props.owner}/${props.repo}/transfer`, {
+      method: 'POST',
+      body: { new_owner: transferOwner.value.trim() },
+    });
+    emit('transferred', transferOwner.value.trim());
+  } catch (err: unknown) {
+    error.value = getFetchErrorMessage(err, t('repoSettings.transferFailed'));
+  } finally {
+    transferring.value = false;
   }
 };
 
@@ -183,6 +230,31 @@ const deleteRepository = async () => {
 
         <div class="repo-settings-modal__danger">
           <p class="has-text-weight-semibold mb-2">{{ t('repoSettings.dangerZone') }}</p>
+
+          <div class="repo-settings-modal__transfer mb-4">
+            <p class="is-size-7 mb-2">{{ t('repoSettings.transferHint', { repo }) }}</p>
+            <div class="repo-settings-modal__transfer-row">
+              <input
+                v-model="transferOwner"
+                class="input"
+                type="text"
+                autocomplete="off"
+                :placeholder="t('repoSettings.transferPlaceholder')"
+                :disabled="isBusy"
+              />
+              <button
+                class="button is-warning is-light"
+                type="button"
+                :disabled="!canTransfer"
+                @click="transferRepository"
+              >
+                <Loader2Icon v-if="transferring" :size="14" class="mr-2 spin-animation" />
+                <ArrowRightLeftIcon v-else :size="14" class="mr-2" />
+                {{ transferring ? t('repoSettings.transferring') : t('repoSettings.transfer') }}
+              </button>
+            </div>
+          </div>
+
           <p class="is-size-7 mb-3">{{ t('repoSettings.deleteWarning', { repo }) }}</p>
           <label class="label is-size-7" for="repo-settings-confirm">
             {{ t('repoSettings.confirmLabel', { repo }) }}
@@ -243,6 +315,12 @@ const deleteRepository = async () => {
 .repo-settings-modal__hint {
   color: var(--nekogit-text-muted);
   font-size: 0.75rem;
+}
+
+.repo-settings-modal__transfer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
 }
 
 .repo-settings-modal__danger {

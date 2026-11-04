@@ -10,14 +10,16 @@ export const REPOSITORY_NAME_MAX_LENGTH = 100;
 /** Normalized fields accepted by the GitHub repository creation endpoint. */
 export interface RepositoryCreatePayload {
   name: string;
+  owner?: string;
   description?: string;
   homepage?: string;
   private: boolean;
   auto_init: boolean;
 }
 
-const allowedFields = new Set(['name', 'description', 'homepage', 'private', 'auto_init']);
+const allowedFields = new Set(['name', 'owner', 'description', 'homepage', 'private', 'auto_init']);
 const repositoryNamePattern = /^[A-Za-z0-9._-]+$/;
+const ownerLoginPattern = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
 
 function throwValidationError(statusMessage: string): never {
   if (typeof createError === 'function') {
@@ -63,6 +65,21 @@ function normalizeHomepage(value: unknown): string | undefined {
   return homepage;
 }
 
+function normalizeOwner(value: unknown): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== 'string') {
+    throwValidationError('owner must be a string');
+  }
+
+  const owner = value.trim();
+  if (!owner) return undefined;
+  if (!ownerLoginPattern.test(owner)) {
+    throwValidationError('owner must be a valid GitHub user or organization login');
+  }
+
+  return owner;
+}
+
 /**
  * Validate and normalize a POST repository creation body.
  *
@@ -95,6 +112,8 @@ export function normalizeRepositoryCreateBody(body: unknown): RepositoryCreatePa
     throwValidationError('name may only contain letters, digits, dots, underscores, and hyphens');
   }
 
+  const owner = normalizeOwner(record.owner);
+
   const privateValue = record.private;
   if (privateValue !== undefined && typeof privateValue !== 'boolean') {
     throwValidationError('private must be a boolean');
@@ -110,6 +129,7 @@ export function normalizeRepositoryCreateBody(body: unknown): RepositoryCreatePa
     private: privateValue ?? false,
     auto_init: autoInitValue ?? false,
   };
+  if (owner !== undefined) payload.owner = owner;
 
   const description = normalizeOptionalText(
     record.description,

@@ -36,6 +36,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'repository-updated', repository: Record<string, unknown>): void;
   (e: 'repository-deleted'): void;
+  (e: 'repository-transferred', owner: string): void;
 }>();
 
 /** Repo Detail Icon. */
@@ -795,6 +796,11 @@ const handleRepositoryDeleted = () => {
   emit('repository-deleted');
 };
 
+const handleRepositoryTransferred = (newOwner: string) => {
+  isRepositorySettingsOpen.value = false;
+  emit('repository-transferred', newOwner);
+};
+
 onMounted(() => {
   fetchStarState();
   fetchWatchState();
@@ -1124,6 +1130,7 @@ onUnmounted(() => {
     @close="closeRepositorySettings"
     @updated="handleRepositoryUpdated"
     @deleted="handleRepositoryDeleted"
+    @transferred="handleRepositoryTransferred"
   />
 </template>
 

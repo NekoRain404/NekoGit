@@ -34,7 +34,7 @@ Adaptive dark mode styling keeps the dashboard comfortable in low-light environm
 
 ### 📂 Repositories
 
-Paginated list of your repos with quick links to each. Create personal repositories, edit descriptions and homepages, archive or unarchive them, and delete a repository from its detail view with a typed-name confirmation.
+Paginated list of your repos with quick links to each. Create personal or organization repositories, edit descriptions and homepages, transfer a repository to another owner, archive or unarchive it, and delete it from the detail view with a typed-name confirmation.
 
 ---
 

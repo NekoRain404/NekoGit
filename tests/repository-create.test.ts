@@ -59,14 +59,28 @@ describe('repository creation normalization', () => {
     });
   });
 
-  test('accepts explicit visibility and initialization flags', () => {
+  test('accepts explicit visibility, initialization, and organization owner', () => {
     expect(
-      normalizeRepositoryCreateBody({ name: 'NekoGit', private: true, auto_init: true })
+      normalizeRepositoryCreateBody({
+        name: 'NekoGit',
+        owner: '  NekoRain404  ',
+        private: true,
+        auto_init: true,
+      })
     ).toEqual({
       name: 'NekoGit',
+      owner: 'NekoRain404',
       private: true,
       auto_init: true,
     });
+  });
+
+  test('rejects invalid organization owners', () => {
+    for (const owner of ['bad owner', '-leading', 'trailing-', 'owner/name', 42]) {
+      expect(
+        captureError(() => normalizeRepositoryCreateBody({ name: 'NekoGit', owner }))
+      ).toMatchObject({ statusCode: 400 });
+    }
   });
 
   test('rejects unknown fields and invalid optional values', () => {
