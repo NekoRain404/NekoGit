@@ -70,6 +70,8 @@ export const useLocalRepositoryPanelState = () => {
   const desktopDeleteBranchLoading = ref(false);
   const desktopCommitMessage = ref('');
   const desktopCloneCopied = ref(false);
+  const desktopRebaseLoading = ref(false);
+  const desktopAbortRebaseLoading = ref(false);
   const associatedPullRequest = shallowRef<{
     number: number;
     title: string;
@@ -174,6 +176,8 @@ export const useLocalRepositoryPanelState = () => {
     desktopLocalRepositoryStashes,
     desktopLocalRepositoryStatus,
     desktopNewBranchName,
+    desktopAbortRebaseLoading,
+    desktopRebaseLoading,
     desktopRemoteBranchName,
     desktopSelectedChangedFilePath,
     desktopStagingChangedFilePaths,

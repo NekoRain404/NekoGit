@@ -281,6 +281,8 @@ pub fn run() {
             desktop_create_local_repository_branch,
             desktop_checkout_remote_local_repository_branch,
             desktop_delete_local_repository_branch,
+            desktop_rebase_local_repository,
+            desktop_abort_local_repository_rebase,
             desktop_commit_local_repository_changes,
             desktop_stash_local_repository_changes,
             desktop_pop_local_repository_stash,

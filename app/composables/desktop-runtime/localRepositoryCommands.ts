@@ -190,6 +190,27 @@ export const pushLocalRepository = async (repositoryUrl: string) => {
   });
 };
 
+/** Rebase the current branch onto a validated target, or onto its upstream when omitted. */
+export const rebaseLocalRepository = async (
+  repositoryUrl: string,
+  targetBranch: string | null = null
+) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>('desktop_rebase_local_repository', {
+    repositoryUrl,
+    targetBranch,
+  });
+};
+
+/** Abort an in-progress rebase in a local repository. */
+export const abortLocalRepositoryRebase = async (repositoryUrl: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_abort_local_repository_rebase',
+    {
+      repositoryUrl,
+    }
+  );
+};
+
 /** Switch the checked-out branch of a local repository. */
 export const switchLocalRepositoryBranch = async (repositoryUrl: string, branchName: string) => {
   return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(

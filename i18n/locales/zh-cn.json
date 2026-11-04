@@ -278,6 +278,10 @@
       "markedNotificationsRead": "已将 {count} 条通知标为已读。",
       "noUnreadNotifications": "当前没有未读通知。",
       "markAllNotificationsReadFailed": "通知标为已读失败，请稍后重试。",
+      "unsubscribe": "取消订阅此通知线程",
+      "unsubscribeConfirm": "确定要取消订阅此通知线程吗？你将不再收到该线程的通知。",
+      "unsubscribed": "已取消订阅该通知线程。",
+      "unsubscribeFailed": "取消订阅通知线程失败，请稍后重试。",
       "manageViews": "管理视图",
       "views": "视图"
     },

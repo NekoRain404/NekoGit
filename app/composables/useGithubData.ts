@@ -383,6 +383,41 @@ export function useGithubData() {
     return updated ? nextItems : items;
   };
 
+  const withUnsubscribedNotification = (items: DashboardNotification[], threadId: string) => {
+    let updated = false;
+    const nextItems = items.map((item) => {
+      if (normalizeNotificationThreadId(item.id) !== threadId) {
+        return item;
+      }
+
+      const subscription = item.subscription;
+      const hasSubscriptionObject = Boolean(subscription) && typeof subscription === 'object';
+      const subscriptionState = hasSubscriptionObject
+        ? (subscription as { subscribed?: unknown }).subscribed
+        : undefined;
+
+      if (item.subscribed === false && (!hasSubscriptionObject || subscriptionState === false)) {
+        return item;
+      }
+
+      updated = true;
+      return {
+        ...item,
+        subscribed: false,
+        ...(hasSubscriptionObject
+          ? {
+              subscription: {
+                ...(subscription as Record<string, unknown>),
+                subscribed: false,
+              },
+            }
+          : {}),
+      };
+    });
+
+    return updated ? nextItems : items;
+  };
+
   const applyReadNotification = (threadId: string) => {
     const activePage = pagination.value.notifications.page;
 
@@ -391,6 +426,30 @@ export function useGithubData() {
     for (const [page, cachedData] of Object.entries(pageCache.value.notifications)) {
       const pageNumber = Number(page);
       const nextItems = withReadNotification(cachedData.items, threadId);
+      if (nextItems === cachedData.items) {
+        continue;
+      }
+
+      const nextData = {
+        ...cachedData,
+        items: nextItems,
+      };
+      pageCache.value.notifications[pageNumber] = nextData;
+
+      if (pageNumber === activePage) {
+        applyNotificationsData(nextData);
+      }
+    }
+  };
+
+  const applyUnsubscribedNotification = (threadId: string) => {
+    const activePage = pagination.value.notifications.page;
+
+    notifications.value = withUnsubscribedNotification(notifications.value, threadId);
+
+    for (const [page, cachedData] of Object.entries(pageCache.value.notifications)) {
+      const pageNumber = Number(page);
+      const nextItems = withUnsubscribedNotification(cachedData.items, threadId);
       if (nextItems === cachedData.items) {
         continue;
       }
@@ -858,6 +917,21 @@ export function useGithubData() {
     void refreshUnreadNotificationCount();
   };
 
+  const unsubscribeNotificationThread = async (threadId: PropertyKey) => {
+    const normalizedThreadId = normalizeNotificationThreadId(threadId);
+    if (!normalizedThreadId) {
+      throw new Error('Invalid notification thread id');
+    }
+
+    await apiFetch(
+      `/api/notifications/threads/${encodeURIComponent(normalizedThreadId)}/subscription`,
+      {
+        method: 'DELETE',
+      }
+    );
+    applyUnsubscribedNotification(normalizedThreadId);
+  };
+
   const markAllNotificationsAsRead = async () => {
     await apiFetch('/api/notifications', {
       method: 'PATCH',
@@ -911,5 +985,6 @@ export function useGithubData() {
     markNotificationAsRead,
     markAllNotificationsAsRead,
     markNotificationThreadsAsRead,
+    unsubscribeNotificationThread,
   };
 }

@@ -148,7 +148,7 @@
 
 **GitHub 写操作**
 
-- Issue：创建 label（创建/关闭/重开/编辑/指派/里程碑已支持）
+- Issue：创建 label UI（创建/关闭/重开/编辑/指派/里程碑/label 创建 API 已支持）
 - PR：dismiss review（draft/ready、merge 方式、review thread 回复、编辑标题/正文已支持）
 - Discussion：创建（标记 answer、upvote、lock/unlock 已支持）
 
@@ -263,7 +263,7 @@
 - AUD-028：clone/fetch/pull/push 增加 120s 超时（`NEKOGIT_GIT_TIMEOUT_SECS` 可调），并发排空 stdout/stderr 防止管道死锁；取消/进程组管理仍延后。
 - AUD-029：reviewer summary 增加 45s 客户端 TTL 缓存、并发请求去重，并在 reviewer 增删后失效。
 - 额外功能：桌面端支持“接管已有本地 clone”（校验 Git work tree 与 origin 后记录），无需重新 clone。
-- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、discussion actions 等测试，共 35 个测试文件 / 238 个用例；Rust 99 个测试。
+- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、discussion actions、label create 等测试，共 36 个测试文件 / 241 个用例；Rust 105 个测试。
 - 本地 Git 补全：stash 列表/pop、非当前分支安全删除（`git branch -d`）。
 - Issue 写操作：关闭/重开、编辑标题/正文（PATCH route + modal + 权限 gating）。
 - PR 编辑：标题/正文编辑 modal，复用 PATCH pull request endpoint。
@@ -271,18 +271,21 @@
 - PR 写操作：draft/ready 切换、merge/squash/rebase 合并方式选择。
 - 本地 Git 补全：按文件 stage/unstage（含初始提交无 HEAD 的 unstage 回退）、stash apply/clear。
 - Discussion 写操作：mark/unmark answer、讨论/评论 upvote、lock/unlock（GraphQL + UI）。
+- 本地 Git：rebase / abort rebase（含冲突检测与明确提示）。
+- 通知：线程退订（REST + UI）。
+- Label：创建 label 的后端 endpoint 与校验（UI 待接入）。
 - Issue 写操作：创建 issue（endpoint + modal）、assignees/milestone 编辑（endpoint + picker UI）。
 
 最终验证（2026-11-04）：
 
-- `pnpm fmt:check` ✅ 429 files
+- `pnpm fmt:check` ✅ 435 files
 - `pnpm typecheck` ✅
 - `pnpm lint` ✅（correctness 已启用）
-- `pnpm test` ✅ 35 files / 238 tests
+- `pnpm test` ✅ 36 files / 241 tests
 - `pnpm build` ✅（`taskset -c 0-3`，47.3 MB）
-- `node scripts/check-tauri-commands.mjs` ✅ 43 commands
+- `node scripts/check-tauri-commands.mjs` ✅ 45 commands
 - `cargo fmt --check` ✅
-- `cargo test --jobs 4` ✅ 99 tests
+- `cargo test --jobs 4` ✅ 105 tests
 - `cargo clippy --jobs 4 --all-targets -- -D warnings` ✅
 - server smoke：安全响应头生效；无 CSRF token → 403
 
@@ -291,4 +294,4 @@
 - AUD-020：server route / 组件 / E2E 测试基线仍未建立（已新增纯逻辑测试）。
 - AUD-028 的“取消/进程组管理”部分（超时已完成）。
 - AUD-030：AppImage/rpm、自动更新、签名。
-- Notification done/unsubscribe、rebase/远端 publish、Issue label 创建、组件/E2E 测试、AppImage/rpm 打包/签名等仍在 backlog。
+- Notification “done”、远端 publish、label 创建 UI、Discussion 创建、组件/E2E 测试、AppImage/rpm 打包/签名等仍在 backlog。

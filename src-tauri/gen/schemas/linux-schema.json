@@ -2001,6 +2001,12 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "Enables the desktop_abort_local_repository_rebase command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-abort-local-repository-rebase",
+          "markdownDescription": "Enables the desktop_abort_local_repository_rebase command without any pre-configured scope."
+        },
+        {
           "description": "Enables the desktop_apply_local_repository_stash command without any pre-configured scope.",
           "type": "string",
           "const": "allow-desktop-apply-local-repository-stash",
@@ -2169,6 +2175,12 @@
           "markdownDescription": "Enables the desktop_read_github_cli_token command without any pre-configured scope."
         },
         {
+          "description": "Enables the desktop_rebase_local_repository command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-rebase-local-repository",
+          "markdownDescription": "Enables the desktop_rebase_local_repository command without any pre-configured scope."
+        },
+        {
           "description": "Enables the desktop_remember_local_repository command without any pre-configured scope.",
           "type": "string",
           "const": "allow-desktop-remember-local-repository",
@@ -2257,6 +2269,12 @@
           "type": "string",
           "const": "allow-desktop-unstage-local-repository-path",
           "markdownDescription": "Enables the desktop_unstage_local_repository_path command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the desktop_abort_local_repository_rebase command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-abort-local-repository-rebase",
+          "markdownDescription": "Denies the desktop_abort_local_repository_rebase command without any pre-configured scope."
         },
         {
           "description": "Denies the desktop_apply_local_repository_stash command without any pre-configured scope.",
@@ -2425,6 +2443,12 @@
           "type": "string",
           "const": "deny-desktop-read-github-cli-token",
           "markdownDescription": "Denies the desktop_read_github_cli_token command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the desktop_rebase_local_repository command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-rebase-local-repository",
+          "markdownDescription": "Denies the desktop_rebase_local_repository command without any pre-configured scope."
         },
         {
           "description": "Denies the desktop_remember_local_repository command without any pre-configured scope.",

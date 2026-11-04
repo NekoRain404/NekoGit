@@ -6,8 +6,9 @@ mod git;
 mod sync;
 
 pub(crate) use branches::{
-    checkout_remote_local_repository_branch, create_local_repository_branch,
-    delete_local_repository_branch, switch_local_repository_branch,
+    abort_local_repository_rebase, checkout_remote_local_repository_branch,
+    create_local_repository_branch, delete_local_repository_branch, rebase_local_repository,
+    switch_local_repository_branch,
 };
 pub(crate) use changes::{
     apply_local_repository_stash, clear_local_repository_stashes, commit_local_repository_changes,

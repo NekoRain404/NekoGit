@@ -36,6 +36,10 @@ export interface DashboardNotification {
   updated_at?: string;
   reason?: string;
   html_url?: string;
+  /** Optional client-side flag used after unsubscribing from a thread. */
+  subscribed?: boolean;
+  /** Optional subscription metadata when a future GitHub payload includes it. */
+  subscription?: { subscribed?: boolean; [key: string]: unknown };
   [key: string]: unknown;
 }
 

@@ -10,8 +10,9 @@ mod sync;
 
 pub(crate) use adopt::desktop_remember_local_repository;
 pub(crate) use branches::{
-    desktop_checkout_remote_local_repository_branch, desktop_create_local_repository_branch,
-    desktop_delete_local_repository_branch, desktop_switch_local_repository_branch,
+    desktop_abort_local_repository_rebase, desktop_checkout_remote_local_repository_branch,
+    desktop_create_local_repository_branch, desktop_delete_local_repository_branch,
+    desktop_rebase_local_repository, desktop_switch_local_repository_branch,
 };
 pub(crate) use changes::{
     desktop_apply_local_repository_stash, desktop_clear_local_repository_stashes,

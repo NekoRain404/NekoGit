@@ -49,6 +49,8 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     popLocalRepositoryStash,
     pullLocalRepository,
     pushLocalRepository,
+    rebaseDesktopLocalRepository: rebaseLocalRepositoryCommand,
+    abortDesktopLocalRepositoryRebase: abortLocalRepositoryRebaseCommand,
     rememberLocalRepository,
     stageLocalRepositoryPath,
     stashLocalRepositoryChanges,
@@ -59,6 +61,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
 
   const panelState = useLocalRepositoryPanelState();
   const {
+    desktopAbortRebaseLoading,
     desktopAction,
     desktopBranchAction,
     desktopBranchToDelete,
@@ -86,6 +89,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopLocalRepositoryStashes,
     desktopLocalRepositoryStatus,
     desktopNewBranchName,
+    desktopRebaseLoading,
     desktopRemoteBranchName,
     desktopSelectedChangedFilePath,
     desktopStagingChangedFilePaths,
@@ -324,6 +328,86 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
       'Failed to push local repository.',
       options.copy.value.confirmPush
     );
+  };
+
+  const refreshAfterRebase = async () => {
+    void refreshAssociatedPullRequest();
+    await Promise.all([
+      refreshDesktopLocalRepositoryGitStatus(),
+      refreshDesktopLocalRepositoryBranches(),
+      refreshDesktopLocalRepositoryChangedFiles(),
+      refreshDesktopLocalRepositoryCommitHistory(),
+    ]);
+  };
+
+  const rebaseDesktopLocalRepository = async () => {
+    const repository = desktopRepository.value;
+    if (
+      !repository ||
+      !desktopLocalRepositoryStatus.value?.exists ||
+      !desktopLocalRepositoryGitStatus.value?.clean ||
+      !desktopLocalRepositoryGitStatus.value?.upstream ||
+      desktopAction.value ||
+      desktopRebaseLoading.value
+    ) {
+      return;
+    }
+    if (import.meta.client && !window.confirm(options.copy.value.confirmRebase)) return;
+
+    desktopRebaseLoading.value = true;
+    desktopAction.value = 'rebase';
+    desktopGitStatusLoading.value = true;
+    desktopGitStatusError.value = '';
+
+    try {
+      desktopLocalRepositoryGitStatus.value = await rebaseLocalRepositoryCommand(
+        repository.cloneUrl
+      );
+      await refreshAfterRebase();
+    } catch (error) {
+      const message = getDesktopActionErrorMessage(error, 'Failed to rebase the local branch.');
+      await showDesktopMessage(message, 'error');
+      await refreshAfterRebase();
+      desktopGitStatusError.value = message;
+    } finally {
+      desktopGitStatusLoading.value = false;
+      desktopRebaseLoading.value = false;
+      desktopAction.value = null;
+    }
+  };
+
+  const abortDesktopLocalRepositoryRebase = async () => {
+    const repository = desktopRepository.value;
+    if (
+      !repository ||
+      !desktopLocalRepositoryStatus.value?.exists ||
+      desktopAction.value ||
+      desktopAbortRebaseLoading.value
+    ) {
+      return;
+    }
+    if (import.meta.client && !window.confirm(options.copy.value.confirmAbortRebase)) return;
+
+    desktopAbortRebaseLoading.value = true;
+    desktopAction.value = 'abortRebase';
+    desktopGitStatusLoading.value = true;
+    desktopGitStatusError.value = '';
+
+    try {
+      desktopLocalRepositoryGitStatus.value = await abortLocalRepositoryRebaseCommand(
+        repository.cloneUrl
+      );
+      await refreshAfterRebase();
+    } catch (error) {
+      const message = getDesktopActionErrorMessage(error, 'Failed to abort the local rebase.');
+      await showDesktopMessage(message, 'error');
+      await refreshAfterRebase();
+      desktopGitStatusError.value = message;
+    } finally {
+      desktopGitStatusLoading.value = false;
+      desktopAbortRebaseLoading.value = false;
+      desktopAction.value = null;
+    }
   };
 
   const commitDesktopLocalRepositoryChanges = async () => {
@@ -925,12 +1009,14 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     openDesktopChangedFile,
     openDesktopLocalRepository,
     openDesktopLocalRepositoryTerminal,
+    abortDesktopLocalRepositoryRebase,
     applyDesktopLocalRepositoryStash,
     clearDesktopLocalRepositoryStashes,
     popDesktopLocalRepositoryStash,
     previewDesktopChangedFileDiff,
     pullDesktopLocalRepository,
     pushDesktopLocalRepository,
+    rebaseDesktopLocalRepository,
     stageDesktopChangedFile,
     stashDesktopLocalRepositoryChanges,
     switchDesktopLocalRepositoryBranch,

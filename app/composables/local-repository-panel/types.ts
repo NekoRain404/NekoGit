@@ -12,6 +12,8 @@ export type DesktopRepositoryAction =
   | 'open'
   | 'pull'
   | 'push'
+  | 'rebase'
+  | 'abortRebase'
   | 'stash'
   | 'terminal'
   | null;
@@ -39,6 +41,8 @@ export type LocalRepositoryCopy = {
   gitCommitting: string;
   gitConflicted: string;
   gitConflictActionUnavailable: string;
+  gitAbortRebase: string;
+  gitAbortingRebase: string;
   gitCheckoutRemoteBranch: string;
   gitCheckingOutRemoteBranch: string;
   gitCopied: string;
@@ -57,6 +61,8 @@ export type LocalRepositoryCopy = {
   gitCommits: string;
   gitPublishBranch: string;
   gitPull: string;
+  gitRebase: string;
+  gitRebasing: string;
   gitPulling: string;
   gitPush: string;
   gitPushing: string;
@@ -103,6 +109,8 @@ export type LocalRepositoryCopy = {
   confirmClearStashes: string;
   confirmDeleteBranch: string;
   confirmPush: string;
+  confirmRebase: string;
+  confirmAbortRebase: string;
   creatingPullRequest: string;
   pullRequestCreated: string;
   noPullRequest: string;

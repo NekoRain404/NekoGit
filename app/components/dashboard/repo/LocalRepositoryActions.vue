@@ -7,11 +7,13 @@ import {
   DownloadIcon,
   FolderOpenIcon,
   FolderSearchIcon,
+  GitMergeIcon,
   GitPullRequestArrowIcon,
   GitPullRequestIcon,
   Loader2Icon,
   RefreshCwIcon,
   TerminalIcon,
+  Undo2Icon,
   UploadIcon,
 } from 'lucide-vue-next';
 import { ref } from 'vue';
@@ -105,6 +107,43 @@ const handlePRCreated = async (pull: any) => {
       <GitPullRequestArrowIcon v-else :size="14" />
       <span>
         {{ state.desktopAction.value === 'pull' ? copy.gitPulling : copy.gitPull }}
+      </span>
+    </button>
+    <button
+      v-if="
+        state.desktopLocalRepositoryGitStatus.value?.clean &&
+        state.desktopLocalRepositoryGitStatus.value?.upstream
+      "
+      class="local-repo-link local-repo-panel__action local-repo-panel__action--wide"
+      :disabled="Boolean(state.desktopAction.value)"
+      @click="state.rebaseDesktopLocalRepository"
+    >
+      <Loader2Icon
+        v-if="state.desktopAction.value === 'rebase'"
+        :size="14"
+        class="spin-animation"
+      />
+      <GitMergeIcon v-else :size="14" />
+      <span>
+        {{ state.desktopAction.value === 'rebase' ? copy.gitRebasing : copy.gitRebase }}
+      </span>
+    </button>
+    <button
+      v-if="state.desktopLocalRepositoryStatus.value?.exists"
+      class="local-repo-link local-repo-panel__action local-repo-panel__action--wide"
+      :disabled="Boolean(state.desktopAction.value)"
+      @click="state.abortDesktopLocalRepositoryRebase"
+    >
+      <Loader2Icon
+        v-if="state.desktopAction.value === 'abortRebase'"
+        :size="14"
+        class="spin-animation"
+      />
+      <Undo2Icon v-else :size="14" />
+      <span>
+        {{
+          state.desktopAction.value === 'abortRebase' ? copy.gitAbortingRebase : copy.gitAbortRebase
+        }}
       </span>
     </button>
     <button

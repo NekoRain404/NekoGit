@@ -157,6 +157,7 @@
                   <AsyncNotificationItem
                     :notification="notification"
                     :mark-read="markNotificationAsReadSafely"
+                    :unsubscribe="unsubscribeNotificationThreadSafely"
                   />
                 </div>
               </SimpleBar>
@@ -450,6 +451,7 @@ const {
   error,
   notifications,
   unreadNotificationCount: exactNotificationUnreadCount,
+  refreshUnreadNotificationCount,
   issues,
   pulls,
   repos,
@@ -463,6 +465,7 @@ const {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   markNotificationThreadsAsRead,
+  unsubscribeNotificationThread,
 } = useGithubData();
 
 const hasCompletedInitialDashboardLoad = shallowRef(false);
@@ -844,6 +847,24 @@ const markNotificationAsReadSafely = async (notification: DashboardNotification)
     await markNotificationAsRead(notification.id);
   } catch (error) {
     console.error('Failed to mark notification as read:', error);
+    throw error;
+  }
+};
+
+const unsubscribeNotificationThreadSafely = async (notification: DashboardNotification) => {
+  try {
+    await unsubscribeNotificationThread(notification.id);
+    notificationActionMessage.value = {
+      tone: 'success',
+      text: t('dashboard.actions.unsubscribed'),
+    };
+    void refreshUnreadNotificationCount();
+  } catch (error) {
+    console.error('Failed to unsubscribe from GitHub notification thread:', error);
+    notificationActionMessage.value = {
+      tone: 'danger',
+      text: t('dashboard.actions.unsubscribeFailed'),
+    };
     throw error;
   }
 };
