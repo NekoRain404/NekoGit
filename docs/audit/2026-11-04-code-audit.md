@@ -293,7 +293,7 @@
 - `cargo fmt --check` ✅
 - `cargo test --jobs 4` ✅ 109 tests
 - `cargo clippy --jobs 4 --all-targets -- -D warnings` ✅
-- `pnpm smoke:server` ✅ 安全响应头、未认证 401、缺失 CSRF 403、带 CSRF 空 token 400
+- `pnpm smoke:server` ✅ 安全响应头、未认证 401（含仓库 PATCH/DELETE 路由）、缺失 CSRF 403、带 CSRF 空 token 400
 - `pnpm test:e2e` ✅ 2 tests（系统 Chrome，landing 与未登录路由守卫）
 - server smoke：安全响应头生效；无 CSRF token → 403
 

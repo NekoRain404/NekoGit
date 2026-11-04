@@ -72,6 +72,36 @@ try {
   const unauthorized = await fetch(`${baseUrl}/api/user`);
   assert(unauthorized.status === 401, `Expected /api/user to be 401, got ${unauthorized.status}`);
 
+  const unauthorizedRepoUpdate = await fetch(`${baseUrl}/api/repos/nekogit-smoke/repository`, {
+    method: 'PATCH',
+    headers: {
+      'content-type': 'application/json',
+      origin: baseUrl,
+      cookie: `nekogit_csrf=${csrfToken}`,
+      'x-csrf-token': csrfToken,
+    },
+    body: JSON.stringify({ description: 'smoke' }),
+  });
+  assert(
+    unauthorizedRepoUpdate.status === 401,
+    `Expected repository PATCH to be 401, got ${unauthorizedRepoUpdate.status}`
+  );
+
+  const unauthorizedRepoDelete = await fetch(`${baseUrl}/api/repos/nekogit-smoke/repository`, {
+    method: 'DELETE',
+    headers: {
+      'content-type': 'application/json',
+      origin: baseUrl,
+      cookie: `nekogit_csrf=${csrfToken}`,
+      'x-csrf-token': csrfToken,
+    },
+    body: JSON.stringify({ confirmName: 'repository' }),
+  });
+  assert(
+    unauthorizedRepoDelete.status === 401,
+    `Expected repository DELETE to be 401, got ${unauthorizedRepoDelete.status}`
+  );
+
   const missingCsrf = await fetch(`${baseUrl}/auth/pat`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', origin: baseUrl },
