@@ -264,7 +264,7 @@
 - AUD-028：clone/fetch/pull/push 增加 120s 超时（`NEKOGIT_GIT_TIMEOUT_SECS` 可调），并发排空 stdout/stderr 防止管道死锁；新增 `desktop_cancel_local_repository_operation`，Unix 下以进程组 SIGKILL 终止 fetch/pull/push/clone/rebase。
 - AUD-029：reviewer summary 增加 45s 客户端 TTL 缓存、并发请求去重，并在 reviewer 增删后失效。
 - 额外功能：桌面端支持“接管已有本地 clone”（校验 Git work tree 与 origin 后记录），无需重新 clone。
-- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，并加入 `@vue/test-utils` + happy-dom 组件测试（PREditModal、LabelCreateForm），共 43 个测试文件 / 272 个用例；Rust 109 个测试。
+- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，并加入 `@vue/test-utils` + happy-dom 组件测试（PREditModal、LabelCreateForm、CreateRepositoryModal、RepositorySettingsModal），共 45 个测试文件 / 277 个用例；Rust 109 个测试。
 - 浏览器 E2E：新增 Playwright 配置与 `e2e/landing.spec.ts`，使用系统 Chrome（不下载浏览器）验证 landing 渲染、CSRF cookie 与未登录访问 `/dashboard` 的重定向；CI Build job 执行 `pnpm test:e2e`。
 - 本地 Git 补全：stash 列表/pop、非当前分支安全删除（`git branch -d`）。
 - Issue 写操作：关闭/重开、编辑标题/正文（PATCH route + modal + 权限 gating）。
@@ -284,10 +284,10 @@
 
 最终验证（2026-11-04）：
 
-- `pnpm fmt:check` ✅ 467 files
+- `pnpm fmt:check` ✅ 469 files
 - `pnpm typecheck` ✅
 - `pnpm lint` ✅（correctness 已启用）
-- `pnpm test` ✅ 43 files / 272 tests（含 Vue 组件测试与仓库创建/转移/设置校验）
+- `pnpm test` ✅ 45 files / 277 tests（含仓库创建/设置 modal 组件测试与校验单测）
 - `pnpm build` ✅（`taskset -c 0-3`，47.3 MB）
 - `node scripts/check-tauri-commands.mjs` ✅ 48 commands
 - `cargo fmt --check` ✅
