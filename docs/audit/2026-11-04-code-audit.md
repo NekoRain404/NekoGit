@@ -166,7 +166,7 @@
 
 **桌面本地 Git**
 
-- stash apply/clear、远端 publish、rebase、冲突处理、完整变更文件/历史（接管已有 clone、stash list/pop、分支删除、按文件 stage/unstage、commit amend/undo、命令超时与取消已支持）
+- stash apply/clear、远端 publish、rebase、冲突处理（接管已有 clone、stash list/pop、分支删除、按文件 stage/unstage、commit amend/undo、变更文件/历史“显示全部”、命令超时与取消已支持）
 
 **打包与测试**
 

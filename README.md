@@ -88,7 +88,7 @@ The package is written to `src-tauri/target/release/bundle/deb/`. Release builds
 
 The desktop client keeps its runtime state in the Tauri app data directory. It generates a persistent `session.secret` on first launch, stores webview data under `webview/`, writes the bundled server log to `logs/nekogit-server.log`, and exposes **File → Open Data Directory** / **File → Open Server Log** from the native menu. Closing the main window hides NekoGit to the system tray; use the tray menu or **File → Quit** to exit the bundled server. Reopening NekoGit while it is already running focuses the existing window instead of starting a second bundled server.
 
-The repository sidebar can clone or adopt an existing checkout, fetch, pull, push/publish, rebase, stage files individually, stash/apply/pop entries, amend the last commit, and undo a local commit while keeping its changes staged.
+The repository sidebar can clone or adopt an existing checkout, fetch, pull, push/publish, rebase, stage files individually, expand changed-file and commit-history lists, stash/apply/pop entries, amend the last commit, and undo a local commit while keeping its changes staged.
 
 Common desktop shortcuts include `F5` for refreshing the current NekoGit view, `Ctrl+,` for settings, `Alt+Left` / `Alt+Right` for in-app navigation, and `Ctrl+Shift+G` / `Ctrl+Shift+O` / `Ctrl+Shift+L` for opening, opening from clipboard, or copying GitHub URLs.
 

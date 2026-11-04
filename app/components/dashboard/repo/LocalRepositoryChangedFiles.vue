@@ -25,6 +25,14 @@ const { copy, state } = useLocalRepositoryPanelContext();
         :size="12"
         class="spin-animation"
       />
+      <button
+        v-else-if="state.desktopChangedFiles.value.length >= 8 && !state.changedFilesExpanded.value"
+        class="local-repo-files__more"
+        type="button"
+        @click="state.showAllDesktopChangedFiles"
+      >
+        {{ copy.gitShowAll }}
+      </button>
     </div>
     <p v-if="state.desktopChangedFilesError.value" class="local-repo-files__error">
       {{ state.desktopChangedFilesError.value }}

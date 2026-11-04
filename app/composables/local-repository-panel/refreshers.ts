@@ -1,4 +1,5 @@
 /// Data refresh pipeline for the local repository panel (status, git status, branches, commits, diffs) with stale-response guards.
+import { ref } from 'vue';
 import type { ComputedRef } from 'vue';
 
 import type {
@@ -54,6 +55,11 @@ export const useLocalRepositoryPanelRefreshers = ({
   desktopRepository,
   state,
 }: LocalRepositoryPanelRefreshersOptions) => {
+  const changedFilesLimit = ref(8);
+  const commitHistoryLimit = ref(6);
+  const changedFilesExpanded = ref(false);
+  const commitHistoryExpanded = ref(false);
+
   const {
     associatedPullRequest,
     desktopBranchesError,
@@ -274,7 +280,10 @@ export const useLocalRepositoryPanelRefreshers = ({
     desktopChangedFilesError.value = '';
 
     try {
-      const changedFiles = await commands.getLocalRepositoryChangedFiles(repository.cloneUrl, 8);
+      const changedFiles = await commands.getLocalRepositoryChangedFiles(
+        repository.cloneUrl,
+        changedFilesLimit.value
+      );
       if (!requestSerials.changedFiles.isCurrent(requestId)) return changedFiles;
 
       desktopLocalRepositoryChangedFiles.value = changedFiles;
@@ -316,7 +325,10 @@ export const useLocalRepositoryPanelRefreshers = ({
     desktopCommitHistoryError.value = '';
 
     try {
-      const history = await commands.getLocalRepositoryCommitHistory(repository.cloneUrl, 6);
+      const history = await commands.getLocalRepositoryCommitHistory(
+        repository.cloneUrl,
+        commitHistoryLimit.value
+      );
       if (!requestSerials.commitHistory.isCurrent(requestId)) return history;
 
       desktopLocalRepositoryCommitHistory.value = history;
@@ -382,8 +394,34 @@ export const useLocalRepositoryPanelRefreshers = ({
     }
   };
 
+  const showAllDesktopChangedFiles = async () => {
+    if (changedFilesExpanded.value) return;
+    changedFilesExpanded.value = true;
+    changedFilesLimit.value = 100;
+    await refreshDesktopLocalRepositoryChangedFiles();
+  };
+
+  const showAllDesktopCommitHistory = async () => {
+    if (commitHistoryExpanded.value) return;
+    commitHistoryExpanded.value = true;
+    commitHistoryLimit.value = 50;
+    await refreshDesktopLocalRepositoryCommitHistory();
+  };
+
+  const resetDesktopLocalRepositoryListLimits = () => {
+    changedFilesExpanded.value = false;
+    commitHistoryExpanded.value = false;
+    changedFilesLimit.value = 8;
+    commitHistoryLimit.value = 6;
+  };
+
   return {
     previewDesktopChangedFileDiff,
+    changedFilesExpanded,
+    commitHistoryExpanded,
+    showAllDesktopChangedFiles,
+    showAllDesktopCommitHistory,
+    resetDesktopLocalRepositoryListLimits,
     refreshAssociatedPullRequest,
     refreshDesktopLocalRepositoryBranches,
     refreshDesktopLocalRepositoryChangedFiles,

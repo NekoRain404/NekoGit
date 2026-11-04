@@ -480,6 +480,21 @@
   text-transform: uppercase;
 }
 
+.local-repo-files__more {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--nekogit-info);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.local-repo-files__more:hover {
+  text-decoration: underline;
+}
+
 .local-repo-files__error,
 .local-repo-history__error {
   overflow: hidden;

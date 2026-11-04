@@ -158,6 +158,8 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
   });
 
   const {
+    changedFilesExpanded,
+    commitHistoryExpanded,
     previewDesktopChangedFileDiff,
     refreshAssociatedPullRequest,
     refreshDesktopLocalRepositoryBranches,
@@ -167,6 +169,9 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     refreshDesktopLocalRepositoryReadState,
     refreshDesktopLocalRepositoryStashes,
     refreshDesktopLocalRepositoryStatus,
+    resetDesktopLocalRepositoryListLimits,
+    showAllDesktopChangedFiles,
+    showAllDesktopCommitHistory,
   } = useLocalRepositoryPanelRefreshers({
     commands: {
       getLocalRepositoryBranches,
@@ -996,6 +1001,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
   watch(
     () => [desktopAvailable.value, desktopCloneUrl.value],
     () => {
+      resetDesktopLocalRepositoryListLimits();
       if (!desktopAvailable.value || !desktopCloneUrl.value) {
         desktopLocalRepositoryStatus.value = null;
         desktopStatusError.value = '';
@@ -1014,6 +1020,8 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
   });
 
   return {
+    changedFilesExpanded,
+    commitHistoryExpanded,
     desktopAction,
     desktopAvailable,
     desktopBranchAction,
@@ -1100,6 +1108,8 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     pullDesktopLocalRepository,
     pushDesktopLocalRepository,
     rebaseDesktopLocalRepository,
+    showAllDesktopChangedFiles,
+    showAllDesktopCommitHistory,
     stageDesktopChangedFile,
     stashDesktopLocalRepositoryChanges,
     switchDesktopLocalRepositoryBranch,

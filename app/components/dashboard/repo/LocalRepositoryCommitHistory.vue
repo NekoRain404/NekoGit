@@ -24,6 +24,16 @@ const { copy, formatDate, state } = useLocalRepositoryPanelContext();
         :size="12"
         class="spin-animation"
       />
+      <button
+        v-else-if="
+          state.desktopCommitHistory.value.length >= 6 && !state.commitHistoryExpanded.value
+        "
+        class="local-repo-files__more"
+        type="button"
+        @click="state.showAllDesktopCommitHistory"
+      >
+        {{ copy.gitShowAll }}
+      </button>
     </div>
     <p v-if="state.desktopCommitHistoryError.value" class="local-repo-history__error">
       {{ state.desktopCommitHistoryError.value }}

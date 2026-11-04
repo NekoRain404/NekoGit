@@ -73,6 +73,7 @@ export type LocalRepositoryCopy = {
   gitPush: string;
   gitPushing: string;
   gitRenamed: string;
+  gitShowAll: string;
   gitStaged: string;
   gitStage: string;
   gitStaging: string;
