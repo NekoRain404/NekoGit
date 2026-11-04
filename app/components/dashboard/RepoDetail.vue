@@ -11,6 +11,7 @@ import {
   GithubIcon,
   InfoIcon,
   Loader2Icon,
+  MessageSquareIcon,
   PlusIcon,
   StarIcon,
   XIcon,
@@ -19,6 +20,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import type { LocationQueryRaw } from 'vue-router';
 
+import DiscussionCreateModal from '~/components/dashboard/discussion/DiscussionCreateModal.vue';
 import IssueCreateModal from '~/components/dashboard/issue/IssueCreateModal.vue';
 import LocalRepositoryPanel from '~/components/dashboard/repo/LocalRepositoryPanel.vue';
 import getFetchErrorMessage from '~/utils/getFetchErrorMessage';
@@ -36,7 +38,7 @@ const { locale, t } = useI18n();
 const localePath = useLocalePath();
 const apiFetch = useNekoGitApiFetch();
 const router = useRouter();
-const { navigateToFile, navigateToIssue } = useNavigationHistory();
+const { navigateToDiscussion, navigateToFile, navigateToIssue } = useNavigationHistory();
 const {
   branches,
   currentBranch,
@@ -345,6 +347,9 @@ const watchState = ref<WatchState | null>(null);
 const isIssueCreateModalOpen = ref(false);
 const creatingIssue = ref(false);
 const issueCreateError = ref('');
+const isDiscussionCreateModalOpen = ref(false);
+const creatingDiscussion = ref(false);
+const discussionCreateError = ref('');
 const loadingWatch = ref(false);
 const showWatchDropdown = ref(false);
 const watchCount = ref(props.repository.watchers_count ?? 0);
@@ -640,6 +645,57 @@ const fetchLicense = async () => {
   }
 };
 
+const openDiscussionCreateModal = () => {
+  discussionCreateError.value = '';
+  isDiscussionCreateModalOpen.value = true;
+};
+
+const closeDiscussionCreateModal = () => {
+  if (creatingDiscussion.value) return;
+  isDiscussionCreateModalOpen.value = false;
+  discussionCreateError.value = '';
+};
+
+const createDiscussion = async (payload: { title: string; body: string; categoryId: string }) => {
+  if (creatingDiscussion.value) return;
+
+  creatingDiscussion.value = true;
+  discussionCreateError.value = '';
+  try {
+    const response = await apiFetch<{ discussion?: { number?: number } }>(
+      `/api/repos/${props.owner}/${props.repo}/discussions`,
+      {
+        method: 'POST',
+        body: payload,
+      }
+    );
+    const number = response?.discussion?.number;
+
+    if (typeof number !== 'number') {
+      throw new Error(t('discussionDetail.createDiscussionFailed'));
+    }
+
+    isDiscussionCreateModalOpen.value = false;
+    navigateToDiscussion(props.owner, props.repo, number);
+    await router.push(
+      localePath({
+        path: '/dashboard',
+        query: {
+          tab: 'issues',
+          discussion: `${props.owner}/${props.repo}/${number}`,
+        },
+      })
+    );
+  } catch (error: unknown) {
+    discussionCreateError.value = getFetchErrorMessage(
+      error,
+      t('discussionDetail.createDiscussionFailed')
+    );
+  } finally {
+    creatingDiscussion.value = false;
+  }
+};
+
 const openIssueCreateModal = () => {
   issueCreateError.value = '';
   isIssueCreateModalOpen.value = true;
@@ -800,6 +856,17 @@ onUnmounted(() => {
                 <Loader2Icon v-if="creatingIssue" :size="14" class="spin-animation" />
                 <PlusIcon v-else :size="14" />
                 <span>{{ t('issueDetail.newIssue') }}</span>
+              </button>
+
+              <button
+                class="repo-action-btn"
+                type="button"
+                :disabled="creatingDiscussion"
+                @click="openDiscussionCreateModal"
+              >
+                <Loader2Icon v-if="creatingDiscussion" :size="14" class="spin-animation" />
+                <MessageSquareIcon v-else :size="14" />
+                <span>{{ t('discussionDetail.newDiscussion') }}</span>
               </button>
 
               <BranchSelector

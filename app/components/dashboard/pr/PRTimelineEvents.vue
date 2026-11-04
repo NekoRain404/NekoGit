@@ -26,11 +26,15 @@
           :item="item"
           :repo-owner="repoOwner"
           :repo-name="repoName"
+          :can-dismiss-review="canDismissReview"
+          :dismissing-review-id="dismissingReviewId"
+          :review-dismiss-result="reviewDismissResult"
           :resolving-review-thread-id="resolvingReviewThreadId"
           :replying-review-thread-id="replyingReviewThreadId"
           :review-thread-reply-result="reviewThreadReplyResult"
           @toggle-review-thread="emit('toggle-review-thread', $event.threadId, $event.resolved)"
           @reply-to-review-thread="emit('reply-to-review-thread', $event)"
+          @dismiss-review="emit('dismiss-review', $event)"
         />
 
         <PRTimelineCommitCard
@@ -111,6 +115,13 @@ interface ReviewThreadReplyResult {
   error?: string;
 }
 
+/** Result of a review dismissal submission. */
+interface ReviewDismissResult {
+  reviewId: string;
+  success: boolean;
+  error?: string;
+}
+
 const props = defineProps<{
   timeline: PRTimelineItem[];
   loading: boolean;
@@ -119,6 +130,9 @@ const props = defineProps<{
   pullNumber: number;
   hasNextPage?: boolean;
   loadingMore?: boolean;
+  canDismissReview?: boolean;
+  dismissingReviewId?: string | null;
+  reviewDismissResult?: ReviewDismissResult | null;
   resolvingReviewThreadId?: string | null;
   replyingReviewThreadId?: string | null;
   reviewThreadReplyResult?: ReviewThreadReplyResult | null;
@@ -131,6 +145,7 @@ const emit = defineEmits<{
   (e: 'load-more'): void;
   (e: 'toggle-review-thread', threadId: string, resolved: boolean): void;
   (e: 'reply-to-review-thread', payload: { threadId: string; body: string }): void;
+  (e: 'dismiss-review', payload: { reviewId: string; message: string }): void;
 }>();
 
 const { t } = useI18n();

@@ -954,3 +954,150 @@ export async function setDiscussionLocked(
     locked: Boolean(lockedRecord.locked),
   };
 }
+
+const FETCH_DISCUSSION_CATEGORIES_QUERY = `
+  query FetchDiscussionCategories($owner: String!, $repo: String!) {
+    repository(owner: $owner, name: $repo) {
+      discussionCategories(first: 100) {
+        nodes {
+          id
+          name
+          emoji
+          description
+          isAnswerable
+          slug
+        }
+      }
+    }
+  }
+`;
+
+interface FetchDiscussionCategoriesResponse {
+  repository?: {
+    discussionCategories?: {
+      nodes?: (DiscussionCategoryPayload | null)[] | null;
+    } | null;
+  } | null;
+}
+
+const CREATE_DISCUSSION_MUTATION = `
+  mutation CreateDiscussion(
+    $repositoryId: ID!
+    $categoryId: ID!
+    $title: String!
+    $body: String!
+  ) {
+    createDiscussion(
+      input: {
+        repositoryId: $repositoryId
+        categoryId: $categoryId
+        title: $title
+        body: $body
+      }
+    ) {
+      discussion {
+        id
+        number
+        title
+        url
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+interface CreateDiscussionResponse {
+  createDiscussion?: {
+    discussion?: {
+      id?: string | null;
+      number?: number | null;
+      title?: string | null;
+      url?: string | null;
+      createdAt?: string | null;
+      updatedAt?: string | null;
+    } | null;
+  } | null;
+}
+
+/** Normalized discussion category used by the create-discussion UI. */
+export interface DiscussionCategoryOption {
+  id: string;
+  name: string;
+  emoji?: string;
+  description: string | null;
+  isAnswerable: boolean;
+  slug?: string;
+}
+
+/** Normalized created discussion summary. */
+export interface CreatedDiscussion {
+  id: string;
+  number: number;
+  title: string;
+  url: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Fetch the discussion categories available in a repository. */
+export async function fetchDiscussionCategories(
+  octokit: GitHubClient,
+  owner: string,
+  repo: string
+): Promise<DiscussionCategoryOption[]> {
+  const response = await octokit.graphql<FetchDiscussionCategoriesResponse>(
+    FETCH_DISCUSSION_CATEGORIES_QUERY,
+    { owner, repo }
+  );
+  const nodes = response.repository?.discussionCategories?.nodes ?? [];
+  const categories: DiscussionCategoryOption[] = [];
+
+  for (const node of nodes) {
+    const category = normalizeCategory(node);
+    if (!category) continue;
+    categories.push({
+      id: category.id,
+      name: category.name,
+      emoji: category.emoji,
+      description: category.description ?? null,
+      isAnswerable: category.isAnswerable,
+      slug: category.slug,
+    });
+  }
+
+  return categories;
+}
+
+/** Create a discussion in a repository and return its normalized summary. */
+export async function createDiscussion(
+  octokit: GitHubClient,
+  repositoryId: string,
+  categoryId: string,
+  title: string,
+  body: string
+): Promise<CreatedDiscussion> {
+  const response = await octokit.graphql<CreateDiscussionResponse>(CREATE_DISCUSSION_MUTATION, {
+    repositoryId: validateDiscussionNodeId(repositoryId, 'Repository ID'),
+    categoryId: validateDiscussionNodeId(categoryId, 'Discussion category ID'),
+    title,
+    body,
+  });
+  const discussion = response.createDiscussion?.discussion;
+
+  if (!discussion?.id || typeof discussion.number !== 'number') {
+    throw createError({
+      statusCode: 502,
+      statusMessage: 'GitHub did not return the created discussion',
+    });
+  }
+
+  return {
+    id: discussion.id,
+    number: discussion.number,
+    title: discussion.title ?? title,
+    url: discussion.url ?? '',
+    createdAt: discussion.createdAt ?? undefined,
+    updatedAt: discussion.updatedAt ?? undefined,
+  };
+}

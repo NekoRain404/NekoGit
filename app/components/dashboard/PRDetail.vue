@@ -47,6 +47,9 @@
             :pull-number="currentPullRequest?.number || 0"
             :has-next-page="hasNextTimelinePage"
             :loading-more="loadingMoreTimeline"
+            :can-dismiss-review="canMerge"
+            :dismissing-review-id="dismissingReviewId"
+            :review-dismiss-result="reviewDismissResult"
             :resolving-review-thread-id="resolvingReviewThreadId"
             :replying-review-thread-id="replyingReviewThreadId"
             :review-thread-reply-result="reviewThreadReplyResult"
@@ -56,6 +59,7 @@
             @load-more="loadMoreTimeline"
             @toggle-review-thread="toggleReviewThreadResolved"
             @reply-to-review-thread="handleReplyToReviewThread"
+            @dismiss-review="handleDismissReview"
           />
         </div>
       </div>
@@ -201,6 +205,13 @@ interface ReviewThreadReplyResult {
   error?: string;
 }
 
+/** Result of a review dismissal submission. */
+interface ReviewDismissResult {
+  reviewId: string;
+  success: boolean;
+  error?: string;
+}
+
 /** Pull Request Detail Label. */
 interface PullRequestDetailLabel {
   id?: number | string;
@@ -251,6 +262,8 @@ const reviewerPickerError = shallowRef('');
 const resolvingReviewThreadId = shallowRef<string | null>(null);
 const replyingReviewThreadId = shallowRef<string | null>(null);
 const reviewThreadReplyResult = shallowRef<ReviewThreadReplyResult | null>(null);
+const dismissingReviewId = shallowRef<string | null>(null);
+const reviewDismissResult = shallowRef<ReviewDismissResult | null>(null);
 const reviewerCandidates = ref<PRReviewerCandidate[]>([]);
 const reviewerCandidateWarnings = ref<PRReviewerCandidateWarning[]>([]);
 const { t } = useI18n();
@@ -575,6 +588,52 @@ const handleReplyToReviewThread = async (payload: { threadId: string; body: stri
   }
 };
 
+const handleDismissReview = async (payload: { reviewId: string; message: string }) => {
+  if (!repoInfo.value || !currentPullRequest.value?.number || dismissingReviewId.value) {
+    return;
+  }
+
+  const reviewId = payload.reviewId.trim();
+  if (!reviewId) return;
+
+  const { owner, repo } = repoInfo.value;
+  const pullNumber = currentPullRequest.value.number;
+  const pullRequestIdentity = getPullRequestIdentity();
+  const message = payload.message.trim();
+
+  dismissingReviewId.value = reviewId;
+  reviewDismissResult.value = null;
+  detailError.value = '';
+
+  try {
+    await apiFetch(
+      `/api/repos/${owner}/${repo}/pulls/${pullNumber}/reviews/${encodeURIComponent(reviewId)}/dismissals`,
+      {
+        method: 'PUT',
+        body: message ? { message } : {},
+      }
+    );
+
+    if (pullRequestIdentity === getPullRequestIdentity()) {
+      reviewDismissResult.value = { reviewId, success: true };
+      await fetchTimeline();
+    }
+  } catch (err: unknown) {
+    console.error('Error dismissing pull request review:', err);
+    if (pullRequestIdentity === getPullRequestIdentity()) {
+      reviewDismissResult.value = {
+        reviewId,
+        success: false,
+        error: getFetchErrorMessage(err, t('prReview.dismissFailed')),
+      };
+    }
+  } finally {
+    if (pullRequestIdentity === getPullRequestIdentity()) {
+      dismissingReviewId.value = null;
+    }
+  }
+};
+
 const checkoutPullRequestLocally = async () => {
   const headRef = currentPullRequest.value?.head?.ref;
   if (!headRef || !repoOwner.value || !repoName.value) return;
@@ -885,6 +944,8 @@ const resetPullRequestScopedState = (pullRequest: any) => {
   resolvingReviewThreadId.value = null;
   replyingReviewThreadId.value = null;
   reviewThreadReplyResult.value = null;
+  dismissingReviewId.value = null;
+  reviewDismissResult.value = null;
   reviewerRequestsAvailable.value = null;
   reviewerPickerError.value = '';
   reviewerCandidates.value = [];
