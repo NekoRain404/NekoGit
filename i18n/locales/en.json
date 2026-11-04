@@ -930,5 +930,24 @@
     "deleteFailed": "Failed to delete the repository.",
     "cancel": "Cancel",
     "open": "Settings"
+  },
+  "repoCreate": {
+    "title": "New repository",
+    "name": "Repository name",
+    "namePlaceholder": "my-project",
+    "nameHint": "Letters, digits, dots, underscores, and hyphens. Up to 100 characters.",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional short description",
+    "homepage": "Homepage",
+    "homepagePlaceholder": "https://example.com",
+    "private": "Private repository",
+    "privateHint": "Private repositories are only visible to you and collaborators.",
+    "autoInit": "Initialize with a README",
+    "autoInitHint": "Creates the first commit automatically so you can clone right away.",
+    "create": "Create repository",
+    "creating": "Creating",
+    "createFailed": "Failed to create the repository.",
+    "created": "Created repository {name}.",
+    "cancel": "Cancel"
   }
 }

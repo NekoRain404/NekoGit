@@ -91,6 +91,17 @@
                 <CopyIcon v-once :size="18" class="dashboard-tab-action__icon" />
               </button>
               <button
+                v-if="currentTab === 'repos'"
+                class="button is-ghost is-small dashboard-tab-action"
+                type="button"
+                :aria-label="t('repoCreate.title')"
+                :title="t('repoCreate.title')"
+                @click="isCreateRepositoryModalOpen = true"
+              >
+                <FolderPlusIcon v-once :size="18" class="dashboard-tab-action__icon" />
+                <span>{{ t('repoCreate.create') }}</span>
+              </button>
+              <button
                 class="button is-ghost is-small dashboard-tab-action dashboard-tab-refresh"
                 type="button"
                 :aria-label="t('dashboard.actions.refreshCurrentTab')"
@@ -251,6 +262,12 @@
     @repository-updated="handleRepositoryUpdated"
     @repository-deleted="handleRepositoryDeleted"
   />
+
+  <CreateRepositoryModal
+    :is-visible="isCreateRepositoryModalOpen"
+    @close="isCreateRepositoryModalOpen = false"
+    @created="handleRepositoryCreated"
+  />
 </template>
 
 <script setup lang="ts">
@@ -262,6 +279,7 @@ import {
   CircleDotIcon,
   CopyIcon,
   ExternalLinkIcon,
+  FolderPlusIcon,
   GitPullRequestIcon,
   RefreshCwIcon,
   SearchIcon,
@@ -286,6 +304,7 @@ import DashboardLayout from '~/components/dashboard/DashboardLayout.vue';
 import DashboardLoadingList from '~/components/dashboard/DashboardLoadingList.vue';
 import DashboardPagination from '~/components/dashboard/DashboardPagination.vue';
 import DetailOverlayHost from '~/components/dashboard/DetailOverlayHost.vue';
+import CreateRepositoryModal from '~/components/dashboard/repo/CreateRepositoryModal.vue';
 import TabSidebar from '~/components/dashboard/tab-sidebar/TabSidebar.vue';
 import QuickActions from '~/components/dashboard/widgets/QuickActions.vue';
 import QuickFilters from '~/components/dashboard/widgets/QuickFilters.vue';
@@ -471,6 +490,7 @@ const {
 } = useGithubData();
 
 const hasCompletedInitialDashboardLoad = shallowRef(false);
+const isCreateRepositoryModalOpen = ref(false);
 const dashboardListLoading = computed(
   () => !hasCompletedInitialDashboardLoad.value || loading.value
 );
@@ -966,6 +986,31 @@ const handleRepositoryUpdated = (updated: Record<string, unknown>) => {
 const handleRepositoryDeleted = async () => {
   await handleRepoDetailBack();
   await refreshCurrentTabSafely();
+};
+
+const handleRepositoryCreated = async (repository: Record<string, unknown>) => {
+  isCreateRepositoryModalOpen.value = false;
+  const name = typeof repository.name === 'string' ? repository.name : '';
+  setDashboardActionMessage({
+    tone: 'success',
+    text: t('repoCreate.created', { name }),
+  });
+  await refreshCurrentTabSafely();
+
+  const owner = repository.owner;
+  const ownerLogin =
+    owner && typeof owner === 'object' && 'login' in owner ? String(owner.login || '') : '';
+  if (ownerLogin && name) {
+    await router.push(
+      localePath({
+        path: '/dashboard',
+        query: {
+          tab: 'repos',
+          repo: `${ownerLogin}/${name}`,
+        },
+      })
+    );
+  }
 };
 
 const refreshCurrentTabSafely = async () => {

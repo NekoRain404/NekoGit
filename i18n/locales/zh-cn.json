@@ -930,5 +930,24 @@
     "deleteFailed": "删除仓库失败。",
     "cancel": "取消",
     "open": "设置"
+  },
+  "repoCreate": {
+    "title": "新建仓库",
+    "name": "仓库名称",
+    "namePlaceholder": "my-project",
+    "nameHint": "可使用字母、数字、点、下划线和连字符，最多 100 个字符。",
+    "description": "描述",
+    "descriptionPlaceholder": "可选的简短描述",
+    "homepage": "主页",
+    "homepagePlaceholder": "https://example.com",
+    "private": "私有仓库",
+    "privateHint": "私有仓库仅你和协作者可见。",
+    "autoInit": "使用 README 初始化",
+    "autoInitHint": "自动创建首次提交，便于立即克隆。",
+    "create": "创建仓库",
+    "creating": "创建中",
+    "createFailed": "创建仓库失败。",
+    "created": "已创建仓库 {name}。",
+    "cancel": "取消"
   }
 }

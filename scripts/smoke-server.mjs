@@ -87,6 +87,21 @@ try {
     `Expected repository PATCH to be 401, got ${unauthorizedRepoUpdate.status}`
   );
 
+  const unauthorizedRepoCreate = await fetch(`${baseUrl}/api/repos`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      origin: baseUrl,
+      cookie: `nekogit_csrf=${csrfToken}`,
+      'x-csrf-token': csrfToken,
+    },
+    body: JSON.stringify({ name: 'nekogit-smoke-repository' }),
+  });
+  assert(
+    unauthorizedRepoCreate.status === 401,
+    `Expected repository POST to be 401, got ${unauthorizedRepoCreate.status}`
+  );
+
   const unauthorizedRepoDelete = await fetch(`${baseUrl}/api/repos/nekogit-smoke/repository`, {
     method: 'DELETE',
     headers: {
