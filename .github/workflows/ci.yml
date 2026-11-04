@@ -134,6 +134,9 @@ jobs:
       - name: Run build
         run: pnpm build
 
+      - name: Server smoke test
+        run: pnpm smoke:server
+
   rust:
     name: Rust
     runs-on: ubuntu-latest

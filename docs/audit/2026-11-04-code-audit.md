@@ -280,7 +280,7 @@
 
 最终验证（2026-11-04）：
 
-- `pnpm fmt:check` ✅ 444 files
+- `pnpm fmt:check` ✅ 445 files
 - `pnpm typecheck` ✅
 - `pnpm lint` ✅（correctness 已启用）
 - `pnpm test` ✅ 38 files / 251 tests
@@ -289,6 +289,7 @@
 - `cargo fmt --check` ✅
 - `cargo test --jobs 4` ✅ 105 tests
 - `cargo clippy --jobs 4 --all-targets -- -D warnings` ✅
+- `pnpm smoke:server` ✅ 安全响应头、未认证 401、缺失 CSRF 403、带 CSRF 空 token 400
 - server smoke：安全响应头生效；无 CSRF token → 403
 
 未完成（明确延后）：
@@ -296,4 +297,4 @@
 - AUD-020：server route / 组件 / E2E 测试基线仍未建立（已新增纯逻辑测试）。
 - AUD-028 的“取消/进程组管理”部分（超时已完成）。
 - AUD-030：AppImage/rpm、自动更新、签名。
-- Notification “done”、组件/E2E 测试、AppImage/rpm 打包/签名等仍在 backlog。
+- Notification “done”、浏览器 E2E/组件测试、AppImage/rpm 打包/签名等仍在 backlog。
