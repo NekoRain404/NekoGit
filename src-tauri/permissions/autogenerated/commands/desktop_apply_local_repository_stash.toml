@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-apply-local-repository-stash"
+description = "Enables the desktop_apply_local_repository_stash command without any pre-configured scope."
+commands.allow = ["desktop_apply_local_repository_stash"]
+
+[[permission]]
+identifier = "deny-desktop-apply-local-repository-stash"
+description = "Denies the desktop_apply_local_repository_stash command without any pre-configured scope."
+commands.deny = ["desktop_apply_local_repository_stash"]

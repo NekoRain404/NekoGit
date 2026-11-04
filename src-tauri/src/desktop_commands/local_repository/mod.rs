@@ -14,6 +14,7 @@ pub(crate) use branches::{
     desktop_delete_local_repository_branch, desktop_switch_local_repository_branch,
 };
 pub(crate) use changes::{
+    desktop_apply_local_repository_stash, desktop_clear_local_repository_stashes,
     desktop_commit_local_repository_changes, desktop_pop_local_repository_stash,
     desktop_stage_local_repository_path, desktop_stash_local_repository_changes,
     desktop_unstage_local_repository_path,

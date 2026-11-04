@@ -9,7 +9,8 @@ pub(crate) use github::{
     desktop_open_github, desktop_open_github_url, desktop_read_github_cli_token,
 };
 pub(crate) use local_repository::{
-    desktop_checkout_remote_local_repository_branch, desktop_clone_repository,
+    desktop_apply_local_repository_stash, desktop_checkout_remote_local_repository_branch,
+    desktop_clear_local_repository_stashes, desktop_clone_repository,
     desktop_commit_local_repository_changes, desktop_create_local_repository_branch,
     desktop_delete_local_repository_branch, desktop_fetch_local_repository,
     desktop_local_repository_branches, desktop_local_repository_changed_files,

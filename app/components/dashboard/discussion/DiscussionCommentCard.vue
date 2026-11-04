@@ -1,6 +1,6 @@
 <!-- Discussion Comment Card — Card rendering a single discussion comment with its reply list and composer. -->
 <script setup lang="ts">
-import { CheckCircle2Icon, MessageSquareReplyIcon } from 'lucide-vue-next';
+import { CheckCircle2Icon, MessageSquareReplyIcon, ThumbsUpIcon } from 'lucide-vue-next';
 import { computed, shallowRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -19,10 +19,16 @@ const props = defineProps<{
   repoOwner: string;
   repoName: string;
   canReply: boolean;
+  canMarkAnswer: boolean;
   submittingReply?: boolean;
   loadingMoreReplies?: boolean;
   replyError?: string;
+  upvotePending?: boolean;
+  answerPending?: boolean;
+  actionError?: string;
   submitReply: DiscussionReplySubmitHandler;
+  upvoteComment: (comment: DiscussionComment) => Promise<void>;
+  toggleAnswer: (comment: DiscussionComment) => Promise<void>;
 }>();
 
 const emit = defineEmits<{
@@ -32,6 +38,20 @@ const emit = defineEmits<{
 const { locale, t } = useI18n();
 const relativeTimeNow = useRelativeTimeNow();
 const localeCode = computed(() => locale.value);
+const commentUpvoteLabel = computed(() =>
+  props.comment.viewerHasUpvoted ? t('discussionDetail.removeUpvote') : t('discussionDetail.upvote')
+);
+const answerButtonLabel = computed(() => {
+  if (props.answerPending) {
+    return props.comment.isAnswer
+      ? t('discussionDetail.unmarkingAnswer')
+      : t('discussionDetail.markingAnswer');
+  }
+
+  return props.comment.isAnswer
+    ? t('discussionDetail.unmarkAnswer')
+    : t('discussionDetail.markAnswer');
+});
 const isReplying = shallowRef(false);
 const showReplies = shallowRef(false);
 
@@ -100,6 +120,35 @@ watch(
 
       <div class="discussion-comment__toolbar">
         <button
+          class="button is-small"
+          :class="[
+            comment.viewerHasUpvoted ? 'is-primary is-light' : 'is-light',
+            { 'is-loading': upvotePending },
+          ]"
+          type="button"
+          :disabled="upvotePending"
+          :aria-label="commentUpvoteLabel"
+          @click="upvoteComment(comment)"
+        >
+          <ThumbsUpIcon :size="14" />
+          <span>{{ comment.upvoteCount }}</span>
+          <span class="ml-1">{{ commentUpvoteLabel }}</span>
+        </button>
+        <button
+          v-if="canMarkAnswer"
+          class="button is-small"
+          :class="[
+            comment.isAnswer ? 'is-success is-light' : 'is-light',
+            { 'is-loading': answerPending },
+          ]"
+          type="button"
+          :disabled="answerPending"
+          @click="toggleAnswer(comment)"
+        >
+          <CheckCircle2Icon :size="14" />
+          <span>{{ answerButtonLabel }}</span>
+        </button>
+        <button
           v-if="canReply"
           class="button is-light is-small"
           type="button"
@@ -121,6 +170,8 @@ watch(
           ↳ {{ t('discussionDetail.replyCount', { count: comment.replies.totalCount }) }}
         </button>
       </div>
+
+      <p v-if="actionError" class="is-size-7 has-text-danger mt-2">{{ actionError }}</p>
 
       <DiscussionComposer
         v-if="isReplying && canReply"

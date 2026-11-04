@@ -44,6 +44,8 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     openLocalRepository,
     openLocalRepositoryPath,
     openLocalRepositoryTerminal,
+    applyLocalRepositoryStash,
+    clearLocalRepositoryStashes,
     popLocalRepositoryStash,
     pullLocalRepository,
     pushLocalRepository,
@@ -87,6 +89,9 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopRemoteBranchName,
     desktopSelectedChangedFilePath,
     desktopStagingChangedFilePaths,
+    desktopStashActionError,
+    desktopStashApplyingIndex,
+    desktopStashClearing,
     desktopStashPoppingIndex,
     desktopStashesError,
     desktopStashesLoading,
@@ -429,6 +434,92 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     } finally {
       desktopGitStatusLoading.value = false;
       desktopStashPoppingIndex.value = null;
+    }
+  };
+
+  const applyDesktopLocalRepositoryStash = async (index: number) => {
+    const repository = desktopRepository.value;
+    if (
+      !repository ||
+      !desktopLocalRepositoryStatus.value?.exists ||
+      desktopStashApplyingIndex.value !== null ||
+      desktopStashPoppingIndex.value !== null ||
+      desktopStashClearing.value
+    ) {
+      return;
+    }
+
+    desktopStashApplyingIndex.value = index;
+    desktopStashActionError.value = '';
+    desktopGitStatusLoading.value = true;
+    desktopGitStatusError.value = '';
+
+    try {
+      desktopLocalRepositoryGitStatus.value = await applyLocalRepositoryStash(
+        repository.cloneUrl,
+        index
+      );
+      void refreshAssociatedPullRequest();
+      await refreshDesktopLocalRepositoryChangedFiles();
+      await refreshDesktopLocalRepositoryStashes();
+      await refreshDesktopLocalRepositoryCommitHistory();
+    } catch (error) {
+      desktopGitStatusError.value = getDesktopActionErrorMessage(
+        error,
+        'Failed to apply local stash.'
+      );
+      desktopStashActionError.value = desktopGitStatusError.value;
+      await showDesktopMessage(desktopGitStatusError.value, 'error');
+      await refreshDesktopLocalRepositoryGitStatus();
+      await refreshDesktopLocalRepositoryChangedFiles();
+      await refreshDesktopLocalRepositoryStashes();
+      await refreshDesktopLocalRepositoryCommitHistory();
+    } finally {
+      desktopGitStatusLoading.value = false;
+      desktopStashApplyingIndex.value = null;
+    }
+  };
+
+  const clearDesktopLocalRepositoryStashes = async () => {
+    const repository = desktopRepository.value;
+    if (
+      !repository ||
+      !desktopLocalRepositoryStatus.value?.exists ||
+      desktopStashApplyingIndex.value !== null ||
+      desktopStashPoppingIndex.value !== null ||
+      desktopStashClearing.value
+    ) {
+      return;
+    }
+    if (import.meta.client && !window.confirm(options.copy.value.confirmClearStashes)) return;
+
+    desktopStashClearing.value = true;
+    desktopStashActionError.value = '';
+    desktopGitStatusLoading.value = true;
+    desktopGitStatusError.value = '';
+
+    try {
+      desktopLocalRepositoryGitStatus.value = await clearLocalRepositoryStashes(
+        repository.cloneUrl
+      );
+      void refreshAssociatedPullRequest();
+      await refreshDesktopLocalRepositoryChangedFiles();
+      await refreshDesktopLocalRepositoryStashes();
+      await refreshDesktopLocalRepositoryCommitHistory();
+    } catch (error) {
+      desktopGitStatusError.value = getDesktopActionErrorMessage(
+        error,
+        'Failed to clear local stashes.'
+      );
+      desktopStashActionError.value = desktopGitStatusError.value;
+      await showDesktopMessage(desktopGitStatusError.value, 'error');
+      await refreshDesktopLocalRepositoryGitStatus();
+      await refreshDesktopLocalRepositoryChangedFiles();
+      await refreshDesktopLocalRepositoryStashes();
+      await refreshDesktopLocalRepositoryCommitHistory();
+    } finally {
+      desktopGitStatusLoading.value = false;
+      desktopStashClearing.value = false;
     }
   };
 
@@ -807,6 +898,9 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     desktopSelectedChangedFilePath,
     desktopNewBranchName,
     desktopRemoteBranchName,
+    desktopStashActionError,
+    desktopStashApplyingIndex,
+    desktopStashClearing,
     desktopStashPoppingIndex,
     desktopStagingChangedFilePaths,
     desktopStashesError,
@@ -831,6 +925,8 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     openDesktopChangedFile,
     openDesktopLocalRepository,
     openDesktopLocalRepositoryTerminal,
+    applyDesktopLocalRepositoryStash,
+    clearDesktopLocalRepositoryStashes,
     popDesktopLocalRepositoryStash,
     previewDesktopChangedFileDiff,
     pullDesktopLocalRepository,

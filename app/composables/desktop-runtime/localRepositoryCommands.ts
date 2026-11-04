@@ -86,6 +86,27 @@ export const popLocalRepositoryStash = async (repositoryUrl: string, index: numb
   );
 };
 
+/** Apply a stash entry by index without removing it. */
+export const applyLocalRepositoryStash = async (repositoryUrl: string, index: number) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_apply_local_repository_stash',
+    {
+      repositoryUrl,
+      index,
+    }
+  );
+};
+
+/** Clear every stash entry in a local repository. */
+export const clearLocalRepositoryStashes = async (repositoryUrl: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_clear_local_repository_stashes',
+    {
+      repositoryUrl,
+    }
+  );
+};
+
 /** Stage a single file or directory in a local repository. */
 export const stageLocalRepositoryPath = async (repositoryUrl: string, relativePath: string) => {
   return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(

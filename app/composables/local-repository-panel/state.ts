@@ -54,6 +54,9 @@ export const useLocalRepositoryPanelState = () => {
   const desktopStashesLoading = ref(false);
   const desktopStashesError = ref('');
   const desktopStashPoppingIndex = ref<number | null>(null);
+  const desktopStashApplyingIndex = ref<number | null>(null);
+  const desktopStashClearing = ref(false);
+  const desktopStashActionError = ref('');
   const desktopFileDiffLoading = ref(false);
   const desktopFileDiffError = ref('');
   const desktopSelectedChangedFilePath = ref('');
@@ -133,6 +136,9 @@ export const useLocalRepositoryPanelState = () => {
     desktopStashesLoading.value = false;
     desktopStashesError.value = '';
     desktopStashPoppingIndex.value = null;
+    desktopStashApplyingIndex.value = null;
+    desktopStashClearing.value = false;
+    desktopStashActionError.value = '';
   };
 
   return {
@@ -171,6 +177,9 @@ export const useLocalRepositoryPanelState = () => {
     desktopRemoteBranchName,
     desktopSelectedChangedFilePath,
     desktopStagingChangedFilePaths,
+    desktopStashActionError,
+    desktopStashApplyingIndex,
+    desktopStashClearing,
     desktopStashPoppingIndex,
     desktopStashesError,
     desktopStashesLoading,

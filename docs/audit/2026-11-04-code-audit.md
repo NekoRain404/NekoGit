@@ -148,9 +148,9 @@
 
 **GitHub 写操作**
 
-- Issue：指派/里程碑选择 UI、创建 label（关闭/重开/编辑/创建已支持，assignees/milestone API 已就绪）
+- Issue：创建 label（创建/关闭/重开/编辑/指派/里程碑已支持）
 - PR：dismiss review（draft/ready、merge 方式、review thread 回复、编辑标题/正文已支持）
-- Discussion：创建、标记 answer、upvote、lock/unlock
+- Discussion：创建（标记 answer、upvote、lock/unlock 已支持）
 
 **通知**
 
@@ -263,25 +263,26 @@
 - AUD-028：clone/fetch/pull/push 增加 120s 超时（`NEKOGIT_GIT_TIMEOUT_SECS` 可调），并发排空 stdout/stderr 防止管道死锁；取消/进程组管理仍延后。
 - AUD-029：reviewer summary 增加 45s 客户端 TTL 缓存、并发请求去重，并在 reviewer 增删后失效。
 - 额外功能：桌面端支持“接管已有本地 clone”（校验 Git work tree 与 origin 后记录），无需重新 clone。
-- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions 等测试，共 34 个测试文件 / 232 个用例；Rust 95 个测试。
+- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、discussion actions 等测试，共 35 个测试文件 / 238 个用例；Rust 99 个测试。
 - 本地 Git 补全：stash 列表/pop、非当前分支安全删除（`git branch -d`）。
 - Issue 写操作：关闭/重开、编辑标题/正文（PATCH route + modal + 权限 gating）。
 - PR 编辑：标题/正文编辑 modal，复用 PATCH pull request endpoint。
 - Review thread：GraphQL 回复 endpoint + PR 时间线回复 composer。
 - PR 写操作：draft/ready 切换、merge/squash/rebase 合并方式选择。
-- 本地 Git 补全：按文件 stage/unstage（含初始提交无 HEAD 的 unstage 回退）。
-- Issue 写操作：创建 issue（endpoint + modal）、assignees/milestone PATCH 校验支持（UI 待接入）。
+- 本地 Git 补全：按文件 stage/unstage（含初始提交无 HEAD 的 unstage 回退）、stash apply/clear。
+- Discussion 写操作：mark/unmark answer、讨论/评论 upvote、lock/unlock（GraphQL + UI）。
+- Issue 写操作：创建 issue（endpoint + modal）、assignees/milestone 编辑（endpoint + picker UI）。
 
 最终验证（2026-11-04）：
 
-- `pnpm fmt:check` ✅ 419 files
+- `pnpm fmt:check` ✅ 429 files
 - `pnpm typecheck` ✅
 - `pnpm lint` ✅（correctness 已启用）
-- `pnpm test` ✅ 34 files / 232 tests
+- `pnpm test` ✅ 35 files / 238 tests
 - `pnpm build` ✅（`taskset -c 0-3`，47.3 MB）
-- `node scripts/check-tauri-commands.mjs` ✅ 41 commands
+- `node scripts/check-tauri-commands.mjs` ✅ 43 commands
 - `cargo fmt --check` ✅
-- `cargo test --jobs 4` ✅ 95 tests
+- `cargo test --jobs 4` ✅ 99 tests
 - `cargo clippy --jobs 4 --all-targets -- -D warnings` ✅
 - server smoke：安全响应头生效；无 CSRF token → 403
 
@@ -290,4 +291,4 @@
 - AUD-020：server route / 组件 / E2E 测试基线仍未建立（已新增纯逻辑测试）。
 - AUD-028 的“取消/进程组管理”部分（超时已完成）。
 - AUD-030：AppImage/rpm、自动更新、签名。
-- Issue assignees/milestone 的选择 UI、Discussion answer/upvote/lock、Notification done/unsubscribe、stash apply/clear、rebase/远端 publish 等仍在 backlog。
+- Notification done/unsubscribe、rebase/远端 publish、Issue label 创建、组件/E2E 测试、AppImage/rpm 打包/签名等仍在 backlog。

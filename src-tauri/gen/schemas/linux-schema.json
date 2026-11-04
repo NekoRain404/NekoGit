@@ -2001,6 +2001,12 @@
       "description": "Permission identifier",
       "oneOf": [
         {
+          "description": "Enables the desktop_apply_local_repository_stash command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-apply-local-repository-stash",
+          "markdownDescription": "Enables the desktop_apply_local_repository_stash command without any pre-configured scope."
+        },
+        {
           "description": "Enables the desktop_autostart_status command without any pre-configured scope.",
           "type": "string",
           "const": "allow-desktop-autostart-status",
@@ -2011,6 +2017,12 @@
           "type": "string",
           "const": "allow-desktop-checkout-remote-local-repository-branch",
           "markdownDescription": "Enables the desktop_checkout_remote_local_repository_branch command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the desktop_clear_local_repository_stashes command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-clear-local-repository-stashes",
+          "markdownDescription": "Enables the desktop_clear_local_repository_stashes command without any pre-configured scope."
         },
         {
           "description": "Enables the desktop_clone_repository command without any pre-configured scope.",
@@ -2247,6 +2259,12 @@
           "markdownDescription": "Enables the desktop_unstage_local_repository_path command without any pre-configured scope."
         },
         {
+          "description": "Denies the desktop_apply_local_repository_stash command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-apply-local-repository-stash",
+          "markdownDescription": "Denies the desktop_apply_local_repository_stash command without any pre-configured scope."
+        },
+        {
           "description": "Denies the desktop_autostart_status command without any pre-configured scope.",
           "type": "string",
           "const": "deny-desktop-autostart-status",
@@ -2257,6 +2275,12 @@
           "type": "string",
           "const": "deny-desktop-checkout-remote-local-repository-branch",
           "markdownDescription": "Denies the desktop_checkout_remote_local_repository_branch command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the desktop_clear_local_repository_stashes command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-clear-local-repository-stashes",
+          "markdownDescription": "Denies the desktop_clear_local_repository_stashes command without any pre-configured scope."
         },
         {
           "description": "Denies the desktop_clone_repository command without any pre-configured scope.",

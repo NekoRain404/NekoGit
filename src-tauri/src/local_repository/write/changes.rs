@@ -219,6 +219,58 @@ pub(crate) fn pop_local_repository_stash(
     local_repository_git_status(app_data_dir, &git_status.repository_url)
 }
 
+/// Applies a stash entry without removing it and returns the updated git status.
+pub(crate) fn apply_local_repository_stash(
+    app_data_dir: &Path,
+    repository_url: &str,
+    index: u32,
+) -> Result<DesktopLocalRepositoryGitStatus, String> {
+    if index > MAX_LOCAL_REPOSITORY_STASH_INDEX {
+        return Err(format!(
+            "stash index must be between 0 and {MAX_LOCAL_REPOSITORY_STASH_INDEX}"
+        ));
+    }
+
+    let git_status = local_repository_git_status(app_data_dir, repository_url)?;
+    if git_status.conflicted > 0 {
+        return Err("local repository has unresolved conflicts".to_owned());
+    }
+
+    let stash_ref = format!("stash@{{{index}}}");
+    let output = git_command(&git_status.repository_path)
+        .args(["stash", "apply"])
+        .arg(&stash_ref)
+        .output()
+        .map_err(|error| format!("failed to start git stash apply: {error}"))?;
+
+    if !output.status.success() {
+        let details = git_command_failure_details(&output);
+        return Err(format!("git stash apply failed: {details}"));
+    }
+
+    local_repository_git_status(app_data_dir, &git_status.repository_url)
+}
+
+/// Clears every stash entry and returns the updated git status.
+pub(crate) fn clear_local_repository_stashes(
+    app_data_dir: &Path,
+    repository_url: &str,
+) -> Result<DesktopLocalRepositoryGitStatus, String> {
+    let git_status = local_repository_git_status(app_data_dir, repository_url)?;
+
+    let output = git_command(&git_status.repository_path)
+        .args(["stash", "clear"])
+        .output()
+        .map_err(|error| format!("failed to start git stash clear: {error}"))?;
+
+    if !output.status.success() {
+        let details = git_command_failure_details(&output);
+        return Err(format!("git stash clear failed: {details}"));
+    }
+
+    local_repository_git_status(app_data_dir, &git_status.repository_url)
+}
+
 /// Stashes current changes.
 pub(crate) fn stash_local_repository_changes(
     app_data_dir: &Path,
@@ -529,6 +581,89 @@ mod tests {
                 .unwrap_err();
 
         assert!(error.contains("stash index must be between"));
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn rejects_apply_indices_above_the_limit() {
+        let base = test_base("apply-index-bound");
+        fs::create_dir_all(&base).unwrap();
+
+        let error = apply_local_repository_stash(
+            &base,
+            REPOSITORY_URL,
+            MAX_LOCAL_REPOSITORY_STASH_INDEX + 1,
+        )
+        .unwrap_err();
+
+        assert!(error.contains("stash index must be between"));
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn applies_the_latest_stash_without_dropping_it() {
+        let base = test_base("apply");
+        let repository_path = init_repository_with_stash(&base);
+        let stashes = local_repository_stashes(&base, REPOSITORY_URL).unwrap();
+        assert_eq!(stashes.stashes.len(), 1);
+        assert_eq!(stashes.stashes[0].index, 0);
+
+        let status = apply_local_repository_stash(&base, REPOSITORY_URL, 0).unwrap();
+
+        assert!(!status.clean);
+        assert_eq!(status.unstaged, 1);
+        assert_eq!(
+            fs::read_to_string(repository_path.join("README.md")).unwrap(),
+            "changed\n"
+        );
+        let stashes = local_repository_stashes(&base, REPOSITORY_URL).unwrap();
+        assert_eq!(stashes.stashes.len(), 1);
+        assert_eq!(stashes.stashes[0].index, 0);
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn rejects_applying_a_stash_while_conflicted() {
+        let base = test_base("apply-conflict");
+        let repository_path = init_conflicted_repository(&base);
+        remember_local_repository(&base, REPOSITORY_URL, &repository_path).unwrap();
+
+        let error = apply_local_repository_stash(&base, REPOSITORY_URL, 0).unwrap_err();
+
+        assert!(error.contains("unresolved conflicts"));
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn clears_all_stashes() {
+        let base = test_base("clear");
+        let repository_path = init_repository(&base);
+        fs::write(repository_path.join("README.md"), "first\n").unwrap();
+        git(
+            &repository_path,
+            &["stash", "push", "-q", "-m", "first stash"],
+        );
+        fs::write(repository_path.join("README.md"), "second\n").unwrap();
+        git(
+            &repository_path,
+            &["stash", "push", "-q", "-m", "second stash"],
+        );
+        remember_local_repository(&base, REPOSITORY_URL, &repository_path).unwrap();
+        assert_eq!(
+            local_repository_stashes(&base, REPOSITORY_URL)
+                .unwrap()
+                .stashes
+                .len(),
+            2
+        );
+
+        let status = clear_local_repository_stashes(&base, REPOSITORY_URL).unwrap();
+
+        assert!(status.clean);
+        assert!(local_repository_stashes(&base, REPOSITORY_URL)
+            .unwrap()
+            .stashes
+            .is_empty());
         let _ = fs::remove_dir_all(&base);
     }
 

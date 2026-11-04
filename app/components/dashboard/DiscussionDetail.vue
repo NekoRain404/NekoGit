@@ -11,6 +11,7 @@ import type {
   DiscussionRepliesPayload,
   DiscussionReply,
 } from '#shared/types/discussions';
+import type { DiscussionLockReason } from '#shared/utils/discussion-actions';
 import DiscussionActions from '~/components/dashboard/discussion/DiscussionActions.vue';
 import DiscussionAnswerCard from '~/components/dashboard/discussion/DiscussionAnswerCard.vue';
 import DiscussionComments from '~/components/dashboard/discussion/DiscussionComments.vue';
@@ -48,6 +49,13 @@ const submittingComment = shallowRef(false);
 const loadingReplyIds = shallowRef(new Set<string>());
 const submittingReplyIds = shallowRef(new Set<string>());
 const replyErrors = shallowRef(new Map<string, string>());
+const discussionUpvotePending = shallowRef(false);
+const discussionUpvoteError = shallowRef('');
+const lockPending = shallowRef(false);
+const lockError = shallowRef('');
+const pendingCommentUpvoteIds = shallowRef(new Set<string>());
+const pendingCommentAnswerIds = shallowRef(new Set<string>());
+const commentActionErrors = shallowRef(new Map<string, string>());
 
 const displayDiscussion = computed<DiscussionDetailPayload>(() => ({
   ...discussionState.value,
@@ -77,6 +85,7 @@ const canComment = computed(
   () => !isDiscussionLocked.value && Boolean(discussionWriteApiBase.value)
 );
 const canReply = computed(() => canComment.value);
+const canMarkAnswer = computed(() => Boolean(displayDiscussion.value.category?.isAnswerable));
 
 const visibleAnswer = computed(() => {
   const answer = displayDiscussion.value.answer;
@@ -167,6 +176,18 @@ function setReplyError(commentId: string, error: string) {
   replyErrors.value = nextErrors;
 }
 
+function setCommentActionError(commentId: string, error: string) {
+  const nextErrors = new Map(commentActionErrors.value);
+
+  if (error) {
+    nextErrors.set(commentId, error);
+  } else {
+    nextErrors.delete(commentId);
+  }
+
+  commentActionErrors.value = nextErrors;
+}
+
 function updateComment(
   commentId: string,
   updater: (comment: DiscussionComment) => DiscussionComment
@@ -189,6 +210,13 @@ function resetDiscussionState(discussion: DiscussionDetailPayload) {
   loadingReplyIds.value = new Set();
   submittingReplyIds.value = new Set();
   replyErrors.value = new Map();
+  discussionUpvotePending.value = false;
+  discussionUpvoteError.value = '';
+  lockPending.value = false;
+  lockError.value = '';
+  pendingCommentUpvoteIds.value = new Set();
+  pendingCommentAnswerIds.value = new Set();
+  commentActionErrors.value = new Map();
 }
 
 async function loadMoreComments() {
@@ -338,6 +366,209 @@ async function submitReply(comment: DiscussionComment, body: string) {
   }
 }
 
+/** Upvote payload returned by the discussion upvote routes. */
+interface DiscussionUpvotePayload {
+  id: string;
+  upvoteCount: number;
+  viewerHasUpvoted: boolean;
+}
+
+function applyCommentUpvote(commentId: string, payload: DiscussionUpvotePayload) {
+  comments.value = comments.value.map((comment) =>
+    comment.id === commentId
+      ? {
+          ...comment,
+          upvoteCount: payload.upvoteCount,
+          viewerHasUpvoted: payload.viewerHasUpvoted,
+        }
+      : comment
+  );
+
+  const answer = discussionState.value.answer;
+
+  if (answer && (answer.id === commentId || answer.nodeId === commentId)) {
+    discussionState.value = {
+      ...discussionState.value,
+      answer: {
+        ...answer,
+        upvoteCount: payload.upvoteCount,
+        viewerHasUpvoted: payload.viewerHasUpvoted,
+      },
+    };
+  }
+}
+
+async function toggleDiscussionUpvote() {
+  if (discussionUpvotePending.value) return;
+
+  if (!discussionReadApiBase.value) {
+    discussionUpvoteError.value = t('discussionDetail.upvoteFailed');
+    return;
+  }
+
+  const upvoted = !displayDiscussion.value.viewerHasUpvoted;
+  discussionUpvotePending.value = true;
+  discussionUpvoteError.value = '';
+
+  try {
+    const payload = await apiFetch<DiscussionUpvotePayload>(
+      `${discussionReadApiBase.value}/upvote`,
+      {
+        method: 'POST',
+        body: { upvoted },
+      }
+    );
+
+    discussionState.value = {
+      ...discussionState.value,
+      upvoteCount: payload.upvoteCount,
+      viewerHasUpvoted: payload.viewerHasUpvoted,
+    };
+  } catch (error) {
+    discussionUpvoteError.value = getFetchErrorMessage(error, t('discussionDetail.upvoteFailed'));
+  } finally {
+    discussionUpvotePending.value = false;
+  }
+}
+
+async function toggleCommentUpvote(comment: DiscussionComment) {
+  if (pendingCommentUpvoteIds.value.has(comment.id)) return;
+
+  if (!discussionReadApiBase.value) {
+    setCommentActionError(comment.id, t('discussionDetail.upvoteFailed'));
+    return;
+  }
+
+  const upvoted = !comment.viewerHasUpvoted;
+  setIdInSet(pendingCommentUpvoteIds, comment.id, true);
+  setCommentActionError(comment.id, '');
+
+  try {
+    const payload = await apiFetch<DiscussionUpvotePayload>(
+      `${discussionReadApiBase.value}/comments/${encodeURIComponent(comment.id)}/upvote`,
+      {
+        method: 'POST',
+        body: { upvoted },
+      }
+    );
+
+    applyCommentUpvote(comment.id, payload);
+  } catch (error) {
+    setCommentActionError(
+      comment.id,
+      getFetchErrorMessage(error, t('discussionDetail.upvoteFailed'))
+    );
+  } finally {
+    setIdInSet(pendingCommentUpvoteIds, comment.id, false);
+  }
+}
+
+function applyCommentAnswer(commentId: string, isAnswer: boolean) {
+  const target = comments.value.find((comment) => comment.id === commentId);
+
+  comments.value = comments.value.map((comment) => {
+    if (comment.id === commentId) {
+      return { ...comment, isAnswer };
+    }
+
+    if (isAnswer && comment.isAnswer) {
+      return { ...comment, isAnswer: false };
+    }
+
+    return comment;
+  });
+
+  if (isAnswer && target) {
+    discussionState.value = {
+      ...discussionState.value,
+      isAnswered: true,
+      answer: cloneReply(target),
+    };
+    return;
+  }
+
+  const currentAnswer = discussionState.value.answer;
+
+  if (!currentAnswer || currentAnswer.id === commentId || currentAnswer.nodeId === commentId) {
+    discussionState.value = {
+      ...discussionState.value,
+      isAnswered: false,
+      answer: null,
+    };
+  }
+}
+
+async function toggleCommentAnswer(comment: DiscussionComment) {
+  if (pendingCommentAnswerIds.value.has(comment.id)) return;
+
+  if (!discussionReadApiBase.value) {
+    setCommentActionError(comment.id, t('discussionDetail.answerUpdateFailed'));
+    return;
+  }
+
+  const answered = !comment.isAnswer;
+  setIdInSet(pendingCommentAnswerIds, comment.id, true);
+  setCommentActionError(comment.id, '');
+
+  try {
+    const payload = await apiFetch<{ id: string; isAnswer: boolean }>(
+      `${discussionReadApiBase.value}/comments/${encodeURIComponent(comment.id)}/answer`,
+      {
+        method: 'POST',
+        body: { answered },
+      }
+    );
+
+    applyCommentAnswer(comment.id, payload.isAnswer);
+  } catch (error) {
+    setCommentActionError(
+      comment.id,
+      getFetchErrorMessage(error, t('discussionDetail.answerUpdateFailed'))
+    );
+  } finally {
+    setIdInSet(pendingCommentAnswerIds, comment.id, false);
+  }
+}
+
+async function submitDiscussionLock(locked: boolean, reason?: DiscussionLockReason) {
+  if (lockPending.value) return;
+
+  const fallbackMessage = t(
+    locked ? 'discussionDetail.lockFailed' : 'discussionDetail.unlockFailed'
+  );
+
+  if (!discussionReadApiBase.value) {
+    lockError.value = fallbackMessage;
+    throw new Error(fallbackMessage);
+  }
+
+  lockPending.value = true;
+  lockError.value = '';
+
+  try {
+    const payload = await apiFetch<{ id: string; locked: boolean }>(
+      `${discussionReadApiBase.value}/lock`,
+      {
+        method: 'POST',
+        body: {
+          locked,
+          ...(reason ? { reason } : {}),
+        },
+      }
+    );
+
+    discussionState.value = {
+      ...discussionState.value,
+      locked: payload.locked,
+    };
+  } catch (error) {
+    lockError.value = getFetchErrorMessage(error, fallbackMessage);
+    throw new Error(lockError.value);
+  } finally {
+    lockPending.value = false;
+  }
+}
+
 watch(
   () => props.discussion,
   (discussion) => resetDiscussionState(discussion),
@@ -353,6 +584,9 @@ watch(
           :discussion="displayDiscussion"
           :repo-owner="repoOwner"
           :repo-name="repoName"
+          :upvote-pending="discussionUpvotePending"
+          :upvote-error="discussionUpvoteError"
+          @toggle-upvote="toggleDiscussionUpvote"
         />
 
         <DiscussionAnswerCard
@@ -368,6 +602,7 @@ watch(
           :repo-owner="repoOwner"
           :repo-name="repoName"
           :can-reply="canReply"
+          :can-mark-answer="canMarkAnswer"
           :loading="loadingComments"
           :loading-more="loadingMoreComments"
           :has-next-page="commentsPageInfo.hasNextPage"
@@ -375,7 +610,12 @@ watch(
           :reply-errors="replyErrors"
           :loading-reply-ids="loadingReplyIds"
           :submitting-reply-ids="submittingReplyIds"
+          :pending-upvote-ids="pendingCommentUpvoteIds"
+          :pending-answer-ids="pendingCommentAnswerIds"
+          :action-errors="commentActionErrors"
           :submit-reply="submitReply"
+          :upvote-comment="toggleCommentUpvote"
+          :toggle-answer="toggleCommentAnswer"
           @load-more-comments="loadMoreComments"
           @load-more-replies="loadMoreReplies"
         />
@@ -406,7 +646,12 @@ watch(
           :class="{ 'sidebar-scroll--active': isSidebarScrolling }"
           @scroll="onSidebarScroll"
         >
-          <DiscussionActions :discussion="displayDiscussion" />
+          <DiscussionActions
+            :discussion="displayDiscussion"
+            :lock-pending="lockPending"
+            :lock-error="lockError"
+            :submit-lock="submitDiscussionLock"
+          />
         </div>
       </div>
     </div>

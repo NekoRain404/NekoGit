@@ -70,6 +70,10 @@ export type LocalRepositoryCopy = {
   gitStashing: string;
   gitPopStash: string;
   gitPoppingStash: string;
+  gitApplyStash: string;
+  gitApplyingStash: string;
+  gitClearStashes: string;
+  gitClearingStashes: string;
   gitSelectBranchToDelete: string;
   gitSwitchBranch: string;
   gitUnstaged: string;
@@ -96,6 +100,7 @@ export type LocalRepositoryCopy = {
   createPullRequestTitlePlaceholder: string;
   createPullRequestDescriptionPlaceholder: string;
   confirmCommit: string;
+  confirmClearStashes: string;
   confirmDeleteBranch: string;
   confirmPush: string;
   creatingPullRequest: string;

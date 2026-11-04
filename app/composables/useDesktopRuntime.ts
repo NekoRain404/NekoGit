@@ -18,7 +18,9 @@ import {
 } from './desktop-runtime/commands';
 import { getCommandErrorMessage, invokeDesktopCommand } from './desktop-runtime/invoke';
 import {
+  applyLocalRepositoryStash,
   checkoutRemoteLocalRepositoryBranch,
+  clearLocalRepositoryStashes,
   cloneRepository,
   commitLocalRepositoryChanges,
   createLocalRepositoryBranch,
@@ -186,6 +188,8 @@ export function useDesktopRuntime() {
     commitLocalRepositoryChanges,
     stashLocalRepositoryChanges,
     popLocalRepositoryStash,
+    applyLocalRepositoryStash,
+    clearLocalRepositoryStashes,
     stageLocalRepositoryPath,
     unstageLocalRepositoryPath,
     openLocalRepository,

@@ -11,6 +11,7 @@ import type {
   DiscussionRepliesPayload,
   DiscussionReply,
 } from '#shared/types/discussions';
+import type { DiscussionLockReason } from '#shared/utils/discussion-actions';
 
 type GitHubClient = Octokit;
 
@@ -51,6 +52,8 @@ interface DiscussionReplyPayload {
   createdAt?: string | null;
   updatedAt?: string | null;
   isAnswer?: boolean | null;
+  upvoteCount?: number | null;
+  viewerHasUpvoted?: boolean | null;
   author?: DiscussionActorPayload | null;
   replyTo?: {
     id?: string | null;
@@ -84,6 +87,8 @@ interface DiscussionPayload {
   updatedAt?: string | null;
   locked?: boolean | null;
   isAnswered?: boolean | null;
+  upvoteCount?: number | null;
+  viewerHasUpvoted?: boolean | null;
   author?: DiscussionActorPayload | null;
   category?: DiscussionCategoryPayload | null;
   answer?: DiscussionReplyPayload | null;
@@ -142,6 +147,32 @@ interface AddDiscussionCommentResponse {
   } | null;
 }
 
+interface DiscussionCommentAnswerMutationResponse {
+  markDiscussionCommentAsAnswer?: { clientMutationId?: string | null } | null;
+  unmarkDiscussionCommentAsAnswer?: { clientMutationId?: string | null } | null;
+}
+
+interface DiscussionUpvoteSubjectPayload {
+  id?: string | null;
+  upvoteCount?: number | null;
+  viewerHasUpvoted?: boolean | null;
+}
+
+interface DiscussionUpvoteMutationResponse {
+  addUpvote?: { subject?: DiscussionUpvoteSubjectPayload | null } | null;
+  removeUpvote?: { subject?: DiscussionUpvoteSubjectPayload | null } | null;
+}
+
+interface DiscussionLockablePayload {
+  id?: string | null;
+  locked?: boolean | null;
+}
+
+interface DiscussionLockMutationResponse {
+  lockLockable?: { lockedRecord?: DiscussionLockablePayload | null } | null;
+  unlockLockable?: { lockedRecord?: DiscussionLockablePayload | null } | null;
+}
+
 const PAGE_INFO_FIELDS = `
   pageInfo {
     hasNextPage
@@ -165,6 +196,8 @@ const DISCUSSION_REPLY_FIELDS = `
     createdAt
     updatedAt
     isAnswer
+    upvoteCount
+    viewerHasUpvoted
     author {
       ...DiscussionActorFields
     }
@@ -215,6 +248,8 @@ const FETCH_DISCUSSION_QUERY = `
         updatedAt
         locked
         isAnswered
+        upvoteCount
+        viewerHasUpvoted
         author {
           ...DiscussionActorFields
         }
@@ -341,6 +376,101 @@ const ADD_DISCUSSION_COMMENT_MUTATION = `
   }
 `;
 
+const MARK_DISCUSSION_COMMENT_AS_ANSWER_MUTATION = `
+  mutation MarkDiscussionCommentAsAnswer($id: ID!) {
+    markDiscussionCommentAsAnswer(input: { id: $id }) {
+      clientMutationId
+    }
+  }
+`;
+
+const UNMARK_DISCUSSION_COMMENT_AS_ANSWER_MUTATION = `
+  mutation UnmarkDiscussionCommentAsAnswer($id: ID!) {
+    unmarkDiscussionCommentAsAnswer(input: { id: $id }) {
+      clientMutationId
+    }
+  }
+`;
+
+const ADD_DISCUSSION_UPVOTE_MUTATION = `
+  mutation AddDiscussionUpvote($subjectId: ID!) {
+    addUpvote(input: { subjectId: $subjectId }) {
+      subject {
+        ... on Discussion {
+          id
+          upvoteCount
+          viewerHasUpvoted
+        }
+        ... on DiscussionComment {
+          id
+          upvoteCount
+          viewerHasUpvoted
+        }
+      }
+    }
+  }
+`;
+
+const REMOVE_DISCUSSION_UPVOTE_MUTATION = `
+  mutation RemoveDiscussionUpvote($subjectId: ID!) {
+    removeUpvote(input: { subjectId: $subjectId }) {
+      subject {
+        ... on Discussion {
+          id
+          upvoteCount
+          viewerHasUpvoted
+        }
+        ... on DiscussionComment {
+          id
+          upvoteCount
+          viewerHasUpvoted
+        }
+      }
+    }
+  }
+`;
+
+const LOCK_DISCUSSION_MUTATION = `
+  mutation LockDiscussion($lockableId: ID!, $lockReason: LockReason) {
+    lockLockable(input: { lockableId: $lockableId, lockReason: $lockReason }) {
+      lockedRecord {
+        ... on Discussion {
+          id
+          locked
+        }
+        ... on Issue {
+          id
+          locked
+        }
+      }
+    }
+  }
+`;
+
+const UNLOCK_DISCUSSION_MUTATION = `
+  mutation UnlockDiscussion($lockableId: ID!) {
+    unlockLockable(input: { lockableId: $lockableId }) {
+      lockedRecord {
+        ... on Discussion {
+          id
+          locked
+        }
+        ... on Issue {
+          id
+          locked
+        }
+      }
+    }
+  }
+`;
+
+const DISCUSSION_LOCK_REASON_MAP: Record<DiscussionLockReason, string> = {
+  'off-topic': 'OFF_TOPIC',
+  'too-heated': 'TOO_HEATED',
+  resolved: 'RESOLVED',
+  spam: 'SPAM',
+};
+
 function throwDiscussionNotFound(): never {
   throw createError({
     statusCode: 404,
@@ -456,6 +586,11 @@ function normalizeReply(reply: DiscussionReplyPayload): DiscussionReply {
     author: normalizeActor(reply.author),
     isAnswer: Boolean(reply.isAnswer),
     replyToId: typeof reply.replyTo?.id === 'string' ? reply.replyTo.id : null,
+    upvoteCount:
+      typeof reply.upvoteCount === 'number' && Number.isFinite(reply.upvoteCount)
+        ? reply.upvoteCount
+        : 0,
+    viewerHasUpvoted: Boolean(reply.viewerHasUpvoted),
   };
 }
 
@@ -502,6 +637,11 @@ function normalizeDiscussion(
     isAnswered: Boolean(discussion.isAnswered),
     answer: discussion.answer?.id ? normalizeReply(discussion.answer) : null,
     locked: Boolean(discussion.locked),
+    upvoteCount:
+      typeof discussion.upvoteCount === 'number' && Number.isFinite(discussion.upvoteCount)
+        ? discussion.upvoteCount
+        : 0,
+    viewerHasUpvoted: Boolean(discussion.viewerHasUpvoted),
     comments: normalizeComments(discussion.comments),
   };
 }
@@ -734,4 +874,83 @@ export async function addDiscussionReply(
   }
 
   return normalizeReply(reply);
+}
+
+/** Mark or unmark a discussion comment as the accepted answer. */
+export async function setDiscussionCommentAnswer(
+  octokit: GitHubClient,
+  commentId: string,
+  answered: boolean
+): Promise<{ id: string; isAnswer: boolean }> {
+  const id = validateDiscussionNodeId(commentId, 'Discussion comment ID');
+  const mutation = answered
+    ? MARK_DISCUSSION_COMMENT_AS_ANSWER_MUTATION
+    : UNMARK_DISCUSSION_COMMENT_AS_ANSWER_MUTATION;
+
+  await octokit.graphql<DiscussionCommentAnswerMutationResponse>(mutation, { id });
+
+  return { id, isAnswer: answered };
+}
+
+/** Add or remove the viewer's upvote on a discussion or discussion comment. */
+export async function setDiscussionUpvote(
+  octokit: GitHubClient,
+  subjectId: string,
+  upvoted: boolean
+): Promise<{ id: string; upvoteCount: number; viewerHasUpvoted: boolean }> {
+  const nodeId = validateDiscussionNodeId(subjectId, 'Discussion upvote subject ID');
+  const response = await octokit.graphql<DiscussionUpvoteMutationResponse>(
+    upvoted ? ADD_DISCUSSION_UPVOTE_MUTATION : REMOVE_DISCUSSION_UPVOTE_MUTATION,
+    { subjectId: nodeId }
+  );
+  const subject = upvoted ? response.addUpvote?.subject : response.removeUpvote?.subject;
+
+  if (!subject?.id) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Updated discussion upvote subject missing from GitHub response',
+    });
+  }
+
+  return {
+    id: requireString(subject.id, 'Discussion upvote subject ID'),
+    upvoteCount:
+      typeof subject.upvoteCount === 'number' && Number.isFinite(subject.upvoteCount)
+        ? subject.upvoteCount
+        : 0,
+    viewerHasUpvoted: Boolean(subject.viewerHasUpvoted),
+  };
+}
+
+/** Lock or unlock a discussion with an optional GitHub lock reason. */
+export async function setDiscussionLocked(
+  octokit: GitHubClient,
+  discussionId: string,
+  locked: boolean,
+  reason?: DiscussionLockReason
+): Promise<{ id: string; locked: boolean }> {
+  const lockableId = validateDiscussionNodeId(discussionId, 'Discussion ID');
+  const response = locked
+    ? await octokit.graphql<DiscussionLockMutationResponse>(LOCK_DISCUSSION_MUTATION, {
+        lockableId,
+        ...(reason ? { lockReason: DISCUSSION_LOCK_REASON_MAP[reason] } : {}),
+      })
+    : await octokit.graphql<DiscussionLockMutationResponse>(UNLOCK_DISCUSSION_MUTATION, {
+        lockableId,
+      });
+  const lockedRecord = locked
+    ? response.lockLockable?.lockedRecord
+    : response.unlockLockable?.lockedRecord;
+
+  if (!lockedRecord?.id) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Locked discussion missing from GitHub response',
+    });
+  }
+
+  return {
+    id: requireString(lockedRecord.id, 'Discussion ID'),
+    locked: Boolean(lockedRecord.locked),
+  };
 }

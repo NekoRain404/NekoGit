@@ -33,6 +33,8 @@ export interface DiscussionReply {
   author: DiscussionAuthor | null;
   isAnswer: boolean;
   replyToId: string | null;
+  upvoteCount: number;
+  viewerHasUpvoted: boolean;
 }
 
 /** Discussion Replies Payload. */
@@ -69,6 +71,8 @@ export interface DiscussionDetailPayload {
   isAnswered: boolean;
   answer: DiscussionReply | null;
   locked: boolean;
+  upvoteCount: number;
+  viewerHasUpvoted: boolean;
   comments: DiscussionCommentsPayload;
   owner: string;
   repo: string;

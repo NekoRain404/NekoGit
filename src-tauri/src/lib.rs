@@ -284,6 +284,8 @@ pub fn run() {
             desktop_commit_local_repository_changes,
             desktop_stash_local_repository_changes,
             desktop_pop_local_repository_stash,
+            desktop_apply_local_repository_stash,
+            desktop_clear_local_repository_stashes,
             desktop_stage_local_repository_path,
             desktop_unstage_local_repository_path,
             desktop_open_local_repository,

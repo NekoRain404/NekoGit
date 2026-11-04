@@ -82,6 +82,10 @@
       :loading="savingIssue"
       :initial-title="currentIssue?.title || ''"
       :initial-body="currentIssue?.body || ''"
+      :initial-assignees="issueAssignees"
+      :initial-milestone="issueMilestoneNumber"
+      :owner="repoOwner"
+      :repo="repoName"
       :error="editIssueError"
       @close="closeEditModal"
       @save="saveIssueEdit"
@@ -155,6 +159,22 @@ const resolvedRepoOwner = computed(() => repoOwner.value ?? '');
 
 const resolvedRepoName = computed(() => repoName.value ?? '');
 
+const issueAssignees = computed<string[]>(() => {
+  const assignees = currentIssue.value?.assignees;
+
+  if (!Array.isArray(assignees)) return [];
+
+  return assignees
+    .map((assignee: { login?: unknown } | null | undefined) => assignee?.login)
+    .filter((login: unknown): login is string => typeof login === 'string' && login.length > 0);
+});
+
+const issueMilestoneNumber = computed<number | null>(() => {
+  const number = currentIssue.value?.milestone?.number;
+
+  return Number.isSafeInteger(number) && number > 0 ? number : null;
+});
+
 const canEditLabels = computed(() => {
   return repoPermissions.value.canEditLabels;
 });
@@ -218,7 +238,12 @@ const closeEditModal = () => {
   closeModal();
 };
 
-const saveIssueEdit = async (payload: { title: string; body: string }) => {
+const saveIssueEdit = async (payload: {
+  title: string;
+  body: string;
+  assignees: string[];
+  milestone: number | null;
+}) => {
   if (!canEditIssue.value || !repoInfo.value || !currentIssue.value?.number) return;
 
   savingIssue.value = true;
