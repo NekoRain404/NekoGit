@@ -12,6 +12,7 @@ mod write;
 
 pub(crate) use diff::local_repository_file_diff;
 pub(crate) use paths::local_repository_path_status;
+pub(crate) use process::request_git_cancellation;
 pub(crate) use read::{
     local_repository_branches, local_repository_changed_files, local_repository_commit_history,
     local_repository_git_status, local_repository_stashes,

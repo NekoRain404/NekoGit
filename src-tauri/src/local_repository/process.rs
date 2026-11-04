@@ -7,7 +7,8 @@
 
 use std::{
     io::Read,
-    process::{Command, ExitStatus, Output, Stdio},
+    process::{Child, Command, ExitStatus, Output, Stdio},
+    sync::atomic::{AtomicBool, Ordering},
     thread,
     time::{Duration, Instant},
 };
@@ -19,6 +20,32 @@ pub(crate) const MAX_GIT_TIMEOUT_SECS: u64 = 3600;
 const GIT_TIMEOUT_ENV: &str = "NEKOGIT_GIT_TIMEOUT_SECS";
 const OUTPUT_POLL_INTERVAL: Duration = Duration::from_millis(25);
 
+/// Best-effort cancellation flag for the currently running network Git operation.
+static GIT_CANCEL_REQUESTED: AtomicBool = AtomicBool::new(false);
+
+/// Request cancellation of the currently running Git network operation.
+pub(crate) fn request_git_cancellation() {
+    GIT_CANCEL_REQUESTED.store(true, Ordering::SeqCst);
+}
+
+fn take_git_cancellation_request() -> bool {
+    GIT_CANCEL_REQUESTED.swap(false, Ordering::SeqCst)
+}
+
+/// Kill the child and its process group (when available), then reap the child.
+fn kill_child_tree(child: &mut Child) {
+    #[cfg(unix)]
+    {
+        let process_group = -(child.id() as i32);
+        unsafe {
+            libc::kill(process_group, libc::SIGKILL);
+        }
+    }
+
+    let _ = child.kill();
+    let _ = child.wait();
+}
+
 /// Failure while running a timeout-guarded command.
 #[derive(Debug)]
 pub(crate) enum CommandRunError {
@@ -29,6 +56,8 @@ pub(crate) enum CommandRunError {
         description: String,
         timeout: Duration,
     },
+    /// The command was cancelled by the user.
+    Cancelled { description: String },
     /// Waiting for or reading from the child failed.
     Io { message: String },
 }
@@ -45,6 +74,7 @@ impl CommandRunError {
                 "{description} timed out after {}s",
                 format_timeout_seconds(*timeout)
             ),
+            Self::Cancelled { description } => format!("{description} was cancelled"),
         }
     }
 }
@@ -130,13 +160,19 @@ pub(crate) fn run_command_with_timeout(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        command.process_group(0);
+    }
+
+    let _ = take_git_cancellation_request();
     let mut child = command.spawn().map_err(|error| CommandRunError::Spawn {
         message: format!("failed to start {description}: {error}"),
     })?;
 
     let (Some(stdout), Some(stderr)) = (child.stdout.take(), child.stderr.take()) else {
-        let _ = child.kill();
-        let _ = child.wait();
+        kill_child_tree(&mut child);
         return Err(CommandRunError::Io {
             message: format!("failed to capture {description} output"),
         });
@@ -150,9 +186,19 @@ pub(crate) fn run_command_with_timeout(
         match child.try_wait() {
             Ok(Some(status)) => break status,
             Ok(None) => {
+                if take_git_cancellation_request() {
+                    kill_child_tree(&mut child);
+                    // Reader threads are deliberately detached: grandchildren may
+                    // keep inherited pipe handles open after the process group dies.
+                    drop(stdout_reader);
+                    drop(stderr_reader);
+                    return Err(CommandRunError::Cancelled {
+                        description: description.to_owned(),
+                    });
+                }
+
                 if Instant::now() >= deadline {
-                    let _ = child.kill();
-                    let _ = child.wait();
+                    kill_child_tree(&mut child);
                     // Reader threads are deliberately detached: a killed child may
                     // leave grandchildren holding the pipe open, and joining here
                     // would reintroduce the hang the timeout exists to prevent.
@@ -166,8 +212,7 @@ pub(crate) fn run_command_with_timeout(
                 thread::sleep(OUTPUT_POLL_INTERVAL);
             }
             Err(error) => {
-                let _ = child.kill();
-                let _ = child.wait();
+                kill_child_tree(&mut child);
                 drop(stdout_reader);
                 drop(stderr_reader);
                 return Err(CommandRunError::Io {

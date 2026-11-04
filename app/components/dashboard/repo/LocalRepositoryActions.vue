@@ -111,6 +111,20 @@ const handlePRCreated = async (pull: any) => {
     </button>
     <button
       v-if="
+        state.desktopAction.value === 'clone' ||
+        state.desktopAction.value === 'fetch' ||
+        state.desktopAction.value === 'pull' ||
+        state.desktopAction.value === 'push' ||
+        state.desktopAction.value === 'rebase'
+      "
+      class="local-repo-link local-repo-panel__action local-repo-panel__action--wide"
+      type="button"
+      @click="state.cancelDesktopLocalRepositoryOperation"
+    >
+      <span>{{ copy.gitCancelOperation }}</span>
+    </button>
+    <button
+      v-if="
         state.desktopLocalRepositoryGitStatus.value?.clean &&
         state.desktopLocalRepositoryGitStatus.value?.upstream
       "

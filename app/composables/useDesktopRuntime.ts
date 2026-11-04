@@ -20,6 +20,7 @@ import { getCommandErrorMessage, invokeDesktopCommand } from './desktop-runtime/
 import {
   abortLocalRepositoryRebase,
   applyLocalRepositoryStash,
+  cancelLocalRepositoryOperation,
   checkoutRemoteLocalRepositoryBranch,
   clearLocalRepositoryStashes,
   cloneRepository,
@@ -193,6 +194,7 @@ export function useDesktopRuntime() {
     stashLocalRepositoryChanges,
     popLocalRepositoryStash,
     applyLocalRepositoryStash,
+    cancelLocalRepositoryOperation,
     clearLocalRepositoryStashes,
     stageLocalRepositoryPath,
     unstageLocalRepositoryPath,

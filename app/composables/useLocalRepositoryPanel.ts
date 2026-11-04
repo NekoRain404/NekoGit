@@ -27,6 +27,7 @@ export type { LocalRepositoryCopy } from './local-repository-panel/types';
 export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions) {
   const {
     available: desktopAvailable,
+    cancelLocalRepositoryOperation,
     checkoutRemoteLocalRepositoryBranch,
     cloneRepository,
     commitLocalRepositoryChanges,
@@ -206,6 +207,15 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
       await showDesktopMessage(message, 'error');
     } finally {
       desktopAction.value = null;
+    }
+  };
+
+  const cancelDesktopLocalRepositoryOperation = async () => {
+    try {
+      await cancelLocalRepositoryOperation();
+    } catch (error) {
+      const message = getDesktopActionErrorMessage(error, 'Failed to cancel the Git operation.');
+      await showDesktopMessage(message, 'error');
     }
   };
 
@@ -999,6 +1009,7 @@ export function useLocalRepositoryPanel(options: UseLocalRepositoryPanelOptions)
     refreshAssociatedPullRequest,
     submitCreatePullRequest,
     adoptDesktopLocalRepository,
+    cancelDesktopLocalRepositoryOperation,
     checkoutDesktopRemoteLocalRepositoryBranch,
     cloneDesktopRepository,
     commitDesktopLocalRepositoryChanges,

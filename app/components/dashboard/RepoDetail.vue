@@ -185,6 +185,7 @@ const copy = computed(() => {
       createPullRequestTitlePlaceholder: 'PR 标题',
       createPullRequestDescriptionPlaceholder: 'PR 描述（可选）',
       confirmCommit: '确认提交当前所有改动？',
+      gitCancelOperation: '取消操作',
       confirmAbortRebase: '确认中止当前变基？本地分支将恢复到变基之前的状态。',
       confirmRebase: '确认将本地提交变基到上游分支？此操作会重写本地提交历史。',
       confirmClearStashes: '确认清空所有贮藏？此操作无法撤销。',
@@ -316,6 +317,7 @@ const copy = computed(() => {
     createPullRequestTitlePlaceholder: 'PR title',
     createPullRequestDescriptionPlaceholder: 'PR description (optional)',
     confirmCommit: 'Commit all current changes?',
+    gitCancelOperation: 'Cancel operation',
     confirmAbortRebase: 'Abort the current rebase? The branch returns to its pre-rebase state.',
     confirmRebase:
       'Rebase local commits onto the upstream branch? This rewrites local commit history.',

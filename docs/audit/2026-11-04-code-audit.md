@@ -263,7 +263,7 @@
 - AUD-028：clone/fetch/pull/push 增加 120s 超时（`NEKOGIT_GIT_TIMEOUT_SECS` 可调），并发排空 stdout/stderr 防止管道死锁；取消/进程组管理仍延后。
 - AUD-029：reviewer summary 增加 45s 客户端 TTL 缓存、并发请求去重，并在 reviewer 增删后失效。
 - 额外功能：桌面端支持“接管已有本地 clone”（校验 Git work tree 与 origin 后记录），无需重新 clone。
-- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，共 38 个测试文件 / 251 个用例；Rust 105 个测试。
+- 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，并加入 `@vue/test-utils` + happy-dom 组件测试（PREditModal、LabelCreateForm），共 40 个测试文件 / 255 个用例；Rust 105 个测试。
 - 本地 Git 补全：stash 列表/pop、非当前分支安全删除（`git branch -d`）。
 - Issue 写操作：关闭/重开、编辑标题/正文（PATCH route + modal + 权限 gating）。
 - PR 编辑：标题/正文编辑 modal，复用 PATCH pull request endpoint。
@@ -271,7 +271,7 @@
 - PR 写操作：draft/ready 切换、merge/squash/rebase 合并方式选择。
 - 本地 Git 补全：按文件 stage/unstage（含初始提交无 HEAD 的 unstage 回退）、stash apply/clear。
 - Discussion 写操作：mark/unmark answer、讨论/评论 upvote、lock/unlock（GraphQL + UI）。
-- 本地 Git：rebase / abort rebase（含冲突检测与明确提示）。
+- 本地 Git：rebase / abort rebase（含冲突检测与明确提示）、进程组取消（fetch/pull/push/clone/rebase 可前端取消）。
 - 通知：线程退订（REST + UI）。
 - Label：创建 label 的 endpoint、校验与 label editor 内联创建 UI。
 - PR：review dismissal（endpoint + 时间线内联弹层）。
@@ -280,12 +280,12 @@
 
 最终验证（2026-11-04）：
 
-- `pnpm fmt:check` ✅ 445 files
+- `pnpm fmt:check` ✅ 450 files
 - `pnpm typecheck` ✅
 - `pnpm lint` ✅（correctness 已启用）
-- `pnpm test` ✅ 38 files / 251 tests
+- `pnpm test` ✅ 40 files / 255 tests（含 2 个 Vue 组件测试）
 - `pnpm build` ✅（`taskset -c 0-3`，47.3 MB）
-- `node scripts/check-tauri-commands.mjs` ✅ 45 commands
+- `node scripts/check-tauri-commands.mjs` ✅ 46 commands
 - `cargo fmt --check` ✅
 - `cargo test --jobs 4` ✅ 105 tests
 - `cargo clippy --jobs 4 --all-targets -- -D warnings` ✅
@@ -294,7 +294,6 @@
 
 未完成（明确延后）：
 
-- AUD-020：server route / 组件 / E2E 测试基线仍未建立（已新增纯逻辑测试）。
-- AUD-028 的“取消/进程组管理”部分（超时已完成）。
-- AUD-030：AppImage/rpm、自动更新、签名。
-- Notification “done”、浏览器 E2E/组件测试、AppImage/rpm 打包/签名等仍在 backlog。
+- AUD-020：浏览器 E2E 测试（纯逻辑 + Vue 组件测试已建立）。
+- AUD-030：自动更新与代码签名需要发布密钥/基础设施；tag 触发的 deb/AppImage/rpm 发布工作流已添加。
+- Notification “done”：GitHub 未提供对应的公开 REST/GraphQL mutation。

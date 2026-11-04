@@ -50,6 +50,7 @@
     "allow-desktop-server-status",
     "allow-desktop-set-autostart-enabled",
     "allow-desktop-set-navigation-state",
+    "allow-desktop-cancel-local-repository-operation",
     "allow-desktop-remember-local-repository",
     "allow-desktop-set-current-github-state",
     "allow-desktop-set-review-state",

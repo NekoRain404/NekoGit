@@ -267,6 +267,7 @@ pub fn run() {
             desktop_open_github_url,
             desktop_clone_repository,
             desktop_remember_local_repository,
+            desktop_cancel_local_repository_operation,
             desktop_local_repository_status,
             desktop_local_repository_git_status,
             desktop_local_repository_branches,

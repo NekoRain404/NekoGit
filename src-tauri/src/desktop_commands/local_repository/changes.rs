@@ -6,8 +6,8 @@ use crate::{
     desktop_runtime::DesktopRuntime,
     local_repository::{
         apply_local_repository_stash, clear_local_repository_stashes,
-        commit_local_repository_changes, pop_local_repository_stash, stage_local_repository_path,
-        stash_local_repository_changes, unstage_local_repository_path,
+        commit_local_repository_changes, pop_local_repository_stash, request_git_cancellation,
+        stage_local_repository_path, stash_local_repository_changes, unstage_local_repository_path,
         DesktopLocalRepositoryGitStatus,
     },
 };
@@ -113,4 +113,11 @@ pub(crate) async fn desktop_unstage_local_repository_path(
     })
     .await
     .map_err(|error| format!("failed to run git restore --staged task: {error}"))?
+}
+
+/// Requests cancellation of the currently running local Git network operation.
+#[tauri::command]
+pub(crate) fn desktop_cancel_local_repository_operation() -> Result<(), String> {
+    request_git_cancellation();
+    Ok(())
 }

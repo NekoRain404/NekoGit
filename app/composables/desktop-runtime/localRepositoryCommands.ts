@@ -44,6 +44,11 @@ export const rememberLocalRepository = async (repositoryUrl: string, directory: 
   });
 };
 
+/** Request cancellation of the currently running local Git network operation. */
+export const cancelLocalRepositoryOperation = async () => {
+  await invokeDesktopCommand<void>('desktop_cancel_local_repository_operation');
+};
+
 /** Check whether a local repository exists on disk. */
 export const getLocalRepositoryStatus = async (repositoryUrl: string) => {
   return invokeDesktopCommand<DesktopLocalRepositoryStatus>('desktop_local_repository_status', {

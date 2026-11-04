@@ -2019,6 +2019,12 @@
           "markdownDescription": "Enables the desktop_autostart_status command without any pre-configured scope."
         },
         {
+          "description": "Enables the desktop_cancel_local_repository_operation command without any pre-configured scope.",
+          "type": "string",
+          "const": "allow-desktop-cancel-local-repository-operation",
+          "markdownDescription": "Enables the desktop_cancel_local_repository_operation command without any pre-configured scope."
+        },
+        {
           "description": "Enables the desktop_checkout_remote_local_repository_branch command without any pre-configured scope.",
           "type": "string",
           "const": "allow-desktop-checkout-remote-local-repository-branch",
@@ -2287,6 +2293,12 @@
           "type": "string",
           "const": "deny-desktop-autostart-status",
           "markdownDescription": "Denies the desktop_autostart_status command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the desktop_cancel_local_repository_operation command without any pre-configured scope.",
+          "type": "string",
+          "const": "deny-desktop-cancel-local-repository-operation",
+          "markdownDescription": "Denies the desktop_cancel_local_repository_operation command without any pre-configured scope."
         },
         {
           "description": "Denies the desktop_checkout_remote_local_repository_branch command without any pre-configured scope.",

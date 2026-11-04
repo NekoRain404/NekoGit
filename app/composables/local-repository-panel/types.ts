@@ -106,6 +106,7 @@ export type LocalRepositoryCopy = {
   createPullRequestTitlePlaceholder: string;
   createPullRequestDescriptionPlaceholder: string;
   confirmCommit: string;
+  gitCancelOperation: string;
   confirmClearStashes: string;
   confirmDeleteBranch: string;
   confirmPush: string;
