@@ -1,8 +1,8 @@
 /// Downloads and stages the standalone Node.js runtime for Tauri builds into .node-runtime.
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { createReadStream, createWriteStream } from 'node:fs';
-import { chmod, copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { createReadStream, createWriteStream, existsSync } from 'node:fs';
+import { chmod, copyFile, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { get } from 'node:https';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +23,7 @@ function normalizeNodeVersion(value) {
   return version.startsWith('v') ? version : `v${version}`;
 }
 
-function download(url, destination, redirectCount = 0) {
+function download(url, destination, redirectCount = 0, timeoutMs = 300_000) {
   if (redirectCount > 5) {
     throw new Error(`Too many redirects while downloading ${url}`);
   }
@@ -41,7 +41,7 @@ function download(url, destination, redirectCount = 0) {
         }
 
         resolvePromise(
-          download(new URL(redirectUrl, url).toString(), destination, redirectCount + 1)
+          download(new URL(redirectUrl, url).toString(), destination, redirectCount + 1, timeoutMs)
         );
         return;
       }
@@ -52,14 +52,34 @@ function download(url, destination, redirectCount = 0) {
         return;
       }
 
+      const expectedBytes = Number(response.headers['content-length'] ?? 0);
+      let receivedBytes = 0;
+      response.on('data', (chunk) => {
+        receivedBytes += chunk.length;
+      });
+
       const file = createWriteStream(destination);
       response.pipe(file);
+      response.once('error', reject);
       file.once('finish', () => {
-        file.close(resolvePromise);
+        file.close(() => {
+          if (expectedBytes > 0 && receivedBytes !== expectedBytes) {
+            reject(
+              new Error(
+                `Incomplete download from ${url}: expected ${expectedBytes} bytes, received ${receivedBytes}.`
+              )
+            );
+            return;
+          }
+          resolvePromise();
+        });
       });
       file.once('error', reject);
     });
 
+    request.setTimeout(timeoutMs, () => {
+      request.destroy(new Error(`Download timed out after ${timeoutMs}ms: ${url}`));
+    });
     request.once('error', reject);
   });
 }
@@ -69,7 +89,7 @@ function computeFileSha256(filePath) {
     const hash = createHash('sha256');
     const stream = createReadStream(filePath);
     stream.once('error', reject);
-    stream.once('data', (chunk) => hash.update(chunk));
+    stream.on('data', (chunk) => hash.update(chunk));
     stream.once('end', () => resolvePromise(hash.digest('hex')));
   });
 }
@@ -108,9 +128,16 @@ async function verifyArchiveChecksum({ mirror, version, archiveName, archivePath
   let checksumContents = null;
   let checksumError = null;
 
-  for (const checksumUrl of checksumUrls) {
+  if (existsSync(checksumPath)) {
+    const cachedChecksum = await readFile(checksumPath, 'utf8');
+    if (findExpectedArchiveSha256(cachedChecksum, archiveName)) {
+      checksumContents = cachedChecksum;
+    }
+  }
+
+  for (const checksumUrl of checksumContents ? [] : checksumUrls) {
     try {
-      await download(checksumUrl, checksumPath);
+      await download(checksumUrl, checksumPath, 0, 30_000);
       checksumContents = await readFile(checksumPath, 'utf8');
       break;
     } catch (error) {
@@ -171,8 +198,11 @@ function run(command, args) {
 
 async function runtimeIsReady(version) {
   try {
-    const existingVersion = (await readFile(versionFile, 'utf8')).trim();
-    return existingVersion === version;
+    const [existingVersion, binaryStats] = await Promise.all([
+      readFile(versionFile, 'utf8'),
+      stat(nodeBinary),
+    ]);
+    return existingVersion.trim() === version && binaryStats.isFile() && binaryStats.size > 0;
   } catch {
     return false;
   }
@@ -202,14 +232,34 @@ async function main() {
 
   await mkdir(cacheRoot, { recursive: true });
   await rm(extractDir, { recursive: true, force: true });
-  await download(archiveUrl, archivePath);
-  await verifyArchiveChecksum({
-    mirror,
-    version,
-    archiveName,
-    archivePath,
-    archiveUrl,
-  });
+
+  let archiveReady = false;
+  if (existsSync(archivePath)) {
+    try {
+      await verifyArchiveChecksum({
+        mirror,
+        version,
+        archiveName,
+        archivePath,
+        archiveUrl,
+      });
+      archiveReady = true;
+      console.log(`Using cached ${archiveName}.`);
+    } catch {
+      console.warn(`Cached ${archiveName} failed verification; downloading it again.`);
+    }
+  }
+
+  if (!archiveReady) {
+    await download(archiveUrl, archivePath);
+    await verifyArchiveChecksum({
+      mirror,
+      version,
+      archiveName,
+      archivePath,
+      archiveUrl,
+    });
+  }
   await mkdir(extractDir, { recursive: true });
   await run('tar', ['-xJf', archivePath, '-C', extractDir, '--strip-components=1']);
 
