@@ -266,7 +266,7 @@
 - 额外功能：桌面端支持“接管已有本地 clone”（校验 Git work tree 与 origin 后记录），无需重新 clone。
 - 测试基线：新增 repository pagination、security headers、reviewer cache、timeout、adopt、issue create/update、PR actions、PR dismissal、discussion actions、discussion create、label create 等测试，并加入 `@vue/test-utils` + happy-dom 组件测试（PREditModal、LabelCreateForm、CreateRepositoryModal、RepositorySettingsModal），共 45 个测试文件 / 277 个用例；Rust 109 个测试。
 - 浏览器 E2E：新增 Playwright 配置与 `e2e/landing.spec.ts`，使用系统 Chrome（不下载浏览器）验证 landing 渲染、CSRF cookie 与未登录访问 `/dashboard` 的重定向；CI Build job 执行 `pnpm test:e2e`。
-- 依赖安全：升级 Nuxt 4.6.4、Vue 3.5.44、undici 8.12.3、mermaid 11.17.2 等；通过 `pnpm-workspace.yaml` overrides 固定 tar/dompurify/node-forge/brace-expansion/js-yaml 等补丁版本。`pnpm audit --prod` 从 131 个漏洞（7 critical / 59 high）降至 1 个 low（deepmerge 补丁版本尚未同步到配置镜像）。
+- 依赖安全：升级 Nuxt 4.6.4、Vue 3.5.44、undici 8.12.3、mermaid 11.17.2 等；通过 `pnpm-workspace.yaml` overrides 固定 tar/dompurify/node-forge/brace-expansion/js-yaml 等补丁版本。`pnpm audit --prod` 从 131 个漏洞（7 critical / 59 high）降至 1 个 low（deepmerge 4.3.2 尚未发布，advisory 已提前标记）。
 - 桌面集成 smoke：新增 `scripts/smoke-desktop.mjs`，通过 `tauri-driver` + `WebKitWebDriver` + `xvfb-run` 启动真实 Tauri webview，验证 landing 标题与页面内容；本地已通过，并提供手动 `Desktop Smoke` GitHub Actions workflow。
 - 本地 Git 补全：stash 列表/pop、非当前分支安全删除（`git branch -d`）。
 - Issue 写操作：关闭/重开、编辑标题/正文（PATCH route + modal + 权限 gating）。
@@ -298,7 +298,8 @@
 - `pnpm smoke:server` ✅ 安全响应头、未认证 401（含仓库 POST/PATCH/DELETE/transfer 与组织列表路由）、缺失 CSRF 403、带 CSRF 空 token 400
 - `pnpm test:e2e` ✅ 2 tests（系统 Chrome，landing 与未登录路由守卫）
 - `pnpm smoke:desktop` ✅ Tauri webview landing 渲染（tauri-driver + xvfb）
-- `pnpm audit --prod --registry https://registry.npmjs.org` ✅ 1 low（deepmerge）
+- `pnpm audit --prod --registry https://registry.npmjs.org` ✅ 1 low（deepmerge 4.3.2 未发布）
+- `pnpm peers check` ✅ no peer dependency issues
 - server smoke：安全响应头生效；无 CSRF token → 403
 
 未完成（明确延后）：
