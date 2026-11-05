@@ -1,6 +1,6 @@
 <!-- Local Repository Changed Files — Lists changed/uncommitted files of a local repository and links to their diffs. -->
 <script setup lang="ts">
-import { ExternalLinkIcon, Loader2Icon } from 'lucide-vue-next';
+import { ExternalLinkIcon, Loader2Icon, MinusIcon, PlusIcon } from 'lucide-vue-next';
 
 import { useLocalRepositoryPanelContext } from './localRepositoryPanelContext';
 
@@ -12,6 +12,7 @@ const { copy, state } = useLocalRepositoryPanelContext();
     v-if="
       state.desktopLocalRepositoryStatus.value?.exists &&
       (state.desktopChangedFilesLoading.value ||
+        state.desktopChangedFileActionError.value ||
         state.desktopChangedFiles.value.length ||
         state.desktopChangedFilesError.value)
     "
@@ -24,11 +25,22 @@ const { copy, state } = useLocalRepositoryPanelContext();
         :size="12"
         class="spin-animation"
       />
+      <button
+        v-else-if="state.desktopChangedFiles.value.length >= 8 && !state.changedFilesExpanded.value"
+        class="local-repo-files__more"
+        type="button"
+        @click="state.showAllDesktopChangedFiles"
+      >
+        {{ copy.gitShowAll }}
+      </button>
     </div>
     <p v-if="state.desktopChangedFilesError.value" class="local-repo-files__error">
       {{ state.desktopChangedFilesError.value }}
     </p>
-    <ul v-else class="local-repo-files__list">
+    <p v-if="state.desktopChangedFileActionError.value" class="local-repo-files__error">
+      {{ state.desktopChangedFileActionError.value }}
+    </p>
+    <ul v-if="!state.desktopChangedFilesError.value" class="local-repo-files__list">
       <li v-for="file in state.desktopChangedFiles.value" :key="`${file.status}:${file.path}`">
         <div class="local-repo-files__row">
           <button
@@ -40,7 +52,13 @@ const { copy, state } = useLocalRepositoryPanelContext();
               'local-repo-files__item--conflict': file.conflicted,
               'local-repo-files__item--deleted': !file.openable,
             }"
-            :title="file.previousPath ? `${file.previousPath} -> ${file.path}` : file.path"
+            :title="
+              file.conflicted
+                ? copy.gitConflictActionUnavailable
+                : file.previousPath
+                  ? `${file.previousPath} -> ${file.path}`
+                  : file.path
+            "
             @click="state.previewDesktopChangedFileDiff(file)"
           >
             <code>{{ file.status }}</code>
@@ -49,15 +67,53 @@ const { copy, state } = useLocalRepositoryPanelContext();
               {{ state.desktopChangedFileStatusLabels.value[file.statusKind] ?? file.statusKind }}
             </span>
           </button>
-          <button
-            type="button"
-            class="local-repo-files__open"
-            :disabled="!file.openable"
-            :title="copy.openFile"
-            @click="state.openDesktopChangedFile(file)"
-          >
-            <ExternalLinkIcon :size="12" />
-          </button>
+          <div class="local-repo-files__actions">
+            <button
+              v-if="!file.conflicted && (file.unstaged || file.untracked)"
+              type="button"
+              class="local-repo-files__open"
+              :disabled="
+                state.desktopStagingChangedFilePaths.value[file.path] ||
+                state.desktopUnstagingChangedFilePaths.value[file.path]
+              "
+              :title="copy.gitStage"
+              @click="state.stageDesktopChangedFile(file)"
+            >
+              <Loader2Icon
+                v-if="state.desktopStagingChangedFilePaths.value[file.path]"
+                :size="12"
+                class="spin-animation"
+              />
+              <PlusIcon v-else :size="12" />
+            </button>
+            <button
+              v-if="!file.conflicted && file.staged"
+              type="button"
+              class="local-repo-files__open"
+              :disabled="
+                state.desktopStagingChangedFilePaths.value[file.path] ||
+                state.desktopUnstagingChangedFilePaths.value[file.path]
+              "
+              :title="copy.gitUnstage"
+              @click="state.unstageDesktopChangedFile(file)"
+            >
+              <Loader2Icon
+                v-if="state.desktopUnstagingChangedFilePaths.value[file.path]"
+                :size="12"
+                class="spin-animation"
+              />
+              <MinusIcon v-else :size="12" />
+            </button>
+            <button
+              type="button"
+              class="local-repo-files__open"
+              :disabled="!file.openable"
+              :title="copy.openFile"
+              @click="state.openDesktopChangedFile(file)"
+            >
+              <ExternalLinkIcon :size="12" />
+            </button>
+          </div>
         </div>
       </li>
     </ul>
@@ -102,3 +158,15 @@ const { copy, state } = useLocalRepositoryPanelContext();
     </div>
   </div>
 </template>
+
+<style scoped>
+.local-repo-files__row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.local-repo-files__actions {
+  display: flex;
+  gap: 0.35rem;
+  min-width: 0;
+}
+</style>

@@ -10,6 +10,7 @@ import LocalRepositoryChangedFiles from './LocalRepositoryChangedFiles.vue';
 import LocalRepositoryCommitHistory from './LocalRepositoryCommitHistory.vue';
 import LocalRepositoryGitSummary from './LocalRepositoryGitSummary.vue';
 import { provideLocalRepositoryPanel } from './localRepositoryPanelContext';
+import LocalRepositoryStashes from './LocalRepositoryStashes.vue';
 
 const props = defineProps<{
   owner: string;
@@ -72,6 +73,7 @@ provideLocalRepositoryPanel({
           {{ state.desktopLocalRepositoryLocation.value }}
         </p>
         <LocalRepositoryGitSummary />
+        <LocalRepositoryStashes />
         <LocalRepositoryChangedFiles />
         <LocalRepositoryCommitHistory />
         <LocalRepositoryActions />

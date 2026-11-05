@@ -7,7 +7,25 @@
           :issue="currentIssue"
           :repo-owner="resolvedRepoOwner"
           :repo-name="resolvedRepoName"
+          :can-edit-issue="canEditIssue"
+          :is-updating="savingIssue"
+          @edit-issue="openEditModal"
+          @close-issue="closeIssue"
+          @reopen-issue="reopenIssue"
         />
+
+        <div
+          v-if="issueActionError"
+          class="notification is-danger is-light is-size-7 py-2 px-4 mt-4"
+        >
+          <button
+            class="delete is-small"
+            type="button"
+            aria-label="close"
+            @click="issueActionError = ''"
+          ></button>
+          {{ issueActionError }}
+        </div>
 
         <hr />
 
@@ -58,18 +76,35 @@
         </div>
       </div>
     </div>
+
+    <IssueEditModal
+      :is-visible="showEditModal"
+      :loading="savingIssue"
+      :initial-title="currentIssue?.title || ''"
+      :initial-body="currentIssue?.body || ''"
+      :initial-assignees="issueAssignees"
+      :initial-milestone="issueMilestoneNumber"
+      :owner="repoOwner"
+      :repo="repoName"
+      :error="editIssueError"
+      @close="closeEditModal"
+      @save="saveIssueEdit"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import IssueActions from '~/components/dashboard/issue/IssueActions.vue';
+import IssueEditModal from '~/components/dashboard/issue/IssueEditModal.vue';
 import IssueHeader from '~/components/dashboard/issue/IssueHeader.vue';
 import IssueLabels from '~/components/dashboard/issue/IssueLabels.vue';
 import IssueTimelineEvents from '~/components/dashboard/issue/IssueTimelineEvents.vue';
 import type { IssueTimelineItem } from '~/composables/useIssueTimelineEvents';
 import type { RepoPermissions } from '~/utils/createEmptyRepoPermissions';
+import getFetchErrorMessage from '~/utils/getFetchErrorMessage';
 import parseGitHubRepoPath from '~/utils/parseGitHubRepoPath';
 
 const props = defineProps<{
@@ -102,7 +137,13 @@ const permissionRequestId = ref(0);
 const currentTimelinePage = ref(1);
 const hasNextTimelinePage = ref(false);
 const loadingMoreTimeline = ref(false);
+const showEditModal = ref(false);
+const savingIssue = ref(false);
+const issueActionError = ref('');
+const editIssueError = ref('');
 const apiFetch = useNekoGitApiFetch();
+const { t } = useI18n();
+const { openModal, closeModal } = useModalState();
 
 const { isScrolling: isSidebarScrolling, onScroll: onSidebarScroll } = useAutoHideScrollState();
 
@@ -118,11 +159,31 @@ const resolvedRepoOwner = computed(() => repoOwner.value ?? '');
 
 const resolvedRepoName = computed(() => repoName.value ?? '');
 
+const issueAssignees = computed<string[]>(() => {
+  const assignees = currentIssue.value?.assignees;
+
+  if (!Array.isArray(assignees)) return [];
+
+  return assignees
+    .map((assignee: { login?: unknown } | null | undefined) => assignee?.login)
+    .filter((login: unknown): login is string => typeof login === 'string' && login.length > 0);
+});
+
+const issueMilestoneNumber = computed<number | null>(() => {
+  const number = currentIssue.value?.milestone?.number;
+
+  return Number.isSafeInteger(number) && number > 0 ? number : null;
+});
+
 const canEditLabels = computed(() => {
   return repoPermissions.value.canEditLabels;
 });
 
 const canLockIssue = computed(() => {
+  return repoPermissions.value.canLockIssue;
+});
+
+const canEditIssue = computed(() => {
   return repoPermissions.value.canLockIssue;
 });
 
@@ -146,6 +207,113 @@ const addTimelineEvent = (event: IssueTimelineItem) => {
   timeline.value.push(event);
 };
 
+const confirmIssueAction = (message: string) => {
+  if (!import.meta.client) {
+    return true;
+  }
+
+  return window.confirm(message);
+};
+
+const applyUpdatedIssue = (updated: unknown) => {
+  if (!updated || typeof updated !== 'object' || Array.isArray(updated)) return;
+
+  const issue = updated as Record<string, unknown>;
+  currentIssue.value = { ...currentIssue.value, ...issue };
+  isLocked.value = Boolean(issue.locked ?? isLocked.value);
+};
+
+const openEditModal = () => {
+  if (!canEditIssue.value) return;
+
+  editIssueError.value = '';
+  showEditModal.value = true;
+  openModal();
+};
+
+const closeEditModal = () => {
+  if (!showEditModal.value) return;
+
+  showEditModal.value = false;
+  closeModal();
+};
+
+const saveIssueEdit = async (payload: {
+  title: string;
+  body: string;
+  assignees: string[];
+  milestone: number | null;
+}) => {
+  if (!canEditIssue.value || !repoInfo.value || !currentIssue.value?.number) return;
+
+  savingIssue.value = true;
+  issueActionError.value = '';
+  editIssueError.value = '';
+
+  try {
+    const { owner, repo } = repoInfo.value;
+    const data = await apiFetch<Record<string, unknown>>(
+      `/api/repos/${owner}/${repo}/issues/${currentIssue.value.number}`,
+      {
+        method: 'PATCH',
+        body: payload,
+      }
+    );
+
+    applyUpdatedIssue(data);
+    closeEditModal();
+    await fetchTimeline();
+  } catch (err: unknown) {
+    console.error('Error updating issue:', err);
+    editIssueError.value = getFetchErrorMessage(err, t('issueDetail.failedToUpdateIssue'));
+  } finally {
+    savingIssue.value = false;
+  }
+};
+
+const updateIssueState = async (state: 'open' | 'closed') => {
+  if (!canEditIssue.value || !repoInfo.value || !currentIssue.value?.number) return;
+
+  const confirmation = t(
+    state === 'closed' ? 'issueDetail.confirmCloseIssue' : 'issueDetail.confirmReopenIssue'
+  );
+  if (!confirmIssueAction(confirmation)) return;
+
+  savingIssue.value = true;
+  issueActionError.value = '';
+
+  try {
+    const { owner, repo } = repoInfo.value;
+    const data = await apiFetch<Record<string, unknown>>(
+      `/api/repos/${owner}/${repo}/issues/${currentIssue.value.number}`,
+      {
+        method: 'PATCH',
+        body: { state },
+      }
+    );
+
+    applyUpdatedIssue(data);
+    await fetchTimeline();
+  } catch (err: unknown) {
+    console.error(`Error updating issue state to ${state}:`, err);
+    issueActionError.value = getFetchErrorMessage(
+      err,
+      t(state === 'closed' ? 'issueDetail.failedToCloseIssue' : 'issueDetail.failedToReopenIssue')
+    );
+  } finally {
+    savingIssue.value = false;
+  }
+};
+
+const closeIssue = () => updateIssueState('closed');
+const reopenIssue = () => updateIssueState('open');
+
+onUnmounted(() => {
+  if (showEditModal.value) {
+    closeModal();
+  }
+});
+
 const updateLabelEditorVisibility = (visible: boolean) => {
   isLabelEditorVisible.value = visible;
   emit('update:non-sticky-header', visible);
@@ -157,6 +325,9 @@ const getIssueIdentity = () => {
 };
 
 const resetIssueScopedState = (issue: any) => {
+  closeEditModal();
+  issueActionError.value = '';
+  editIssueError.value = '';
   currentIssue.value = issue;
   timeline.value = [];
   repoPermissions.value = createEmptyRepoPermissions();

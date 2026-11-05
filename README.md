@@ -10,7 +10,7 @@ Track notifications, issues, pull requests, and repositories from one focused wo
 
 ### 📬 Notifications
 
-Grouped by reason — `mention`, `review_requested`, `ci_activity`, `security_alert`, `assign`, `state_change`, `subscribed` and more. Unread items have a blue indicator. Click **Mark as read** to dismiss, or let the 60-second auto-refresh catch new ones without reloading the page.
+Reason icons for `mention`, `review_requested`, `ci_activity`, `security_alert`, `assign`, `state_change`, `subscribed` and more make activity easy to scan. Unread items have a blue indicator. Click **Mark as read** to dismiss, or let the 60-second auto-refresh catch new ones without reloading the page.
 
 ### 🎯 Issues & Pull Requests
 
@@ -34,7 +34,7 @@ Adaptive dark mode styling keeps the dashboard comfortable in low-light environm
 
 ### 📂 Repositories
 
-Paginated list of your repos with quick links to each. A fast way to jump to a project without leaving the dashboard.
+Paginated list of your repos with quick links to each. Create personal or organization repositories, edit descriptions and homepages, transfer a repository to another owner, archive or unarchive it, and delete it from the detail view with a typed-name confirmation.
 
 ---
 
@@ -88,9 +88,23 @@ The package is written to `src-tauri/target/release/bundle/deb/`. Release builds
 
 The desktop client keeps its runtime state in the Tauri app data directory. It generates a persistent `session.secret` on first launch, stores webview data under `webview/`, writes the bundled server log to `logs/nekogit-server.log`, and exposes **File → Open Data Directory** / **File → Open Server Log** from the native menu. Closing the main window hides NekoGit to the system tray; use the tray menu or **File → Quit** to exit the bundled server. Reopening NekoGit while it is already running focuses the existing window instead of starting a second bundled server.
 
+The repository sidebar can clone or adopt an existing checkout, fetch, pull, push/publish, rebase, stage files individually, expand changed-file and commit-history lists, stash/apply/pop entries, amend the last commit, and undo a local commit while keeping its changes staged.
+
 Common desktop shortcuts include `F5` for refreshing the current NekoGit view, `Ctrl+,` for settings, `Alt+Left` / `Alt+Right` for in-app navigation, and `Ctrl+Shift+G` / `Ctrl+Shift+O` / `Ctrl+Shift+L` for opening, opening from clipboard, or copying GitHub URLs.
 
 Installed Linux packages register `nekogit://` as a desktop URL handler. For example, `nekogit://open?url=https%3A%2F%2Fgithub.com%2Fowner%2Frepo%2Fissues%2F42` opens the matching GitHub target inside the running NekoGit window; only validated GitHub HTTPS URLs are accepted.
+
+To smoke-test the real desktop webview on Linux, build the app once and run the WebDriver-based landing check:
+
+```bash
+pnpm build
+cargo build --manifest-path src-tauri/Cargo.toml
+cargo install tauri-driver
+sudo apt-get install webkit2gtk-driver xvfb
+pnpm smoke:desktop
+```
+
+The script starts the built Nitro server, launches the Tauri client under `xvfb-run`, drives it through `tauri-driver`, and verifies the landing page renders. Set `NEKOGIT_DESKTOP_BINARY`, `NEKOGIT_TAURI_DRIVER`, or `NEKOGIT_WEBKIT_DRIVER` when the binaries live elsewhere. A manual CI run (`gh workflow run ci.yml`) also executes the same desktop check on Ubuntu.
 
 To point the client at an external/self-hosted instance instead, set:
 

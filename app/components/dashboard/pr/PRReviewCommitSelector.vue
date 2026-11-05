@@ -25,8 +25,8 @@ const emit = defineEmits<{
 
 const isOpen = shallowRef(false);
 
-const selectedCommit = computed(() =>
-  props.commits.find((c) => c.sha === props.selectedSha) ?? props.commits[0] ?? null
+const selectedCommit = computed(
+  () => props.commits.find((c) => c.sha === props.selectedSha) ?? props.commits[0] ?? null
 );
 
 const handleSelect = (sha: string) => {
@@ -36,9 +36,12 @@ const handleSelect = (sha: string) => {
   }
 };
 
-watch(() => props.selectedSha, () => {
-  isOpen.value = false;
-});
+watch(
+  () => props.selectedSha,
+  () => {
+    isOpen.value = false;
+  }
+);
 </script>
 
 <template>

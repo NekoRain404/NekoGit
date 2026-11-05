@@ -27,7 +27,13 @@ interface RepoContentItem {
 interface RepoFileContent extends RepoContentItem {
   type: 'file';
   content: string;
-  encoding: 'base64';
+  encoding: 'base64' | 'none';
+  /**
+   * GitHub returns `encoding: "none"` with empty content for files between
+   * 1 MB and 100 MB. Those files are downloadable through the raw endpoint
+   * (via the Git Blobs API) but cannot be previewed without a large payload.
+   */
+  tooLarge: boolean;
 }
 
 type GitHubContentItem = RepoContentItem & {
@@ -57,17 +63,25 @@ function mapContentItem(item: GitHubContentItem): RepoContentItem {
   };
 }
 
-/** Map a raw content response to a typed file content object, or null if not a base64 file. */
-function mapFileContent(item: GitHubContentItem): RepoFileContent | null {
-  if (item.type !== 'file' || item.encoding !== 'base64') {
+/**
+ * Map a raw content response to typed file metadata, or null if the item is not
+ * a file. Files without inline base64 content (GitHub returns `encoding: "none"`
+ * for 1–100 MB files) keep their metadata with empty content and a `tooLarge`
+ * flag so the preview can show a clear message instead of an empty file.
+ */
+export function mapFileContent(item: GitHubContentItem): RepoFileContent | null {
+  if (item.type !== 'file') {
     return null;
   }
+
+  const hasBase64Content = item.encoding === 'base64';
 
   return {
     ...mapContentItem(item),
     type: 'file',
-    content: item.content || '',
-    encoding: 'base64',
+    content: hasBase64Content ? item.content || '' : '',
+    encoding: hasBase64Content ? 'base64' : 'none',
+    tooLarge: !hasBase64Content,
   };
 }
 

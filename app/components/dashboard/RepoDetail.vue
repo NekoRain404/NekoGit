@@ -11,18 +11,32 @@ import {
   GithubIcon,
   InfoIcon,
   Loader2Icon,
+  MessageSquareIcon,
+  PlusIcon,
+  SettingsIcon,
   StarIcon,
   XIcon,
 } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import type { LocationQueryRaw } from 'vue-router';
 
+import DiscussionCreateModal from '~/components/dashboard/discussion/DiscussionCreateModal.vue';
+import IssueCreateModal from '~/components/dashboard/issue/IssueCreateModal.vue';
 import LocalRepositoryPanel from '~/components/dashboard/repo/LocalRepositoryPanel.vue';
+import RepositorySettingsModal from '~/components/dashboard/repo/RepositorySettingsModal.vue';
+import getFetchErrorMessage from '~/utils/getFetchErrorMessage';
 
 const props = defineProps<{
   repository: any;
   owner: string;
   repo: string;
+}>();
+
+const emit = defineEmits<{
+  (e: 'repository-updated', repository: Record<string, unknown>): void;
+  (e: 'repository-deleted'): void;
+  (e: 'repository-transferred', owner: string): void;
 }>();
 
 /** Repo Detail Icon. */
@@ -31,7 +45,8 @@ type RepoDetailIcon = typeof GithubIcon;
 const { locale, t } = useI18n();
 const localePath = useLocalePath();
 const apiFetch = useNekoGitApiFetch();
-const { navigateToFile } = useNavigationHistory();
+const router = useRouter();
+const { navigateToDiscussion, navigateToFile, navigateToIssue } = useNavigationHistory();
 const {
   branches,
   currentBranch,
@@ -75,6 +90,8 @@ const copy = computed(() => {
       issues: '开放问题',
       language: '语言',
       license: '许可证',
+      adoptLocal: '使用已有本地克隆',
+      adoptingLocal: '正在关联本地克隆…',
       clone: '克隆',
       copied: '已复制',
       copyCloneUrl: '复制 Clone URL',
@@ -85,24 +102,36 @@ const copy = computed(() => {
       gitChanged: '有改动',
       gitChangedFiles: '改动文件',
       gitClean: '干净',
+      gitAmend: '修正上次提交',
+      gitAmending: '修正中',
       gitCommit: '提交',
       gitCommitChanges: '提交变更',
       gitCommitMessage: '提交说明',
       gitCommitting: '提交中',
       gitConflicted: '冲突',
+      gitConflictActionUnavailable: '请先解决冲突，再暂存或取消暂存此文件',
       gitCommits: '提交记录',
       gitCheckoutRemoteBranch: '检出远程',
       gitCheckingOutRemoteBranch: '检出中',
       gitCopied: '复制',
       gitCreateBranch: '创建分支',
       gitCreatingBranch: '创建中',
+      gitDeleteBranch: '删除分支',
       gitDeleted: '删除',
+      gitDeletingBranch: '删除中',
+      gitAbortRebase: '中止变基',
+      gitAbortingRebase: '中止中',
+      gitRebase: '变基',
+      gitRebasing: '变基中',
       gitDiff: 'Diff',
       gitDiffEmpty: '这个文件当前没有可显示的文本 diff',
       gitDiffTruncated: 'diff 已截断',
       gitLastCommit: '最近提交',
+      gitUndoLastCommit: '撤销上次提交',
+      gitUndoingCommit: '撤销中',
       gitModified: '修改',
       gitRenamed: '重命名',
+      gitSelectBranchToDelete: '选择要删除的分支',
       gitSwitchBranch: '切换分支',
       gitSwitchingBranch: '切换中',
       gitFetch: '拉取远端',
@@ -112,10 +141,23 @@ const copy = computed(() => {
       gitPublishBranch: '发布分支',
       gitPush: '推送',
       gitPushing: '推送中',
+      gitShowAll: '显示全部',
       gitStaged: '暂存',
+      gitStage: '暂存',
+      gitStaging: '暂存中',
       gitStash: '贮藏改动',
+      gitStashes: '贮藏',
+      gitStashesUnavailable: '无法读取贮藏',
       gitStashing: '贮藏中',
+      gitPopStash: '弹出',
+      gitPoppingStash: '弹出中',
+      gitApplyStash: '应用',
+      gitApplyingStash: '应用中',
+      gitClearStashes: '清空全部',
+      gitClearingStashes: '清空中',
       gitUnstaged: '未暂存',
+      gitUnstage: '取消暂存',
+      gitUnstaging: '取消暂存中',
       gitUntracked: '未跟踪',
       localChecking: '检查中',
       localChangesUnavailable: '无法读取改动文件',
@@ -149,6 +191,21 @@ const copy = computed(() => {
       watching: '关注',
       watchers: '关注者',
       createPullRequest: '创建 Pull Request',
+      createPullRequestHeadBranch: '源分支',
+      createPullRequestBaseBranch: '目标分支',
+      createPullRequestTitle: 'PR 标题',
+      createPullRequestDescription: '描述',
+      createPullRequestTitlePlaceholder: 'PR 标题',
+      createPullRequestDescriptionPlaceholder: 'PR 描述（可选）',
+      confirmAmend: '将暂存改动合并到上一次提交并重写该提交？',
+      confirmCommit: '确认提交当前所有改动？',
+      confirmUndoCommit: '撤销上一次本地提交？改动会保留在暂存区；若提交已推送，本地与远端将分叉。',
+      gitCancelOperation: '取消操作',
+      confirmAbortRebase: '确认中止当前变基？本地分支将恢复到变基之前的状态。',
+      confirmRebase: '确认将本地提交变基到上游分支？此操作会重写本地提交历史。',
+      confirmClearStashes: '确认清空所有贮藏？此操作无法撤销。',
+      confirmDeleteBranch: '确认删除这个本地分支？',
+      confirmPush: '确认推送到远程仓库？',
       creatingPullRequest: '创建中',
       cancel: '取消',
       pullRequestCreated: 'Pull Request 已创建',
@@ -172,6 +229,8 @@ const copy = computed(() => {
     issues: 'Open issues',
     language: 'Language',
     license: 'License',
+    adoptLocal: 'Use existing local clone',
+    adoptingLocal: 'Adopting local clone…',
     clone: 'Clone',
     copied: 'Copied',
     copyCloneUrl: 'Copy clone URL',
@@ -182,24 +241,36 @@ const copy = computed(() => {
     gitChanged: 'Changed',
     gitChangedFiles: 'Changed files',
     gitClean: 'Clean',
+    gitAmend: 'Amend last commit',
+    gitAmending: 'Amending',
     gitCommit: 'Commit',
     gitCommitChanges: 'Commit changes',
     gitCommitMessage: 'Commit message',
     gitCommitting: 'Committing',
     gitConflicted: 'Conflicts',
+    gitConflictActionUnavailable: 'Resolve conflicts before staging or unstaging this file.',
     gitCommits: 'Commits',
     gitCheckoutRemoteBranch: 'Checkout remote',
     gitCheckingOutRemoteBranch: 'Checking out',
     gitCopied: 'Copied',
     gitCreateBranch: 'Create branch',
     gitCreatingBranch: 'Creating',
+    gitDeleteBranch: 'Delete branch',
     gitDeleted: 'Deleted',
+    gitDeletingBranch: 'Deleting',
+    gitAbortRebase: 'Abort rebase',
+    gitAbortingRebase: 'Aborting',
+    gitRebase: 'Rebase',
+    gitRebasing: 'Rebasing',
     gitDiff: 'Diff',
     gitDiffEmpty: 'No displayable text diff for this file',
     gitDiffTruncated: 'Diff truncated',
     gitLastCommit: 'Last commit',
+    gitUndoLastCommit: 'Undo last commit',
+    gitUndoingCommit: 'Undoing',
     gitModified: 'Modified',
     gitRenamed: 'Renamed',
+    gitSelectBranchToDelete: 'Select branch to delete',
     gitSwitchBranch: 'Switch branch',
     gitSwitchingBranch: 'Switching',
     gitFetch: 'Fetch',
@@ -209,10 +280,23 @@ const copy = computed(() => {
     gitPublishBranch: 'Publish branch',
     gitPush: 'Push',
     gitPushing: 'Pushing',
+    gitShowAll: 'Show all',
     gitStaged: 'Staged',
+    gitStage: 'Stage',
+    gitStaging: 'Staging',
     gitStash: 'Stash changes',
+    gitStashes: 'Stashes',
+    gitStashesUnavailable: 'Stashes unavailable',
     gitStashing: 'Stashing',
+    gitPopStash: 'Pop',
+    gitPoppingStash: 'Popping',
+    gitApplyStash: 'Apply',
+    gitApplyingStash: 'Applying',
+    gitClearStashes: 'Clear all',
+    gitClearingStashes: 'Clearing',
     gitUnstaged: 'Unstaged',
+    gitUnstage: 'Unstage',
+    gitUnstaging: 'Unstaging',
     gitUntracked: 'Untracked',
     localChecking: 'Checking',
     localChangesUnavailable: 'Changed files unavailable',
@@ -246,6 +330,23 @@ const copy = computed(() => {
     watching: 'Watching',
     watchers: 'Watchers',
     createPullRequest: 'Create Pull Request',
+    createPullRequestHeadBranch: 'Head branch',
+    createPullRequestBaseBranch: 'Base branch',
+    createPullRequestTitle: 'PR title',
+    createPullRequestDescription: 'Description',
+    createPullRequestTitlePlaceholder: 'PR title',
+    createPullRequestDescriptionPlaceholder: 'PR description (optional)',
+    confirmAmend: 'Add staged changes to the last commit and rewrite it?',
+    confirmCommit: 'Commit all current changes?',
+    confirmUndoCommit:
+      'Undo the last local commit? Changes stay staged. If the commit was pushed, local and remote will diverge.',
+    gitCancelOperation: 'Cancel operation',
+    confirmAbortRebase: 'Abort the current rebase? The branch returns to its pre-rebase state.',
+    confirmRebase:
+      'Rebase local commits onto the upstream branch? This rewrites local commit history.',
+    confirmClearStashes: 'Clear all stashes? This cannot be undone.',
+    confirmDeleteBranch: 'Delete this local branch?',
+    confirmPush: 'Push to the remote repository?',
     creatingPullRequest: 'Creating',
     cancel: 'Cancel',
     pullRequestCreated: 'Pull Request created',
@@ -268,6 +369,14 @@ const starCount = ref(props.repository.stargazers_count ?? 0);
 /** Watch State. */
 type WatchState = 'all' | 'default' | 'ignore';
 const watchState = ref<WatchState | null>(null);
+const isIssueCreateModalOpen = ref(false);
+const creatingIssue = ref(false);
+const issueCreateError = ref('');
+const isDiscussionCreateModalOpen = ref(false);
+const isRepositorySettingsOpen = ref(false);
+const canManageRepository = ref(false);
+const creatingDiscussion = ref(false);
+const discussionCreateError = ref('');
 const loadingWatch = ref(false);
 const showWatchDropdown = ref(false);
 const watchCount = ref(props.repository.watchers_count ?? 0);
@@ -531,9 +640,7 @@ const fetchReadme = async () => {
       readmeContent.value = null;
       readmePath.value = null;
       readmeError.value =
-        error instanceof Error && error.message
-          ? error.message
-          : t('repoDetail.readmeLoadFailed');
+        error instanceof Error && error.message ? error.message : t('repoDetail.readmeLoadFailed');
     }
   } finally {
     if (requestId === readmeRequestId.value) {
@@ -565,9 +672,141 @@ const fetchLicense = async () => {
   }
 };
 
+const openDiscussionCreateModal = () => {
+  discussionCreateError.value = '';
+  isDiscussionCreateModalOpen.value = true;
+};
+
+const closeDiscussionCreateModal = () => {
+  if (creatingDiscussion.value) return;
+  isDiscussionCreateModalOpen.value = false;
+  discussionCreateError.value = '';
+};
+
+const createDiscussion = async (payload: { title: string; body: string; categoryId: string }) => {
+  if (creatingDiscussion.value) return;
+
+  creatingDiscussion.value = true;
+  discussionCreateError.value = '';
+  try {
+    const response = await apiFetch<{ discussion?: { number?: number } }>(
+      `/api/repos/${props.owner}/${props.repo}/discussions`,
+      {
+        method: 'POST',
+        body: payload,
+      }
+    );
+    const number = response?.discussion?.number;
+
+    if (typeof number !== 'number') {
+      throw new Error(t('discussionDetail.createDiscussionFailed'));
+    }
+
+    isDiscussionCreateModalOpen.value = false;
+    navigateToDiscussion(props.owner, props.repo, number);
+    await router.push(
+      localePath({
+        path: '/dashboard',
+        query: {
+          tab: 'issues',
+          discussion: `${props.owner}/${props.repo}/${number}`,
+        },
+      })
+    );
+  } catch (error: unknown) {
+    discussionCreateError.value = getFetchErrorMessage(
+      error,
+      t('discussionDetail.createDiscussionFailed')
+    );
+  } finally {
+    creatingDiscussion.value = false;
+  }
+};
+
+const openIssueCreateModal = () => {
+  issueCreateError.value = '';
+  isIssueCreateModalOpen.value = true;
+};
+
+const closeIssueCreateModal = () => {
+  if (creatingIssue.value) return;
+  isIssueCreateModalOpen.value = false;
+  issueCreateError.value = '';
+};
+
+const createIssue = async (payload: { title: string; body: string }) => {
+  if (creatingIssue.value) return;
+
+  creatingIssue.value = true;
+  issueCreateError.value = '';
+  try {
+    const issue = await apiFetch<{ number?: number }>(
+      `/api/repos/${props.owner}/${props.repo}/issues`,
+      {
+        method: 'POST',
+        body: { title: payload.title, body: payload.body },
+      }
+    );
+
+    if (typeof issue?.number !== 'number') {
+      throw new Error(t('issueDetail.createIssueFailed'));
+    }
+
+    isIssueCreateModalOpen.value = false;
+    navigateToIssue(props.owner, props.repo, issue.number);
+    await router.push(
+      localePath({
+        path: '/dashboard',
+        query: {
+          tab: 'issues',
+          issue: `${props.owner}/${props.repo}/${issue.number}`,
+        },
+      })
+    );
+  } catch (error: unknown) {
+    issueCreateError.value = getFetchErrorMessage(error, t('issueDetail.createIssueFailed'));
+  } finally {
+    creatingIssue.value = false;
+  }
+};
+
+const fetchRepositoryPermissions = async () => {
+  try {
+    const permissions = await apiFetch<{ admin?: boolean }>(
+      `/api/repos/${props.owner}/${props.repo}/permissions`
+    );
+    canManageRepository.value = Boolean(permissions?.admin);
+  } catch {
+    canManageRepository.value = false;
+  }
+};
+
+const openRepositorySettings = () => {
+  isRepositorySettingsOpen.value = true;
+};
+
+const closeRepositorySettings = () => {
+  isRepositorySettingsOpen.value = false;
+};
+
+const handleRepositoryUpdated = (updated: Record<string, unknown>) => {
+  emit('repository-updated', updated);
+};
+
+const handleRepositoryDeleted = () => {
+  isRepositorySettingsOpen.value = false;
+  emit('repository-deleted');
+};
+
+const handleRepositoryTransferred = (newOwner: string) => {
+  isRepositorySettingsOpen.value = false;
+  emit('repository-transferred', newOwner);
+};
+
 onMounted(() => {
   fetchStarState();
   fetchWatchState();
+  void fetchRepositoryPermissions();
 });
 
 watch(
@@ -668,6 +907,38 @@ onUnmounted(() => {
                   </button>
                 </div>
               </div>
+
+              <button
+                v-if="canManageRepository"
+                class="repo-action-btn"
+                type="button"
+                @click="openRepositorySettings"
+              >
+                <SettingsIcon :size="14" />
+                <span>{{ t('repoSettings.open') }}</span>
+              </button>
+
+              <button
+                class="repo-action-btn"
+                type="button"
+                :disabled="creatingIssue"
+                @click="openIssueCreateModal"
+              >
+                <Loader2Icon v-if="creatingIssue" :size="14" class="spin-animation" />
+                <PlusIcon v-else :size="14" />
+                <span>{{ t('issueDetail.newIssue') }}</span>
+              </button>
+
+              <button
+                class="repo-action-btn"
+                type="button"
+                :disabled="creatingDiscussion"
+                @click="openDiscussionCreateModal"
+              >
+                <Loader2Icon v-if="creatingDiscussion" :size="14" class="spin-animation" />
+                <MessageSquareIcon v-else :size="14" />
+                <span>{{ t('discussionDetail.newDiscussion') }}</span>
+              </button>
 
               <BranchSelector
                 :branches="branches"
@@ -833,6 +1104,36 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
+
+  <IssueCreateModal
+    :is-visible="isIssueCreateModalOpen"
+    :loading="creatingIssue"
+    :error="issueCreateError"
+    @close="closeIssueCreateModal"
+    @save="createIssue"
+  />
+
+  <DiscussionCreateModal
+    :is-visible="isDiscussionCreateModalOpen"
+    :owner="owner"
+    :repo="repo"
+    :loading="creatingDiscussion"
+    :error="discussionCreateError"
+    @close="closeDiscussionCreateModal"
+    @save="createDiscussion"
+  />
+
+  <RepositorySettingsModal
+    v-if="canManageRepository"
+    :is-visible="isRepositorySettingsOpen"
+    :owner="owner"
+    :repo="repo"
+    :repository="repository"
+    @close="closeRepositorySettings"
+    @updated="handleRepositoryUpdated"
+    @deleted="handleRepositoryDeleted"
+    @transferred="handleRepositoryTransferred"
+  />
 </template>
 
 <style scoped lang="scss">

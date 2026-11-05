@@ -44,7 +44,6 @@ export function useDashboardDetails(currentRouteTab: Ref<string>) {
     navigateToDiscussion,
     navigateToIssue,
     navigateToPullRequest,
-    navigateToRepo,
     replaceWithEntry,
     currentEntry,
   } = useNavigationHistory();
@@ -206,15 +205,6 @@ export function useDashboardDetails(currentRouteTab: Ref<string>) {
     });
 
     await pushDashboardQuery(query);
-  };
-
-  const pushRepoDetailRoute = async (owner: string, repo: string, branch?: string) => {
-    await pushDashboardQuery(
-      buildDetailDashboardQuery({
-        repo: serializeRepoTarget(owner, repo),
-        branch,
-      })
-    );
   };
 
   const clearDetailRoute = async () => {
@@ -438,14 +428,6 @@ export function useDashboardDetails(currentRouteTab: Ref<string>) {
       repo: repoPath.repo,
       number: pull.number,
     });
-  };
-
-  const openRepo = async (repo: DashboardEntity) => {
-    const repoPath = parseGitHubRepoPath(repo.repository_url);
-    if (!repoPath) return;
-
-    navigateToRepo(repoPath.owner, repoPath.repo, currentRouteTab.value);
-    await pushRepoDetailRoute(repoPath.owner, repoPath.repo);
   };
 
   const loadIssueData = async (owner: string, repo: string, issueNumber: number) => {

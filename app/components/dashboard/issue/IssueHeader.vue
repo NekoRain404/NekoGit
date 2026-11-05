@@ -1,9 +1,41 @@
-<!-- Issue Header — Issue page header with title, state icon, type and metadata. -->
+<!-- Issue Header — Issue page header with title, state icon, type, metadata and edit actions. -->
 <template>
   <div class="mb-6">
-    <div class="is-flex is-align-items-center mb-4">
+    <div class="is-flex is-align-items-center is-flex-wrap-wrap mb-4">
       <component :size="24" :is="stateIcon" :style="stateColor" />
-      <h1 class="title is-3 ml-4">{{ issue?.title }}</h1>
+      <h1 class="title is-3 ml-4 is-flex-grow-1">{{ issue?.title }}</h1>
+
+      <div v-if="canEditIssue && issue" class="is-flex is-align-items-center issue-header__actions">
+        <button
+          class="button is-small is-light"
+          type="button"
+          :disabled="isUpdating"
+          @click="$emit('edit-issue')"
+        >
+          <PencilIcon :size="14" class="mr-1" />
+          <span>{{ t('issueDetail.editIssue') }}</span>
+        </button>
+        <button
+          v-if="issue.state === 'open'"
+          class="button is-small is-light"
+          type="button"
+          :disabled="isUpdating"
+          @click="$emit('close-issue')"
+        >
+          <CircleCheckIcon :size="14" class="mr-1" />
+          <span>{{ t('issueDetail.closeIssue') }}</span>
+        </button>
+        <button
+          v-else
+          class="button is-small is-light"
+          type="button"
+          :disabled="isUpdating"
+          @click="$emit('reopen-issue')"
+        >
+          <RotateCcwIcon :size="14" class="mr-1" />
+          <span>{{ t('issueDetail.reopenIssue') }}</span>
+        </button>
+      </div>
     </div>
 
     <div class="is-flex is-align-items-center my-4 is-flex-wrap-wrap">
@@ -65,7 +97,13 @@
 </template>
 
 <script setup lang="ts">
-import { CircleDotIcon, CircleMinusIcon } from 'lucide-vue-next';
+import {
+  CircleCheckIcon,
+  CircleDotIcon,
+  CircleMinusIcon,
+  PencilIcon,
+  RotateCcwIcon,
+} from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -96,6 +134,14 @@ const props = defineProps<{
   issue?: IssueHeaderIssue | null;
   repoOwner: string;
   repoName: string;
+  canEditIssue?: boolean;
+  isUpdating?: boolean;
+}>();
+
+defineEmits<{
+  (e: 'edit-issue'): void;
+  (e: 'close-issue'): void;
+  (e: 'reopen-issue'): void;
 }>();
 
 const issueAuthor = computed(() => {
@@ -121,3 +167,9 @@ const typeStyle = {
   color: 'var(--nekogit-text-strong)',
 };
 </script>
+
+<style scoped lang="scss">
+.issue-header__actions {
+  gap: 0.5rem;
+}
+</style>

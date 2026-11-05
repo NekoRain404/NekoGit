@@ -1,5 +1,7 @@
 # PR Review 体验增强 实现计划
 
+> **Status (2026-11-04):** shipped. Step checkboxes below are retained as the original implementation record; see `docs/audit/2026-11-04-code-audit.md` for follow-up fixes and known gaps.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 增强 PR Code Review 体验：提交级导航、快捷操作（approve/merge/close）、diff 上下文展开。
@@ -21,9 +23,11 @@
 ### Task 1: 服务端 API — `PATCH /api/repos/[owner]/[repo]/pulls/[pull_number]` (更新/合并 PR)
 
 **Files:**
+
 - Create: `server/api/repos/[owner]/[repo]/pulls/[pull_number].patch.ts`
 
 **Interfaces:**
+
 - Consumes: `extractPullRouteParams(event)`, `readBody<UpdatePullRequestBody>(event)`, `executeGitHubRequest(event, fn, errorMsg)`
 - Produces: `PATCH /api/repos/:owner/:repo/pulls/:pull_number` endpoint, returns updated GitHub pull request object
 
@@ -102,9 +106,11 @@ git commit -m "feat(api): add PATCH /repos/:owner/:repo/pulls/:pull_number endpo
 ### Task 2: 前端 — PRHeader 快捷操作 (approve/merge/close)
 
 **Files:**
+
 - Modify: `app/components/dashboard/pr/PRHeader.vue`
 
 **Interfaces:**
+
 - Consumes: new props `owner`, `repo`, `pullNumber`, `commitId`, `mergeable: boolean`, `canMerge: boolean`, `prState: string`
 - Emits: `approve`, `request-changes`, `merge`, `close-pr`, `reopen-pr`
 - Produces: action button bar in PRHeader
@@ -225,9 +231,11 @@ git commit -m "feat: add approve/merge/close action buttons to PRHeader"
 ### Task 3: 前端 — PRDetail 连接 PRHeader 快捷操作到 API
 
 **Files:**
+
 - Modify: `app/components/dashboard/PRDetail.vue`
 
 **Interfaces:**
+
 - Consumes: `apiFetch` from `useNekoGitApiFetch()`, `currentPullRequest`, `reviewCommitId`, `repoOwner`, `repoName`
 - Produces: Action handlers for approve/merge/close/reopen, wired to PRHeader emit events
 
@@ -240,7 +248,11 @@ const prActionLoading = shallowRef(false);
 
 const getPrIdentity = () => {
   if (!repoOwner.value || !repoName.value || !currentPullRequest.value?.number) return null;
-  return { owner: repoOwner.value, repo: repoName.value, pullNumber: currentPullRequest.value.number };
+  return {
+    owner: repoOwner.value,
+    repo: repoName.value,
+    pullNumber: currentPullRequest.value.number,
+  };
 };
 
 const handleApprove = async () => {
@@ -286,7 +298,10 @@ const handleMerge = async () => {
       `/api/repos/${identity.owner}/${identity.repo}/pulls/${identity.pullNumber}`,
       { method: 'PATCH', body: { merge: true, merge_method: 'squash' } }
     );
-    currentPullRequest.value = { ...currentPullRequest.value, ...(result as Record<string, unknown>) };
+    currentPullRequest.value = {
+      ...currentPullRequest.value,
+      ...(result as Record<string, unknown>),
+    };
   } catch (err: unknown) {
     detailError.value = getFetchErrorMessage(err, 'Failed to merge pull request.');
   } finally {
@@ -303,7 +318,10 @@ const handleClosePr = async () => {
       `/api/repos/${identity.owner}/${identity.repo}/pulls/${identity.pullNumber}`,
       { method: 'PATCH', body: { state: 'closed' } }
     );
-    currentPullRequest.value = { ...currentPullRequest.value, ...(result as Record<string, unknown>) };
+    currentPullRequest.value = {
+      ...currentPullRequest.value,
+      ...(result as Record<string, unknown>),
+    };
   } catch (err: unknown) {
     detailError.value = getFetchErrorMessage(err, 'Failed to close pull request.');
   } finally {
@@ -320,7 +338,10 @@ const handleReopenPr = async () => {
       `/api/repos/${identity.owner}/${identity.repo}/pulls/${identity.pullNumber}`,
       { method: 'PATCH', body: { state: 'open' } }
     );
-    currentPullRequest.value = { ...currentPullRequest.value, ...(result as Record<string, unknown>) };
+    currentPullRequest.value = {
+      ...currentPullRequest.value,
+      ...(result as Record<string, unknown>),
+    };
   } catch (err: unknown) {
     detailError.value = getFetchErrorMessage(err, 'Failed to reopen pull request.');
   } finally {
@@ -368,11 +389,13 @@ git commit -m "feat: wire PR header action buttons to API calls"
 ### Task 4: 前端 — PRReviewWorkspace 提交级导航
 
 **Files:**
+
 - Modify: `app/composables/usePRReview.ts` (add `commitSha` parameter to `loadFiles`)
 - Create: `app/components/dashboard/pr/PRReviewCommitSelector.vue` (new component)
 - Modify: `app/components/dashboard/pr/PRReviewWorkspace.vue` (add commit selector to header)
 
 **Interfaces:**
+
 - Consumes: `usePRReview` extended with `commitSha` parameter; timeline API for commits list
 - Produces: Commit selector dropdown in workspace header
 
@@ -478,8 +501,8 @@ const emit = defineEmits<{
 
 const isOpen = shallowRef(false);
 
-const selectedCommit = computed(() =>
-  props.commits.find((c) => c.sha === props.selectedSha) ?? props.commits[0] ?? null
+const selectedCommit = computed(
+  () => props.commits.find((c) => c.sha === props.selectedSha) ?? props.commits[0] ?? null
 );
 
 const handleSelect = (sha: string) => {
@@ -489,9 +512,12 @@ const handleSelect = (sha: string) => {
   }
 };
 
-watch(() => props.selectedSha, () => {
-  isOpen.value = false;
-});
+watch(
+  () => props.selectedSha,
+  () => {
+    isOpen.value = false;
+  }
+);
 </script>
 
 <template>
@@ -672,7 +698,13 @@ const props = defineProps<{
   pullNumber: number;
   commitId: string;
   title?: string;
-  commits?: Array<{ sha: string; shortSha: string; message: string; authorName: string; date: string }>;
+  commits?: Array<{
+    sha: string;
+    shortSha: string;
+    message: string;
+    authorName: string;
+    date: string;
+  }>;
   commitsLoading?: boolean;
 }>();
 ```
@@ -686,9 +718,12 @@ const selectedCommitSha = shallowRef(props.commitId);
 Add the watcher to sync when `commitId` prop changes:
 
 ```typescript
-watch(() => props.commitId, (newCommitId) => {
-  selectedCommitSha.value = newCommitId;
-});
+watch(
+  () => props.commitId,
+  (newCommitId) => {
+    selectedCommitSha.value = newCommitId;
+  }
+);
 ```
 
 Add the `PRReviewCommitSelector` to the workspace header, after the identity block and before the summary pills:
@@ -725,7 +760,8 @@ const review = usePRReview({
   repo: () => props.repo,
   pullNumber: () => props.pullNumber,
   commitId: () => props.commitId,
-  commitSha: () => selectedCommitSha.value !== props.commitId ? selectedCommitSha.value : undefined,
+  commitSha: () =>
+    selectedCommitSha.value !== props.commitId ? selectedCommitSha.value : undefined,
   messages: {
     loadFailed: t('prReview.loadFailed'),
     submitFailed: t('prReview.submitFailed'),
@@ -747,7 +783,9 @@ import PRReviewCommitSelector from '~/components/dashboard/pr/PRReviewCommitSele
 In `PRDetail.vue`, add state for commits and pass them to `PRReviewWorkspace`:
 
 ```typescript
-const reviewCommits = shallowRef<Array<{ sha: string; shortSha: string; message: string; authorName: string; date: string }>>([]);
+const reviewCommits = shallowRef<
+  Array<{ sha: string; shortSha: string; message: string; authorName: string; date: string }>
+>([]);
 const reviewCommitsLoading = shallowRef(false);
 
 const loadReviewCommits = async () => {
@@ -849,10 +887,12 @@ git commit -m "feat: add commit-level navigation in PR review workspace"
 ### Task 5: 前端 — Diff 上下文展开
 
 **Files:**
+
 - Modify: `app/components/dashboard/pr/PRReviewDiffViewer.vue` (add expand buttons to hunk headers)
 - Modify: `app/components/dashboard/pr/PRReviewVirtualDiffRows.vue` (handle expanded context rows)
 
 **Interfaces:**
+
 - Consumes: `PRReviewDiffRow` with expanded context rows injected before/after hunk header
 - Produces: Expand buttons in each hunk header line
 
@@ -1031,6 +1071,7 @@ git commit -m "feat: add diff context expand/collapse buttons in hunk headers"
 ### Task 6: i18n — 更新国际化文案
 
 **Files:**
+
 - Modify: `i18n/locales/en.json`
 - Modify: `i18n/locales/zh-cn.json`
 

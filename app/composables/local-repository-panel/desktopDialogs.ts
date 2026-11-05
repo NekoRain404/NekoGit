@@ -27,3 +27,14 @@ export const chooseCloneDestinationDirectory = async (repositoryFullName: string
     canCreateDirectories: true,
   });
 };
+
+/** Open a native directory picker for choosing an existing local clone. */
+export const chooseExistingLocalRepositoryDirectory = async (repositoryFullName: string) => {
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  return open({
+    title: `Use existing clone for ${repositoryFullName}`,
+    directory: true,
+    multiple: false,
+    canCreateDirectories: false,
+  });
+};

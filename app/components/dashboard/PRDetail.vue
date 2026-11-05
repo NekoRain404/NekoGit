@@ -31,6 +31,9 @@
           @merge="handleMerge"
           @close-pr="handleClosePr"
           @reopen-pr="handleReopenPr"
+          @edit-pr="openPrEditModal"
+          @convert-to-draft="handleConvertToDraft"
+          @mark-ready="handleMarkReady"
         />
 
         <hr />
@@ -44,12 +47,19 @@
             :pull-number="currentPullRequest?.number || 0"
             :has-next-page="hasNextTimelinePage"
             :loading-more="loadingMoreTimeline"
+            :can-dismiss-review="canMerge"
+            :dismissing-review-id="dismissingReviewId"
+            :review-dismiss-result="reviewDismissResult"
             :resolving-review-thread-id="resolvingReviewThreadId"
+            :replying-review-thread-id="replyingReviewThreadId"
+            :review-thread-reply-result="reviewThreadReplyResult"
             @switch-issue="switchToIssue"
             @switch-pull-request="switchToPullRequest"
             @comment-created="addTimelineEvent"
             @load-more="loadMoreTimeline"
             @toggle-review-thread="toggleReviewThreadResolved"
+            @reply-to-review-thread="handleReplyToReviewThread"
+            @dismiss-review="handleDismissReview"
           />
         </div>
       </div>
@@ -94,6 +104,16 @@
             :pull-number="currentPullRequest?.number || 0"
           />
 
+          <PREditModal
+            :visible="isPrEditModalOpen"
+            :title="currentPullRequest?.title"
+            :body="currentPullRequest?.body"
+            :saving="savingPrEdit"
+            :error="prEditError"
+            @close="closePrEditModal"
+            @save="handleSavePrEdit"
+          />
+
           <PRReviewerRequestModal
             :is-visible="isReviewerPickerOpen"
             :candidates="reviewerCandidates"
@@ -131,7 +151,9 @@
               >
                 <Loader2Icon v-if="checkoutPRLoading" :size="14" class="spin-animation" />
                 <GitBranchIcon v-else :size="14" />
-                <span>{{ checkoutPRLoading ? t('prReview.checkingOut') : t('prReview.checkoutLocally') }}</span>
+                <span>{{
+                  checkoutPRLoading ? t('prReview.checkingOut') : t('prReview.checkoutLocally')
+                }}</span>
               </button>
               <p v-if="checkoutPRError" class="sidebar-card__error mt-2">
                 {{ checkoutPRError }}
@@ -146,13 +168,14 @@
 
 <script setup lang="ts">
 import { EyeIcon, GitBranchIcon, Loader2Icon } from 'lucide-vue-next';
-import { computed, ref, shallowRef, watch } from 'vue';
+import { computed, onMounted, ref, shallowRef, watch } from 'vue';
 
 import PRActions from '~/components/dashboard/pr/PRActions.vue';
+import PRChecksPanel from '~/components/dashboard/pr/PRChecksPanel.vue';
+import PREditModal from '~/components/dashboard/pr/PREditModal.vue';
 import PRHeader from '~/components/dashboard/pr/PRHeader.vue';
 import PRLabels from '~/components/dashboard/pr/PRLabels.vue';
 import PRReviewerRequestModal from '~/components/dashboard/pr/PRReviewerRequestModal.vue';
-import PRChecksPanel from '~/components/dashboard/pr/PRChecksPanel.vue';
 import PRReviewWorkspace from '~/components/dashboard/pr/PRReviewWorkspace.vue';
 import PRTimelineEvents from '~/components/dashboard/pr/PRTimelineEvents.vue';
 import { useDesktopRuntime } from '~/composables/useDesktopRuntime';
@@ -172,6 +195,22 @@ const props = defineProps<{
   pullRequest: any;
   reviewActive?: boolean;
 }>();
+
+type PullMergeMethod = 'merge' | 'squash' | 'rebase';
+
+/** Result of a review thread reply submission. */
+interface ReviewThreadReplyResult {
+  threadId: string;
+  success: boolean;
+  error?: string;
+}
+
+/** Result of a review dismissal submission. */
+interface ReviewDismissResult {
+  reviewId: string;
+  success: boolean;
+  error?: string;
+}
 
 /** Pull Request Detail Label. */
 interface PullRequestDetailLabel {
@@ -208,14 +247,23 @@ const currentTimelinePage = ref(1);
 const hasNextTimelinePage = ref(false);
 const loadingMoreTimeline = ref(false);
 const isReviewWindowOpen = shallowRef(false);
-const reviewCommits = shallowRef<Array<{ sha: string; shortSha: string; message: string; authorName: string; date: string }>>([]);
+const reviewCommits = shallowRef<
+  Array<{ sha: string; shortSha: string; message: string; authorName: string; date: string }>
+>([]);
 const reviewCommitsLoading = shallowRef(false);
 const isReviewerPickerOpen = shallowRef(false);
+const isPrEditModalOpen = shallowRef(false);
+const savingPrEdit = shallowRef(false);
+const prEditError = shallowRef('');
 const loadingReviewerCandidates = shallowRef(false);
 const submittingReviewerRequest = shallowRef(false);
 const reviewerRequestsAvailable = shallowRef<boolean | null>(null);
 const reviewerPickerError = shallowRef('');
 const resolvingReviewThreadId = shallowRef<string | null>(null);
+const replyingReviewThreadId = shallowRef<string | null>(null);
+const reviewThreadReplyResult = shallowRef<ReviewThreadReplyResult | null>(null);
+const dismissingReviewId = shallowRef<string | null>(null);
+const reviewDismissResult = shallowRef<ReviewDismissResult | null>(null);
 const reviewerCandidates = ref<PRReviewerCandidate[]>([]);
 const reviewerCandidateWarnings = ref<PRReviewerCandidateWarning[]>([]);
 const { t } = useI18n();
@@ -225,11 +273,25 @@ const { fetchReviewerSummary, fetchReviewerCandidates, requestReviewers, removeR
 
 const {
   available: desktopAvailable,
+  loadRuntimeInfo,
   checkoutRemoteLocalRepositoryBranch,
   getLocalRepositoryStatus,
 } = useDesktopRuntime();
 const checkoutPRLoading = shallowRef(false);
 const checkoutPRError = shallowRef('');
+
+onMounted(() => {
+  void loadRuntimeInfo();
+});
+
+/** Confirms a destructive action; SSR never prompts and proceeds. */
+const confirmDestructiveAction = (message: string) => {
+  if (!import.meta.client) {
+    return true;
+  }
+
+  return window.confirm(message);
+};
 
 const { isScrolling: isSidebarScrolling, onScroll: onSidebarScroll } = useAutoHideScrollState();
 
@@ -345,21 +407,74 @@ const handleRequestChanges = async () => {
   }
 };
 
-const handleMerge = async () => {
-  if (!repoInfo.value || !currentPullRequest.value?.number) return;
+const openPrEditModal = () => {
+  prEditError.value = '';
+  isPrEditModalOpen.value = true;
+};
+
+const closePrEditModal = () => {
+  if (savingPrEdit.value) return;
+  isPrEditModalOpen.value = false;
+  prEditError.value = '';
+};
+
+const handleSavePrEdit = async (payload: { title: string; body: string }) => {
+  if (!repoInfo.value || !currentPullRequest.value?.number || savingPrEdit.value) return;
+
+  savingPrEdit.value = true;
+  prEditError.value = '';
   try {
     const { owner, repo } = repoInfo.value;
     const data = await apiFetch<Record<string, unknown>>(
       `/api/repos/${owner}/${repo}/pulls/${currentPullRequest.value.number}`,
       {
         method: 'PATCH',
-        body: { merge: true, merge_method: 'merge' },
+        body: { title: payload.title, body: payload.body },
       }
     );
     if (data) {
       currentPullRequest.value = { ...currentPullRequest.value, ...data };
-      await fetchTimeline();
     }
+    isPrEditModalOpen.value = false;
+  } catch (error) {
+    prEditError.value = getFetchErrorMessage(error, 'Failed to update pull request.');
+  } finally {
+    savingPrEdit.value = false;
+  }
+};
+
+const handleMerge = async (method: PullMergeMethod = 'merge') => {
+  if (!repoInfo.value || !currentPullRequest.value?.number) return;
+  if (!confirmDestructiveAction(`${t('prReview.mergePr')}?`)) return;
+  try {
+    const { owner, repo } = repoInfo.value;
+    const data = await apiFetch<{ merged?: boolean; sha?: string; message?: string }>(
+      `/api/repos/${owner}/${repo}/pulls/${currentPullRequest.value.number}`,
+      {
+        method: 'PATCH',
+        body: { merge: true, merge_method: method },
+      }
+    );
+    if (!data) {
+      return;
+    }
+
+    // The merge endpoint only returns { sha, merged, message }. Apply a local
+    // fallback first, then refetch authoritative details; if the refetch fails
+    // the fallback state below remains visible.
+    currentPullRequest.value = {
+      ...currentPullRequest.value,
+      ...data,
+      ...(data.merged
+        ? {
+            state: 'closed',
+            merged_at: currentPullRequest.value?.merged_at ?? new Date().toISOString(),
+          }
+        : {}),
+    };
+
+    await fetchPullRequestDetails();
+    await fetchTimeline();
   } catch (err) {
     detailError.value = getFetchErrorMessage(err, 'Failed to merge pull request.');
   }
@@ -367,6 +482,7 @@ const handleMerge = async () => {
 
 const handleClosePr = async () => {
   if (!repoInfo.value || !currentPullRequest.value?.number) return;
+  if (!confirmDestructiveAction(`${t('prReview.closePr')}?`)) return;
   try {
     const { owner, repo } = repoInfo.value;
     const data = await apiFetch<Record<string, unknown>>(
@@ -402,6 +518,119 @@ const handleReopenPr = async () => {
     }
   } catch (err) {
     detailError.value = getFetchErrorMessage(err, 'Failed to reopen pull request.');
+  }
+};
+
+const updatePullRequestDraft = async (draft: boolean) => {
+  if (!repoInfo.value || !currentPullRequest.value?.number) return;
+  try {
+    const { owner, repo } = repoInfo.value;
+    const data = await apiFetch<{ pullRequest?: Record<string, unknown> }>(
+      `/api/repos/${owner}/${repo}/pulls/${currentPullRequest.value.number}/draft`,
+      {
+        method: 'POST',
+        body: { draft },
+      }
+    );
+
+    currentPullRequest.value = {
+      ...currentPullRequest.value,
+      ...data?.pullRequest,
+      draft,
+    };
+
+    await fetchPullRequestDetails();
+    await fetchTimeline();
+  } catch (err) {
+    detailError.value = getFetchErrorMessage(err, t('prReview.updateDraftFailed'));
+  }
+};
+
+const handleConvertToDraft = () => {
+  void updatePullRequestDraft(true);
+};
+
+const handleMarkReady = () => {
+  void updatePullRequestDraft(false);
+};
+
+const handleReplyToReviewThread = async (payload: { threadId: string; body: string }) => {
+  if (!repoInfo.value || !currentPullRequest.value?.number || replyingReviewThreadId.value) {
+    return;
+  }
+
+  const body = payload.body.trim();
+  if (!body) return;
+
+  const { owner, repo } = repoInfo.value;
+  const pullNumber = currentPullRequest.value.number;
+  replyingReviewThreadId.value = payload.threadId;
+  reviewThreadReplyResult.value = null;
+
+  try {
+    await apiFetch(
+      `/api/repos/${owner}/${repo}/pulls/${pullNumber}/review-threads/${encodeURIComponent(payload.threadId)}/replies`,
+      {
+        method: 'POST',
+        body: { body },
+      }
+    );
+    reviewThreadReplyResult.value = { threadId: payload.threadId, success: true };
+    await fetchTimeline();
+  } catch (err) {
+    reviewThreadReplyResult.value = {
+      threadId: payload.threadId,
+      success: false,
+      error: getFetchErrorMessage(err, t('prReview.replyFailed')),
+    };
+  } finally {
+    replyingReviewThreadId.value = null;
+  }
+};
+
+const handleDismissReview = async (payload: { reviewId: string; message: string }) => {
+  if (!repoInfo.value || !currentPullRequest.value?.number || dismissingReviewId.value) {
+    return;
+  }
+
+  const reviewId = payload.reviewId.trim();
+  if (!reviewId) return;
+
+  const { owner, repo } = repoInfo.value;
+  const pullNumber = currentPullRequest.value.number;
+  const pullRequestIdentity = getPullRequestIdentity();
+  const message = payload.message.trim();
+
+  dismissingReviewId.value = reviewId;
+  reviewDismissResult.value = null;
+  detailError.value = '';
+
+  try {
+    await apiFetch(
+      `/api/repos/${owner}/${repo}/pulls/${pullNumber}/reviews/${encodeURIComponent(reviewId)}/dismissals`,
+      {
+        method: 'PUT',
+        body: message ? { message } : {},
+      }
+    );
+
+    if (pullRequestIdentity === getPullRequestIdentity()) {
+      reviewDismissResult.value = { reviewId, success: true };
+      await fetchTimeline();
+    }
+  } catch (err: unknown) {
+    console.error('Error dismissing pull request review:', err);
+    if (pullRequestIdentity === getPullRequestIdentity()) {
+      reviewDismissResult.value = {
+        reviewId,
+        success: false,
+        error: getFetchErrorMessage(err, t('prReview.dismissFailed')),
+      };
+    }
+  } finally {
+    if (pullRequestIdentity === getPullRequestIdentity()) {
+      dismissingReviewId.value = null;
+    }
   }
 };
 
@@ -713,6 +942,10 @@ const resetPullRequestScopedState = (pullRequest: any) => {
   loadingReviewerCandidates.value = false;
   submittingReviewerRequest.value = false;
   resolvingReviewThreadId.value = null;
+  replyingReviewThreadId.value = null;
+  reviewThreadReplyResult.value = null;
+  dismissingReviewId.value = null;
+  reviewDismissResult.value = null;
   reviewerRequestsAvailable.value = null;
   reviewerPickerError.value = '';
   reviewerCandidates.value = [];

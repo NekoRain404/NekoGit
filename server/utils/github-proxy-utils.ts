@@ -1,19 +1,14 @@
 ///  Utils / Github Proxy Utils - Resolves proxy settings and builds fetch implementations that route GitHub API traffic through an HTTP(S) proxy.
 import type { H3Event } from 'h3';
-import {
-  EnvHttpProxyAgent,
-  RetryAgent,
-  fetch as undiciFetch,
-  type Dispatcher,
-} from 'undici';
+import { EnvHttpProxyAgent, RetryAgent, fetch as undiciFetch, type Dispatcher } from 'undici';
 
 import { resolveEnvProxyUrl } from '../../shared/utils/proxy-url';
 import { normalizeProxyUrl } from '../../shared/utils/user-settings';
-
 import { readUserSettings, getUserSettingsLogin } from './user-settings-utils';
 
-/** Cache agents by proxy URL. */
+/** Cache agents by proxy URL (bounded to avoid unbounded memory growth). */
 const proxyAgentCache = new Map<string, Dispatcher>();
+const PROXY_AGENT_CACHE_MAX_ENTRIES = 32;
 
 /** Connect / tunnel timeouts for flaky Clash-style local proxies. */
 const PROXY_CONNECT_TIMEOUT_MS = 60_000;
@@ -47,9 +42,31 @@ export async function resolveGitHubProxyUrl(event?: H3Event): Promise<string> {
   return resolveEnvProxyUrl();
 }
 
+function destroyProxyAgent(agent: Dispatcher): void {
+  // Evicted agents may still have pooled sockets; close them gracefully and ignore
+  // errors caused by sockets that already exited.
+  void agent.close().catch(() => {});
+}
+
+function enforceProxyAgentCacheLimit(): void {
+  while (proxyAgentCache.size > PROXY_AGENT_CACHE_MAX_ENTRIES) {
+    const oldestEntry = proxyAgentCache.entries().next().value;
+    if (!oldestEntry) {
+      return;
+    }
+
+    const [oldestProxyUrl, oldestAgent] = oldestEntry;
+    proxyAgentCache.delete(oldestProxyUrl);
+    destroyProxyAgent(oldestAgent);
+  }
+}
+
 function getProxyAgent(proxyUrl: string): Dispatcher {
   const existing = proxyAgentCache.get(proxyUrl);
   if (existing) {
+    // Refresh insertion order for LRU-style eviction.
+    proxyAgentCache.delete(proxyUrl);
+    proxyAgentCache.set(proxyUrl, existing);
     return existing;
   }
 
@@ -72,6 +89,7 @@ function getProxyAgent(proxyUrl: string): Dispatcher {
   });
 
   proxyAgentCache.set(proxyUrl, agent);
+  enforceProxyAgentCacheLimit();
   return agent;
 }
 

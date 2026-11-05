@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
@@ -134,6 +135,68 @@ jobs:
       - name: Run build
         run: pnpm build
 
+      - name: Server smoke test
+        run: pnpm smoke:server
+
+      - name: Browser E2E
+        run: pnpm test:e2e
+
+  desktop-smoke:
+    name: Desktop Smoke
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.3.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev \
+            webkit2gtk-driver \
+            xvfb
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web output
+        run: taskset -c 0-3 pnpm build
+
+      - name: Build desktop client
+        run: |
+          mkdir -p .node-runtime
+          cargo build --manifest-path src-tauri/Cargo.toml --jobs 4
+
+      - name: Install tauri-driver
+        run: cargo install tauri-driver --jobs 4
+
+      - name: Run desktop smoke
+        run: dbus-run-session -- pnpm smoke:desktop
+
   rust:
     name: Rust
     runs-on: ubuntu-latest
@@ -160,6 +223,16 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
+
+      - name: Check Tauri command permissions
+        run: node scripts/check-tauri-commands.mjs
+
+      - name: Cargo fmt
+        run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
+
+      - name: Prepare Tauri resources
+        run: |
+          mkdir -p .output .node-runtime
 
       - name: Cargo test
         run: cargo test --manifest-path src-tauri/Cargo.toml

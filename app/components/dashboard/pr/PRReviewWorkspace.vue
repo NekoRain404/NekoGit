@@ -40,7 +40,13 @@ const props = defineProps<{
   pullNumber: number;
   commitId: string;
   title?: string;
-  commits?: Array<{ sha: string; shortSha: string; message: string; authorName: string; date: string }>;
+  commits?: Array<{
+    sha: string;
+    shortSha: string;
+    message: string;
+    authorName: string;
+    date: string;
+  }>;
   commitsLoading?: boolean;
 }>();
 
@@ -62,9 +68,12 @@ const {
 
 const selectedCommitSha = shallowRef(props.commitId);
 
-watch(() => props.commitId, (newCommitId) => {
-  selectedCommitSha.value = newCommitId;
-});
+watch(
+  () => props.commitId,
+  (newCommitId) => {
+    selectedCommitSha.value = newCommitId;
+  }
+);
 
 const handleCommitSelect = (sha: string) => {
   selectedCommitSha.value = sha;
@@ -75,7 +84,9 @@ const review = usePRReview({
   repo: () => props.repo,
   pullNumber: () => props.pullNumber,
   commitId: () => props.commitId,
-  commitSha: () => selectedCommitSha.value !== props.commitId ? selectedCommitSha.value : undefined,
+  commitSha: () =>
+    selectedCommitSha.value !== props.commitId ? selectedCommitSha.value : undefined,
+  submitCommitId: () => selectedCommitSha.value,
   messages: {
     loadFailed: t('prReview.loadFailed'),
     submitFailed: t('prReview.submitFailed'),

@@ -6,11 +6,14 @@ import {
   CopyIcon,
   DownloadIcon,
   FolderOpenIcon,
+  FolderSearchIcon,
+  GitMergeIcon,
   GitPullRequestArrowIcon,
   GitPullRequestIcon,
   Loader2Icon,
   RefreshCwIcon,
   TerminalIcon,
+  Undo2Icon,
   UploadIcon,
 } from 'lucide-vue-next';
 import { ref } from 'vue';
@@ -49,6 +52,21 @@ const handlePRCreated = async (pull: any) => {
       <Loader2Icon v-if="state.desktopAction.value === 'clone'" :size="14" class="spin-animation" />
       <DownloadIcon v-else :size="14" />
       <span>{{ copy.clone }}</span>
+    </button>
+
+    <button
+      v-if="
+        state.desktopLocalRepositoryStatus.value && !state.desktopLocalRepositoryStatus.value.exists
+      "
+      class="local-repo-link local-repo-panel__action"
+      :disabled="Boolean(state.desktopAction.value)"
+      @click="state.adoptDesktopLocalRepository"
+    >
+      <Loader2Icon v-if="state.desktopAction.value === 'adopt'" :size="14" class="spin-animation" />
+      <FolderSearchIcon v-else :size="14" />
+      <span>{{
+        state.desktopAction.value === 'adopt' ? copy.adoptingLocal : copy.adoptLocal
+      }}</span>
     </button>
     <button
       class="local-repo-link local-repo-panel__action local-repo-panel__action--wide"
@@ -92,6 +110,57 @@ const handlePRCreated = async (pull: any) => {
       </span>
     </button>
     <button
+      v-if="
+        state.desktopAction.value === 'clone' ||
+        state.desktopAction.value === 'fetch' ||
+        state.desktopAction.value === 'pull' ||
+        state.desktopAction.value === 'push' ||
+        state.desktopAction.value === 'rebase'
+      "
+      class="local-repo-link local-repo-panel__action local-repo-panel__action--wide"
+      type="button"
+      @click="state.cancelDesktopLocalRepositoryOperation"
+    >
+      <span>{{ copy.gitCancelOperation }}</span>
+    </button>
+    <button
+      v-if="
+        state.desktopLocalRepositoryGitStatus.value?.clean &&
+        state.desktopLocalRepositoryGitStatus.value?.upstream
+      "
+      class="local-repo-link local-repo-panel__action local-repo-panel__action--wide"
+      :disabled="Boolean(state.desktopAction.value)"
+      @click="state.rebaseDesktopLocalRepository"
+    >
+      <Loader2Icon
+        v-if="state.desktopAction.value === 'rebase'"
+        :size="14"
+        class="spin-animation"
+      />
+      <GitMergeIcon v-else :size="14" />
+      <span>
+        {{ state.desktopAction.value === 'rebase' ? copy.gitRebasing : copy.gitRebase }}
+      </span>
+    </button>
+    <button
+      v-if="state.desktopLocalRepositoryStatus.value?.exists"
+      class="local-repo-link local-repo-panel__action local-repo-panel__action--wide"
+      :disabled="Boolean(state.desktopAction.value)"
+      @click="state.abortDesktopLocalRepositoryRebase"
+    >
+      <Loader2Icon
+        v-if="state.desktopAction.value === 'abortRebase'"
+        :size="14"
+        class="spin-animation"
+      />
+      <Undo2Icon v-else :size="14" />
+      <span>
+        {{
+          state.desktopAction.value === 'abortRebase' ? copy.gitAbortingRebase : copy.gitAbortRebase
+        }}
+      </span>
+    </button>
+    <button
       class="local-repo-link local-repo-panel__action local-repo-panel__action--wide"
       :disabled="
         !state.desktopLocalRepositoryStatus.value?.exists ||
@@ -132,7 +201,10 @@ const handlePRCreated = async (pull: any) => {
       </span>
     </button>
     <template
-      v-if="state.desktopLocalRepositoryGitStatus.value?.upstream && state.desktopLocalRepositoryGitStatus.value?.clean"
+      v-if="
+        state.desktopLocalRepositoryGitStatus.value?.upstream &&
+        state.desktopLocalRepositoryGitStatus.value?.clean
+      "
     >
       <button
         v-if="!state.associatedPullRequest.value"

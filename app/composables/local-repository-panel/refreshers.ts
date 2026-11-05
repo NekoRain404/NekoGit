@@ -1,4 +1,5 @@
 /// Data refresh pipeline for the local repository panel (status, git status, branches, commits, diffs) with stale-response guards.
+import { ref } from 'vue';
 import type { ComputedRef } from 'vue';
 
 import type {
@@ -8,6 +9,7 @@ import type {
   DesktopLocalRepositoryCommitHistory,
   DesktopLocalRepositoryFileDiff,
   DesktopLocalRepositoryGitStatus,
+  DesktopLocalRepositoryStashes,
   DesktopLocalRepositoryStatus,
 } from '~/composables/useDesktopRuntime';
 import type { CurrentGitHubRepository } from '~/utils/current-github-url-utils';
@@ -33,6 +35,7 @@ type LocalRepositoryPanelRefreshCommands = {
     maxBytes?: number
   ) => Promise<DesktopLocalRepositoryFileDiff>;
   getLocalRepositoryGitStatus: (repositoryUrl: string) => Promise<DesktopLocalRepositoryGitStatus>;
+  getLocalRepositoryStashes: (repositoryUrl: string) => Promise<DesktopLocalRepositoryStashes>;
   getLocalRepositoryStatus: (repositoryUrl: string) => Promise<DesktopLocalRepositoryStatus>;
 };
 
@@ -52,6 +55,11 @@ export const useLocalRepositoryPanelRefreshers = ({
   desktopRepository,
   state,
 }: LocalRepositoryPanelRefreshersOptions) => {
+  const changedFilesLimit = ref(8);
+  const commitHistoryLimit = ref(6);
+  const changedFilesExpanded = ref(false);
+  const commitHistoryExpanded = ref(false);
+
   const {
     associatedPullRequest,
     desktopBranchesError,
@@ -69,8 +77,11 @@ export const useLocalRepositoryPanelRefreshers = ({
     desktopLocalRepositoryCommitHistory,
     desktopLocalRepositoryFileDiff,
     desktopLocalRepositoryGitStatus,
+    desktopLocalRepositoryStashes,
     desktopLocalRepositoryStatus,
     desktopSelectedChangedFilePath,
+    desktopStashesError,
+    desktopStashesLoading,
     desktopStatusError,
     desktopStatusLoading,
     prLoading,
@@ -80,6 +91,7 @@ export const useLocalRepositoryPanelRefreshers = ({
     resetDesktopLocalRepositoryCommitHistory,
     resetDesktopLocalRepositoryFileDiff,
     resetDesktopLocalRepositoryGitStatus,
+    resetDesktopLocalRepositoryStashes,
   } = state;
 
   const resetDesktopLocalRepositoryReadState = () => {
@@ -87,6 +99,7 @@ export const useLocalRepositoryPanelRefreshers = ({
     resetDesktopLocalRepositoryBranches();
     resetDesktopLocalRepositoryChangedFiles();
     resetDesktopLocalRepositoryCommitHistory();
+    resetDesktopLocalRepositoryStashes();
   };
 
   const refreshDesktopLocalRepositoryGitStatus = async () => {
@@ -182,6 +195,39 @@ export const useLocalRepositoryPanelRefreshers = ({
     }
   };
 
+  const refreshDesktopLocalRepositoryStashes = async () => {
+    const repository = desktopRepository.value;
+    if (!repository || !desktopAvailable.value || !desktopLocalRepositoryStatus.value?.exists) {
+      resetDesktopLocalRepositoryStashes();
+      return null;
+    }
+
+    const requestId = requestSerials.stashes.next();
+    desktopStashesLoading.value = true;
+    desktopStashesError.value = '';
+
+    try {
+      const stashes = await commands.getLocalRepositoryStashes(repository.cloneUrl);
+      if (!requestSerials.stashes.isCurrent(requestId)) return stashes;
+
+      desktopLocalRepositoryStashes.value = stashes;
+      return stashes;
+    } catch (error) {
+      if (requestSerials.stashes.isCurrent(requestId)) {
+        desktopLocalRepositoryStashes.value = null;
+        desktopStashesError.value = getDesktopActionErrorMessage(
+          error,
+          copy.value.gitStashesUnavailable
+        );
+      }
+      return null;
+    } finally {
+      if (requestSerials.stashes.isCurrent(requestId)) {
+        desktopStashesLoading.value = false;
+      }
+    }
+  };
+
   const previewDesktopChangedFileDiff = async (file: DesktopLocalRepositoryChangedFile) => {
     const repository = desktopRepository.value;
     if (!repository || !desktopAvailable.value || !desktopLocalRepositoryStatus.value?.exists) {
@@ -234,7 +280,10 @@ export const useLocalRepositoryPanelRefreshers = ({
     desktopChangedFilesError.value = '';
 
     try {
-      const changedFiles = await commands.getLocalRepositoryChangedFiles(repository.cloneUrl, 8);
+      const changedFiles = await commands.getLocalRepositoryChangedFiles(
+        repository.cloneUrl,
+        changedFilesLimit.value
+      );
       if (!requestSerials.changedFiles.isCurrent(requestId)) return changedFiles;
 
       desktopLocalRepositoryChangedFiles.value = changedFiles;
@@ -276,7 +325,10 @@ export const useLocalRepositoryPanelRefreshers = ({
     desktopCommitHistoryError.value = '';
 
     try {
-      const history = await commands.getLocalRepositoryCommitHistory(repository.cloneUrl, 6);
+      const history = await commands.getLocalRepositoryCommitHistory(
+        repository.cloneUrl,
+        commitHistoryLimit.value
+      );
       if (!requestSerials.commitHistory.isCurrent(requestId)) return history;
 
       desktopLocalRepositoryCommitHistory.value = history;
@@ -320,6 +372,7 @@ export const useLocalRepositoryPanelRefreshers = ({
         void refreshDesktopLocalRepositoryBranches();
         void refreshDesktopLocalRepositoryChangedFiles();
         void refreshDesktopLocalRepositoryCommitHistory();
+        void refreshDesktopLocalRepositoryStashes();
       } else {
         resetDesktopLocalRepositoryReadState();
       }
@@ -341,13 +394,40 @@ export const useLocalRepositoryPanelRefreshers = ({
     }
   };
 
+  const showAllDesktopChangedFiles = async () => {
+    if (changedFilesExpanded.value) return;
+    changedFilesExpanded.value = true;
+    changedFilesLimit.value = 100;
+    await refreshDesktopLocalRepositoryChangedFiles();
+  };
+
+  const showAllDesktopCommitHistory = async () => {
+    if (commitHistoryExpanded.value) return;
+    commitHistoryExpanded.value = true;
+    commitHistoryLimit.value = 50;
+    await refreshDesktopLocalRepositoryCommitHistory();
+  };
+
+  const resetDesktopLocalRepositoryListLimits = () => {
+    changedFilesExpanded.value = false;
+    commitHistoryExpanded.value = false;
+    changedFilesLimit.value = 8;
+    commitHistoryLimit.value = 6;
+  };
+
   return {
     previewDesktopChangedFileDiff,
+    changedFilesExpanded,
+    commitHistoryExpanded,
+    showAllDesktopChangedFiles,
+    showAllDesktopCommitHistory,
+    resetDesktopLocalRepositoryListLimits,
     refreshAssociatedPullRequest,
     refreshDesktopLocalRepositoryBranches,
     refreshDesktopLocalRepositoryChangedFiles,
     refreshDesktopLocalRepositoryCommitHistory,
     refreshDesktopLocalRepositoryGitStatus,
+    refreshDesktopLocalRepositoryStashes,
     refreshDesktopLocalRepositoryReadState: resetDesktopLocalRepositoryReadState,
     refreshDesktopLocalRepositoryStatus,
   };

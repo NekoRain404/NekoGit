@@ -492,6 +492,97 @@ export async function setPullRequestReviewThreadResolved(
   );
 }
 
+const ADD_REVIEW_THREAD_REPLY_MUTATION = `
+  mutation AddPullRequestReviewThreadReply($threadId: ID!, $body: String!) {
+    addPullRequestReviewThreadReply(
+      input: { pullRequestReviewThreadId: $threadId, body: $body }
+    ) {
+      comment {
+        id
+        body
+        createdAt
+        url
+        author {
+          login
+          avatarUrl
+          url
+        }
+      }
+    }
+  }
+`;
+
+interface ReviewThreadReplyGraphQLResponse {
+  addPullRequestReviewThreadReply?: {
+    comment?: {
+      id?: string | null;
+      body?: string | null;
+      createdAt?: string | null;
+      url?: string | null;
+      author?: {
+        login?: string | null;
+        avatarUrl?: string | null;
+        url?: string | null;
+      } | null;
+    } | null;
+  } | null;
+}
+
+/** A normalized reply returned after adding a PR review thread reply. */
+export interface ReviewThreadReplyResult {
+  id: string;
+  body: string;
+  createdAt?: string;
+  url?: string;
+  author?: {
+    login?: string;
+    avatarUrl?: string;
+    url?: string;
+  };
+}
+
+/** Add a reply to an existing PR review thread via GraphQL. */
+export async function addPullRequestReviewThreadReply(
+  octokit: GitHubClient,
+  threadId: string,
+  body: string
+): Promise<ReviewThreadReplyResult> {
+  const trimmedBody = body.trim();
+  if (!trimmedBody) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Reply body is required',
+    });
+  }
+
+  const response = await octokit.graphql<ReviewThreadReplyGraphQLResponse>(
+    ADD_REVIEW_THREAD_REPLY_MUTATION,
+    { threadId, body: trimmedBody }
+  );
+  const comment = response.addPullRequestReviewThreadReply?.comment;
+
+  if (!comment?.id) {
+    throw createError({
+      statusCode: 502,
+      statusMessage: 'GitHub did not return the created review reply',
+    });
+  }
+
+  return {
+    id: comment.id,
+    body: comment.body ?? '',
+    createdAt: comment.createdAt ?? undefined,
+    url: comment.url ?? undefined,
+    author: comment.author
+      ? {
+          login: comment.author.login ?? undefined,
+          avatarUrl: comment.author.avatarUrl ?? undefined,
+          url: comment.author.url ?? undefined,
+        }
+      : undefined,
+  };
+}
+
 /** Sort a timeline array by creation date, using event-type-specific tiebreakers for equal timestamps. */
 export function sortTimelineItems<T extends SortableTimelineItem>(timeline: T[]): T[] {
   return [...timeline].sort((left, right) => {

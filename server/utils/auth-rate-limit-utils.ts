@@ -2,10 +2,7 @@
 import type { H3Event } from 'h3';
 import { getHeader } from 'h3';
 
-import {
-  isAuthTrustProxyEnabled,
-  resolveAuthRateLimitIp,
-} from '../../shared/utils/auth-client-ip';
+import { isAuthTrustProxyEnabled, resolveAuthRateLimitIp } from '../../shared/utils/auth-client-ip';
 import {
   checkAuthRateLimit,
   clearAuthRateLimit,
@@ -17,6 +14,42 @@ import {
 /** Process-local stores for personal unlock and PAT login. */
 const unlockRateLimitStore: AuthRateLimitStore = new Map();
 const patRateLimitStore: AuthRateLimitStore = new Map();
+
+/** Upper bound for each process-local store to prevent memory exhaustion. */
+const AUTH_RATE_LIMIT_STORE_MAX_ENTRIES = 10_000;
+
+/**
+ * Keep a store bounded without changing rate-limit semantics for retained keys.
+ * Expired buckets are pruned first; if the store is still full, the oldest
+ * insertion-order entries are evicted. Evicted clients simply start a fresh
+ * window on their next attempt.
+ */
+function ensureAuthRateLimitStoreCapacity(
+  store: AuthRateLimitStore,
+  key: string,
+  nowMs = Date.now()
+): void {
+  if (store.has(key) || store.size < AUTH_RATE_LIMIT_STORE_MAX_ENTRIES) {
+    return;
+  }
+
+  for (const [storeKey, bucket] of store) {
+    const windowExpired =
+      bucket.failures === 0 ||
+      nowMs - bucket.windowStart > DEFAULT_AUTH_RATE_LIMIT_OPTIONS.windowMs;
+    if (bucket.lockedUntil <= nowMs && windowExpired) {
+      store.delete(storeKey);
+    }
+  }
+
+  while (store.size >= AUTH_RATE_LIMIT_STORE_MAX_ENTRIES) {
+    const oldestKey = store.keys().next().value;
+    if (oldestKey === undefined) {
+      return;
+    }
+    store.delete(oldestKey);
+  }
+}
 
 /** Socket remote address for the connection (not spoofable via XFF). */
 function socketRemoteAddress(event: H3Event): string | null {
@@ -49,10 +82,13 @@ function throwRateLimited(retryAfterMs: number): never {
 
 /** Reject the request if this client is currently locked out for unlock attempts. */
 export function assertUnlockAttemptAllowed(event: H3Event): void {
+  const key = resolveAuthClientKey(event, 'unlock');
+  const nowMs = Date.now();
+  ensureAuthRateLimitStoreCapacity(unlockRateLimitStore, key, nowMs);
   const decision = checkAuthRateLimit(
     unlockRateLimitStore,
-    resolveAuthClientKey(event, 'unlock'),
-    Date.now(),
+    key,
+    nowMs,
     DEFAULT_AUTH_RATE_LIMIT_OPTIONS
   );
   if (!decision.allowed) {
@@ -62,12 +98,10 @@ export function assertUnlockAttemptAllowed(event: H3Event): void {
 
 /** Record a failed personal-mode unlock and lock out after the threshold. */
 export function recordUnlockFailure(event: H3Event): void {
-  recordAuthRateLimitFailure(
-    unlockRateLimitStore,
-    resolveAuthClientKey(event, 'unlock'),
-    Date.now(),
-    DEFAULT_AUTH_RATE_LIMIT_OPTIONS
-  );
+  const key = resolveAuthClientKey(event, 'unlock');
+  const nowMs = Date.now();
+  ensureAuthRateLimitStoreCapacity(unlockRateLimitStore, key, nowMs);
+  recordAuthRateLimitFailure(unlockRateLimitStore, key, nowMs, DEFAULT_AUTH_RATE_LIMIT_OPTIONS);
 }
 
 /** Clear unlock failures after a successful password or remember-device unlock. */
@@ -77,10 +111,13 @@ export function clearUnlockFailures(event: H3Event): void {
 
 /** Reject the request if this client is locked out for PAT login attempts. */
 export function assertPatAttemptAllowed(event: H3Event): void {
+  const key = resolveAuthClientKey(event, 'pat');
+  const nowMs = Date.now();
+  ensureAuthRateLimitStoreCapacity(patRateLimitStore, key, nowMs);
   const decision = checkAuthRateLimit(
     patRateLimitStore,
-    resolveAuthClientKey(event, 'pat'),
-    Date.now(),
+    key,
+    nowMs,
     DEFAULT_AUTH_RATE_LIMIT_OPTIONS
   );
   if (!decision.allowed) {
@@ -90,12 +127,10 @@ export function assertPatAttemptAllowed(event: H3Event): void {
 
 /** Record a failed PAT login attempt. */
 export function recordPatFailure(event: H3Event): void {
-  recordAuthRateLimitFailure(
-    patRateLimitStore,
-    resolveAuthClientKey(event, 'pat'),
-    Date.now(),
-    DEFAULT_AUTH_RATE_LIMIT_OPTIONS
-  );
+  const key = resolveAuthClientKey(event, 'pat');
+  const nowMs = Date.now();
+  ensureAuthRateLimitStoreCapacity(patRateLimitStore, key, nowMs);
+  recordAuthRateLimitFailure(patRateLimitStore, key, nowMs, DEFAULT_AUTH_RATE_LIMIT_OPTIONS);
 }
 
 /** Clear PAT failures after a successful token login. */

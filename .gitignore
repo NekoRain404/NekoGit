@@ -48,3 +48,7 @@ reasonix.toml
 
 /.sisyphus/
 /.omc/
+
+# Playwright
+test-results/
+playwright-report/

@@ -1,7 +1,10 @@
 /// Unit tests for PR pull update action normalization.
 import { describe, expect, test } from 'vitest';
 
-import { normalizePullUpdateAction } from '../server/utils/pr-actions-utils';
+import {
+  normalizePullDraftAction,
+  normalizePullUpdateAction,
+} from '../server/utils/pr-actions-utils';
 
 function captureError(callback: () => unknown) {
   try {
@@ -17,7 +20,7 @@ describe('PR pull update action normalization', () => {
     for (const body of [undefined, null, {}]) {
       expect(captureError(() => normalizePullUpdateAction(body))).toMatchObject({
         statusCode: 400,
-        statusMessage: 'state or merge is required',
+        statusMessage: 'state, title, body, or merge is required',
       });
     }
   });
@@ -37,6 +40,31 @@ describe('PR pull update action normalization', () => {
     });
     expect(captureError(() => normalizePullUpdateAction({ state: '' }))).toMatchObject({
       statusCode: 400,
+    });
+  });
+
+  test('normalizes title and body edits', () => {
+    expect(normalizePullUpdateAction({ title: '  New title  ' })).toEqual({
+      type: 'update',
+      title: 'New title',
+    });
+    expect(normalizePullUpdateAction({ body: '' })).toEqual({ type: 'update', body: '' });
+    expect(
+      normalizePullUpdateAction({ title: 'New title', body: 'New body', state: 'open' })
+    ).toEqual({ type: 'update', title: 'New title', body: 'New body', state: 'open' });
+  });
+
+  test('rejects invalid title and body values', () => {
+    expect(captureError(() => normalizePullUpdateAction({ title: '   ' }))).toMatchObject({
+      statusCode: 400,
+      statusMessage: 'title must be a non-empty string',
+    });
+    expect(captureError(() => normalizePullUpdateAction({ title: 42 }))).toMatchObject({
+      statusCode: 400,
+    });
+    expect(captureError(() => normalizePullUpdateAction({ body: 42 }))).toMatchObject({
+      statusCode: 400,
+      statusMessage: 'body must be a string',
     });
   });
 
@@ -86,5 +114,21 @@ describe('PR pull update action normalization', () => {
       type: 'merge',
       mergeMethod: 'merge',
     });
+  });
+});
+
+describe('PR draft transition normalization', () => {
+  test('normalizes draft booleans', () => {
+    expect(normalizePullDraftAction({ draft: true })).toBe(true);
+    expect(normalizePullDraftAction({ draft: false })).toBe(false);
+  });
+
+  test('rejects missing and non-boolean draft values', () => {
+    for (const body of [undefined, null, {}, { draft: 'true' }, { draft: 1 }, []]) {
+      expect(captureError(() => normalizePullDraftAction(body))).toMatchObject({
+        statusCode: 400,
+        statusMessage: 'draft must be a boolean',
+      });
+    }
   });
 });

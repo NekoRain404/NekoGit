@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-amend-local-repository-commit"
+description = "Enables the desktop_amend_local_repository_commit command without any pre-configured scope."
+commands.allow = ["desktop_amend_local_repository_commit"]
+
+[[permission]]
+identifier = "deny-desktop-amend-local-repository-commit"
+description = "Denies the desktop_amend_local_repository_commit command without any pre-configured scope."
+commands.deny = ["desktop_amend_local_repository_commit"]

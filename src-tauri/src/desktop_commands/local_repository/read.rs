@@ -6,10 +6,11 @@ use crate::{
     desktop_runtime::DesktopRuntime,
     local_repository::{
         local_repository_branches, local_repository_changed_files, local_repository_commit_history,
-        local_repository_file_diff, local_repository_git_status, local_repository_status,
-        DesktopLocalRepositoryBranches, DesktopLocalRepositoryChangedFiles,
-        DesktopLocalRepositoryCommitHistory, DesktopLocalRepositoryFileDiff,
-        DesktopLocalRepositoryGitStatus, DesktopLocalRepositoryStatus,
+        local_repository_file_diff, local_repository_git_status, local_repository_stashes,
+        local_repository_status, DesktopLocalRepositoryBranches,
+        DesktopLocalRepositoryChangedFiles, DesktopLocalRepositoryCommitHistory,
+        DesktopLocalRepositoryFileDiff, DesktopLocalRepositoryGitStatus,
+        DesktopLocalRepositoryStashes, DesktopLocalRepositoryStatus,
     },
 };
 
@@ -101,4 +102,18 @@ pub(crate) async fn desktop_local_repository_file_diff(
     })
     .await
     .map_err(|error| format!("failed to run git diff task: {error}"))?
+}
+
+#[tauri::command]
+/// Lists stashes stored in the repository.
+pub(crate) async fn desktop_local_repository_stashes(
+    runtime: State<'_, DesktopRuntime>,
+    repository_url: String,
+) -> Result<DesktopLocalRepositoryStashes, String> {
+    let app_data_dir = runtime.app_data_dir.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        local_repository_stashes(&app_data_dir, &repository_url)
+    })
+    .await
+    .map_err(|error| format!("failed to run git stash list task: {error}"))?
 }

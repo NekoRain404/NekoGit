@@ -11,12 +11,42 @@ import type {
   DesktopLocalRepositoryStatus,
 } from './types';
 
+/** A single stash entry as reported by `git stash list`. */
+export interface DesktopLocalRepositoryStash {
+  index: number;
+  reference: string;
+  sha: string;
+  message: string;
+  date: string;
+  committedAt: number;
+}
+
+/** Stash entries stored in a local repository. */
+export interface DesktopLocalRepositoryStashes {
+  repositoryUrl: string;
+  repositoryPath: string;
+  stashes: DesktopLocalRepositoryStash[];
+}
+
 /** Clone a remote repository into a local directory. */
 export const cloneRepository = async (repositoryUrl: string, destinationDirectory: string) => {
   return invokeDesktopCommand<DesktopCloneRepositoryResult>('desktop_clone_repository', {
     repositoryUrl,
     destinationDirectory,
   });
+};
+
+/** Associate an existing local Git clone with the current GitHub repository. */
+export const rememberLocalRepository = async (repositoryUrl: string, directory: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryStatus>('desktop_remember_local_repository', {
+    repositoryUrl,
+    directory,
+  });
+};
+
+/** Request cancellation of the currently running local Git network operation. */
+export const cancelLocalRepositoryOperation = async () => {
+  await invokeDesktopCommand<void>('desktop_cancel_local_repository_operation');
 };
 
 /** Check whether a local repository exists on disk. */
@@ -41,6 +71,67 @@ export const getLocalRepositoryBranches = async (repositoryUrl: string) => {
   return invokeDesktopCommand<DesktopLocalRepositoryBranches>('desktop_local_repository_branches', {
     repositoryUrl,
   });
+};
+
+/** List stashes stored in a local repository. */
+export const getLocalRepositoryStashes = async (repositoryUrl: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryStashes>('desktop_local_repository_stashes', {
+    repositoryUrl,
+  });
+};
+
+/** Apply and remove a stash entry by index. */
+export const popLocalRepositoryStash = async (repositoryUrl: string, index: number) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_pop_local_repository_stash',
+    {
+      repositoryUrl,
+      index,
+    }
+  );
+};
+
+/** Apply a stash entry by index without removing it. */
+export const applyLocalRepositoryStash = async (repositoryUrl: string, index: number) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_apply_local_repository_stash',
+    {
+      repositoryUrl,
+      index,
+    }
+  );
+};
+
+/** Clear every stash entry in a local repository. */
+export const clearLocalRepositoryStashes = async (repositoryUrl: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_clear_local_repository_stashes',
+    {
+      repositoryUrl,
+    }
+  );
+};
+
+/** Stage a single file or directory in a local repository. */
+export const stageLocalRepositoryPath = async (repositoryUrl: string, relativePath: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_stage_local_repository_path',
+    {
+      repositoryUrl,
+      relativePath,
+    }
+  );
+};
+
+/** Unstage a single file or directory in a local repository. */
+export const unstageLocalRepositoryPath = async (repositoryUrl: string, relativePath: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_unstage_local_repository_path',
+    {
+      repositoryUrl,
+      relativePath,
+    }
+  );
 };
 
 /** Fetch recent commit history for a repository. */
@@ -104,6 +195,27 @@ export const pushLocalRepository = async (repositoryUrl: string) => {
   });
 };
 
+/** Rebase the current branch onto a validated target, or onto its upstream when omitted. */
+export const rebaseLocalRepository = async (
+  repositoryUrl: string,
+  targetBranch: string | null = null
+) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>('desktop_rebase_local_repository', {
+    repositoryUrl,
+    targetBranch,
+  });
+};
+
+/** Abort an in-progress rebase in a local repository. */
+export const abortLocalRepositoryRebase = async (repositoryUrl: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_abort_local_repository_rebase',
+    {
+      repositoryUrl,
+    }
+  );
+};
+
 /** Switch the checked-out branch of a local repository. */
 export const switchLocalRepositoryBranch = async (repositoryUrl: string, branchName: string) => {
   return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
@@ -119,6 +231,17 @@ export const switchLocalRepositoryBranch = async (repositoryUrl: string, branchN
 export const createLocalRepositoryBranch = async (repositoryUrl: string, branchName: string) => {
   return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
     'desktop_create_local_repository_branch',
+    {
+      repositoryUrl,
+      branchName,
+    }
+  );
+};
+
+/** Delete a local branch using Git's safe delete mode. */
+export const deleteLocalRepositoryBranch = async (repositoryUrl: string, branchName: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_delete_local_repository_branch',
     {
       repositoryUrl,
       branchName,
@@ -150,6 +273,30 @@ export const commitLocalRepositoryChanges = async (
     {
       repositoryUrl,
       commitMessage,
+    }
+  );
+};
+
+/** Amend the current HEAD commit with staged changes, optionally replacing its message. */
+export const amendLocalRepositoryCommit = async (
+  repositoryUrl: string,
+  commitMessage?: string | null
+) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_amend_local_repository_commit',
+    {
+      repositoryUrl,
+      commitMessage: commitMessage?.trim() || null,
+    }
+  );
+};
+
+/** Undo the last local commit while keeping its changes staged. */
+export const undoLocalRepositoryCommit = async (repositoryUrl: string) => {
+  return invokeDesktopCommand<DesktopLocalRepositoryGitStatus>(
+    'desktop_undo_local_repository_commit',
+    {
+      repositoryUrl,
     }
   );
 };

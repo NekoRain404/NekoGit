@@ -1,6 +1,11 @@
 /// ofetch wrapper that automatically attaches the CSRF token to non-safe HTTP requests.
 import type { FetchOptions } from 'ofetch';
 
+import {
+  getFetchResponseStatus,
+  handleUnauthorizedApiResponse,
+} from '#shared/utils/api-unauthorized';
+
 const CSRF_COOKIE_NAME = 'nekogit_csrf';
 const CSRF_HEADER_NAME = 'X-CSRF-Token';
 
@@ -16,6 +21,7 @@ type NekoGitApiFetch = <T = unknown>(request: string, options?: FetchOptions<'js
 /** Create an ofetch wrapper that automatically attaches the CSRF token to unsafe requests. */
 export function useNekoGitApiFetch() {
   const requestFetch = useRequestFetch() as unknown as NekoGitApiFetch;
+  const { clear: clearSession } = useUserSession();
   const csrfCookie = useCookie<string | null | undefined>(CSRF_COOKIE_NAME, {
     readonly: true,
   });
@@ -36,7 +42,19 @@ export function useNekoGitApiFetch() {
       }
     }
 
-    return requestFetch<T>(request, nextOptions);
+    try {
+      return await requestFetch<T>(request, nextOptions);
+    } catch (error) {
+      if (import.meta.client && getFetchResponseStatus(error) === 401) {
+        void handleUnauthorizedApiResponse({
+          request,
+          clearSession,
+          redirect: () => navigateTo('/', { replace: true }),
+        });
+      }
+
+      throw error;
+    }
   };
 
   return apiFetch;

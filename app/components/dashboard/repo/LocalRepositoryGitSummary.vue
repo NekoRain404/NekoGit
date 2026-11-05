@@ -7,7 +7,10 @@ import {
   GitCommitIcon,
   GitPullRequestIcon,
   Loader2Icon,
+  Trash2Icon,
+  Undo2Icon,
 } from 'lucide-vue-next';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { useLocalRepositoryPanelContext } from './localRepositoryPanelContext';
@@ -15,6 +18,9 @@ import { useLocalRepositoryPanelContext } from './localRepositoryPanelContext';
 const { copy, state } = useLocalRepositoryPanelContext();
 const router = useRouter();
 const localePath = useLocalePath();
+const deletableBranches = computed(() =>
+  state.desktopLocalBranches.value.filter((branch) => !branch.current)
+);
 
 const openAssociatedPullRequest = () => {
   const pr = state.associatedPullRequest.value;
@@ -251,6 +257,51 @@ const openAssociatedPullRequest = () => {
             </span>
           </button>
         </div>
+        <div v-if="deletableBranches.length" class="local-repo-branches__delete">
+          <select
+            v-model="state.desktopBranchToDelete.value"
+            class="local-repo-branches__select"
+            :disabled="
+              state.desktopBranchAction.value ||
+              state.desktopDeleteBranchLoading.value ||
+              state.desktopGitStatusLoading.value
+            "
+            :title="copy.gitDeleteBranch"
+          >
+            <option value="">
+              {{ copy.gitSelectBranchToDelete }}
+            </option>
+            <option v-for="branch in deletableBranches" :key="branch.name" :value="branch.name">
+              {{ branch.name }}
+            </option>
+          </select>
+          <button
+            type="button"
+            class="local-repo-branches__create-button"
+            :disabled="
+              !state.desktopBranchToDelete.value ||
+              state.desktopBranchAction.value ||
+              state.desktopDeleteBranchLoading.value ||
+              state.desktopGitStatusLoading.value
+            "
+            :title="copy.gitDeleteBranch"
+            @click="state.deleteDesktopLocalRepositoryBranch"
+          >
+            <Loader2Icon
+              v-if="state.desktopDeleteBranchLoading.value"
+              :size="12"
+              class="spin-animation"
+            />
+            <Trash2Icon v-else :size="12" />
+            <span>
+              {{
+                state.desktopDeleteBranchLoading.value
+                  ? copy.gitDeletingBranch
+                  : copy.gitDeleteBranch
+              }}
+            </span>
+          </button>
+        </div>
       </div>
 
       <div class="local-repo-git__changes">
@@ -311,11 +362,64 @@ const openAssociatedPullRequest = () => {
           </button>
         </div>
       </form>
+
+      <div
+        v-if="state.desktopLocalRepositoryGitStatus.value.lastCommit"
+        class="local-repo-commit__secondary"
+      >
+        <button
+          v-if="state.desktopLocalRepositoryGitStatus.value.staged > 0"
+          type="button"
+          class="local-repo-commit__button local-repo-commit__button--secondary"
+          :disabled="!state.desktopCanAmendCommit.value"
+          :title="copy.gitAmend"
+          @click="state.amendDesktopLocalRepositoryCommit"
+        >
+          <Loader2Icon
+            v-if="state.desktopAction.value === 'amend'"
+            :size="12"
+            class="spin-animation"
+          />
+          <GitCommitIcon v-else :size="12" />
+          <span>
+            {{ state.desktopAction.value === 'amend' ? copy.gitAmending : copy.gitAmend }}
+          </span>
+        </button>
+        <button
+          type="button"
+          class="local-repo-commit__button local-repo-commit__button--secondary"
+          :disabled="!state.desktopCanUndoCommit.value"
+          :title="copy.gitUndoLastCommit"
+          @click="state.undoDesktopLocalRepositoryCommit"
+        >
+          <Loader2Icon
+            v-if="state.desktopAction.value === 'undoCommit'"
+            :size="12"
+            class="spin-animation"
+          />
+          <Undo2Icon v-else :size="12" />
+          <span>
+            {{
+              state.desktopAction.value === 'undoCommit'
+                ? copy.gitUndoingCommit
+                : copy.gitUndoLastCommit
+            }}
+          </span>
+        </button>
+      </div>
     </template>
   </div>
 </template>
 
 <style scoped lang="scss">
+.local-repo-branches__delete {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
 .local-repo-git__pr-badge {
   display: inline-flex;
   align-items: center;

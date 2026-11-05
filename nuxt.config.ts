@@ -148,6 +148,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     session: {
+      // The real value is supplied at runtime by NUXT_SESSION_PASSWORD.
+      password: process.env.NUXT_SESSION_PASSWORD || '',
       cookie: {
         sameSite: 'lax',
         secure: sessionCookieSecure,

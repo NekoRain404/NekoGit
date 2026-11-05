@@ -26,8 +26,6 @@ interface RememberCookiePayload {
 const PERSONAL_REMEMBER_COOKIE = 'nekogit_personal_remember';
 const REMEMBER_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 const REMEMBER_COOKIE_PATH = '/';
-const PERSONAL_MODE_STORAGE_BASE = 'personal-mode';
-const PERSONAL_MODE_IDENTITY_KEY = 'identity';
 
 let personalIdentityCache: PersonalIdentity | null = null;
 
@@ -52,8 +50,7 @@ function getPersonalAuthConfig() {
   };
 
   return {
-    githubToken:
-      fromEnv.githubToken || normalizeSecret(runtimeConfig.nekoGitAuth?.githubToken),
+    githubToken: fromEnv.githubToken || normalizeSecret(runtimeConfig.nekoGitAuth?.githubToken),
     personalPassword:
       fromEnv.personalPassword || normalizeSecret(runtimeConfig.nekoGitAuth?.personalPassword),
     personalCookieSecret:

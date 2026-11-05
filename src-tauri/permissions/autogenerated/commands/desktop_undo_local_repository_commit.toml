@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-undo-local-repository-commit"
+description = "Enables the desktop_undo_local_repository_commit command without any pre-configured scope."
+commands.allow = ["desktop_undo_local_repository_commit"]
+
+[[permission]]
+identifier = "deny-desktop-undo-local-repository-commit"
+description = "Denies the desktop_undo_local_repository_commit command without any pre-configured scope."
+commands.deny = ["desktop_undo_local_repository_commit"]

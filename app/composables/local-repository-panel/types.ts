@@ -3,6 +3,7 @@ import type { ComputedRef } from 'vue';
 
 /** All possible user actions in the local repository panel toolbar. */
 export type DesktopRepositoryAction =
+  | 'adopt'
   | 'clone'
   | 'commit'
   | 'copy'
@@ -11,6 +12,10 @@ export type DesktopRepositoryAction =
   | 'open'
   | 'pull'
   | 'push'
+  | 'rebase'
+  | 'abortRebase'
+  | 'amend'
+  | 'undoCommit'
   | 'stash'
   | 'terminal'
   | null;
@@ -20,9 +25,15 @@ export type DesktopRepositoryGitAction = 'fetch' | 'pull' | 'push';
 
 /** Localized string keys used throughout the local repository panel UI. */
 export type LocalRepositoryCopy = {
+  adoptLocal: string;
+  adoptingLocal: string;
   clone: string;
   copied: string;
   copyCloneUrl: string;
+  gitAmend: string;
+  gitAmending: string;
+  gitUndoLastCommit: string;
+  gitUndoingCommit: string;
   gitAhead: string;
   gitBehind: string;
   gitBranch: string;
@@ -35,12 +46,17 @@ export type LocalRepositoryCopy = {
   gitCommitMessage: string;
   gitCommitting: string;
   gitConflicted: string;
+  gitConflictActionUnavailable: string;
+  gitAbortRebase: string;
+  gitAbortingRebase: string;
   gitCheckoutRemoteBranch: string;
   gitCheckingOutRemoteBranch: string;
   gitCopied: string;
   gitCreateBranch: string;
   gitCreatingBranch: string;
+  gitDeleteBranch: string;
   gitDeleted: string;
+  gitDeletingBranch: string;
   gitDiff: string;
   gitDiffEmpty: string;
   gitDiffTruncated: string;
@@ -51,15 +67,31 @@ export type LocalRepositoryCopy = {
   gitCommits: string;
   gitPublishBranch: string;
   gitPull: string;
+  gitRebase: string;
+  gitRebasing: string;
   gitPulling: string;
   gitPush: string;
   gitPushing: string;
   gitRenamed: string;
+  gitShowAll: string;
   gitStaged: string;
+  gitStage: string;
+  gitStaging: string;
   gitStash: string;
+  gitStashes: string;
+  gitStashesUnavailable: string;
   gitStashing: string;
+  gitPopStash: string;
+  gitPoppingStash: string;
+  gitApplyStash: string;
+  gitApplyingStash: string;
+  gitClearStashes: string;
+  gitClearingStashes: string;
+  gitSelectBranchToDelete: string;
   gitSwitchBranch: string;
   gitUnstaged: string;
+  gitUnstage: string;
+  gitUnstaging: string;
   gitUntracked: string;
   localChecking: string;
   localChangesUnavailable: string;
@@ -74,6 +106,21 @@ export type LocalRepositoryCopy = {
   openTerminal: string;
   cancel: string;
   createPullRequest: string;
+  createPullRequestHeadBranch: string;
+  createPullRequestBaseBranch: string;
+  createPullRequestTitle: string;
+  createPullRequestDescription: string;
+  createPullRequestTitlePlaceholder: string;
+  createPullRequestDescriptionPlaceholder: string;
+  confirmCommit: string;
+  confirmAmend: string;
+  confirmUndoCommit: string;
+  gitCancelOperation: string;
+  confirmClearStashes: string;
+  confirmDeleteBranch: string;
+  confirmPush: string;
+  confirmRebase: string;
+  confirmAbortRebase: string;
   creatingPullRequest: string;
   pullRequestCreated: string;
   noPullRequest: string;

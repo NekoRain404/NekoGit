@@ -1,7 +1,7 @@
 /// Manages pull request review state, depth-first file ordering, and review submission logic.
 import { computed, ref, shallowRef, watch } from 'vue';
 
-import getFetchErrorMessage from '~/utils/getFetchErrorMessage';
+import getFetchErrorMessage from '../utils/getFetchErrorMessage';
 
 /** Temporary tree node used for computing the depth-first tree ordering. */
 interface SortTreeNode {
@@ -117,6 +117,49 @@ export interface PRReviewDraftComment {
   body: string;
 }
 
+/** Input used to build a pull request review submission payload. */
+export interface PRReviewSubmissionInput {
+  commitId: string;
+  event: PRReviewEvent;
+  body: string;
+  comments: PRReviewDraftComment[];
+}
+
+/** Payload sent to the pull request review submission endpoint. */
+export interface PRReviewSubmissionPayload {
+  commitId: string;
+  event: PRReviewEvent;
+  body: string;
+  comments: Array<{ path: string; position: number; body: string }>;
+}
+
+/**
+ * Resolves the commit SHA submitted with a review. The explicitly selected
+ * commit wins; an empty or missing value falls back to the pull request head.
+ */
+export function resolvePRReviewSubmitCommitId(
+  commitId: string,
+  submitCommitId?: string | undefined
+): string {
+  return submitCommitId?.trim() || commitId;
+}
+
+/** Builds the payload sent when submitting a pull request review. */
+export function buildPRReviewSubmissionPayload(
+  input: PRReviewSubmissionInput
+): PRReviewSubmissionPayload {
+  return {
+    commitId: input.commitId,
+    event: input.event,
+    body: input.body.trim(),
+    comments: input.comments.map((comment) => ({
+      path: comment.path,
+      position: comment.position,
+      body: comment.body,
+    })),
+  };
+}
+
 /** An existing review comment on a pull request. */
 export interface PRReviewCommentAuthor {
   login?: string;
@@ -189,6 +232,8 @@ interface UsePRReviewOptions {
   pullNumber: () => number;
   commitId: () => string;
   commitSha?: () => string | undefined;
+  /** Commit used for review submission; defaults to `commitId` when omitted or empty. */
+  submitCommitId?: () => string | undefined;
   messages: {
     loadFailed: string;
     submitFailed: string;
@@ -406,6 +451,10 @@ export function usePRReview(options: UsePRReviewOptions) {
     commitSha: options.commitSha?.() ?? undefined,
   }));
 
+  const submitCommitId = computed(() =>
+    resolvePRReviewSubmitCommitId(options.commitId(), options.submitCommitId?.())
+  );
+
   const selectedFile = computed(
     () =>
       files.value.find((file) => file.filename === activeFilename.value) ?? files.value[0] ?? null
@@ -539,7 +588,7 @@ export function usePRReview(options: UsePRReviewOptions) {
   );
 
   const canSubmit = computed(() => {
-    if (!identity.value.commitId || submitting.value) {
+    if (!submitCommitId.value || submitting.value) {
       return false;
     }
 
@@ -779,19 +828,16 @@ export function usePRReview(options: UsePRReviewOptions) {
     submitting.value = true;
 
     try {
-      const { owner, repo, pullNumber, commitId } = identity.value;
+      const { owner, repo, pullNumber } = identity.value;
+      const payload = buildPRReviewSubmissionPayload({
+        commitId: submitCommitId.value,
+        event: selectedEvent.value,
+        body: draftBody.value,
+        comments: draftComments.value,
+      });
       await $fetch(`/api/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`, {
         method: 'POST',
-        body: {
-          commitId,
-          event: selectedEvent.value,
-          body: draftBody.value.trim(),
-          comments: draftComments.value.map((comment) => ({
-            path: comment.path,
-            position: comment.position,
-            body: comment.body,
-          })),
-        },
+        body: payload,
       });
 
       resetDrafts();

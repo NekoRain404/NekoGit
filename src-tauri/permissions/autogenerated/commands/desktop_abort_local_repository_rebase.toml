@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-abort-local-repository-rebase"
+description = "Enables the desktop_abort_local_repository_rebase command without any pre-configured scope."
+commands.allow = ["desktop_abort_local_repository_rebase"]
+
+[[permission]]
+identifier = "deny-desktop-abort-local-repository-rebase"
+description = "Denies the desktop_abort_local_repository_rebase command without any pre-configured scope."
+commands.deny = ["desktop_abort_local_repository_rebase"]

@@ -3,6 +3,10 @@
 This document is the first stop for maintaining NekoGit after the current
 desktop-client consolidation work.
 
+> The 2026-11-04 code audit is tracked in
+> [docs/audit/2026-11-04-code-audit.md](audit/2026-11-04-code-audit.md). It
+> includes defect IDs, missing-feature inventory, and the remediation checklist.
+
 ## Current Scope
 
 NekoGit is now organized as a Nuxt 4 GitHub dashboard plus a Rust/Tauri Linux
@@ -79,6 +83,7 @@ pnpm fmt:check
 pnpm typecheck
 pnpm lint
 pnpm test
+pnpm check:tauri-commands
 pnpm client:build
 ```
 

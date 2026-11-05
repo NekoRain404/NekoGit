@@ -91,6 +91,17 @@
                 <CopyIcon v-once :size="18" class="dashboard-tab-action__icon" />
               </button>
               <button
+                v-if="currentTab === 'repos'"
+                class="button is-ghost is-small dashboard-tab-action"
+                type="button"
+                :aria-label="t('repoCreate.title')"
+                :title="t('repoCreate.title')"
+                @click="isCreateRepositoryModalOpen = true"
+              >
+                <FolderPlusIcon v-once :size="18" class="dashboard-tab-action__icon" />
+                <span>{{ t('repoCreate.create') }}</span>
+              </button>
+              <button
                 class="button is-ghost is-small dashboard-tab-action dashboard-tab-refresh"
                 type="button"
                 :aria-label="t('dashboard.actions.refreshCurrentTab')"
@@ -157,6 +168,7 @@
                   <AsyncNotificationItem
                     :notification="notification"
                     :mark-read="markNotificationAsReadSafely"
+                    :unsubscribe="unsubscribeNotificationThreadSafely"
                   />
                 </div>
               </SimpleBar>
@@ -247,6 +259,15 @@
     @switch-discussion="handleSwitchDiscussion"
     @open-pull-request-review="handlePRReviewOpen"
     @close-pull-request-review="handlePRReviewClose"
+    @repository-updated="handleRepositoryUpdated"
+    @repository-deleted="handleRepositoryDeleted"
+    @repository-transferred="handleRepositoryTransferred"
+  />
+
+  <CreateRepositoryModal
+    :is-visible="isCreateRepositoryModalOpen"
+    @close="isCreateRepositoryModalOpen = false"
+    @created="handleRepositoryCreated"
   />
 </template>
 
@@ -259,6 +280,7 @@ import {
   CircleDotIcon,
   CopyIcon,
   ExternalLinkIcon,
+  FolderPlusIcon,
   GitPullRequestIcon,
   RefreshCwIcon,
   SearchIcon,
@@ -277,11 +299,13 @@ import type { LocationQueryRaw } from 'vue-router';
 
 import type { DashboardIssueSearchItem } from '#shared/types/dashboard';
 import type { DashboardNotification } from '#shared/types/notifications';
+import { resolveIssueListFilter, resolvePullListFilter } from '#shared/utils/dashboard-list-filter';
 import ActivityBar from '~/components/dashboard/activity-bar/ActivityBar.vue';
 import DashboardLayout from '~/components/dashboard/DashboardLayout.vue';
 import DashboardLoadingList from '~/components/dashboard/DashboardLoadingList.vue';
 import DashboardPagination from '~/components/dashboard/DashboardPagination.vue';
 import DetailOverlayHost from '~/components/dashboard/DetailOverlayHost.vue';
+import CreateRepositoryModal from '~/components/dashboard/repo/CreateRepositoryModal.vue';
 import TabSidebar from '~/components/dashboard/tab-sidebar/TabSidebar.vue';
 import QuickActions from '~/components/dashboard/widgets/QuickActions.vue';
 import QuickFilters from '~/components/dashboard/widgets/QuickFilters.vue';
@@ -448,6 +472,8 @@ const {
   loading,
   error,
   notifications,
+  unreadNotificationCount: exactNotificationUnreadCount,
+  refreshUnreadNotificationCount,
   issues,
   pulls,
   repos,
@@ -461,9 +487,11 @@ const {
   markNotificationAsRead,
   markAllNotificationsAsRead,
   markNotificationThreadsAsRead,
+  unsubscribeNotificationThread,
 } = useGithubData();
 
 const hasCompletedInitialDashboardLoad = shallowRef(false);
+const isCreateRepositoryModalOpen = ref(false);
 const dashboardListLoading = computed(
   () => !hasCompletedInitialDashboardLoad.value || loading.value
 );
@@ -486,14 +514,18 @@ const notificationReadActionPending = computed(
 
 const { customTabs, getCustomTabById } = useCustomTabs();
 
+const quickFilters = ref<QuickFilterMap>({});
+
 const {
   currentTab: currentBuiltinTab,
   refreshCurrentTab,
   switchTab,
 } = useDashboardTabs({
   fetchNotifications,
-  fetchIssues,
-  fetchPulls,
+  fetchIssues: (page, options) =>
+    fetchIssues(page, options, resolveIssueListFilter(quickFilters.value.issues)),
+  fetchPulls: (page, options) =>
+    fetchPulls(page, options, resolvePullListFilter(quickFilters.value.pulls)),
   fetchRepos,
   initialTab: parseDashboardTab(route.query.tab),
 });
@@ -630,7 +662,7 @@ realtimeNotifications.onNewNotifications((newNotifications) => {
 
 const currentPagination = computed(() => pagination.value[currentTab.value]);
 
-const notificationUnreadCount = computed(() => {
+const pageNotificationUnreadCount = computed(() => {
   let unread = 0;
 
   for (const item of notifications.value) {
@@ -641,6 +673,10 @@ const notificationUnreadCount = computed(() => {
 
   return unread;
 });
+
+const notificationUnreadCount = computed(
+  () => exactNotificationUnreadCount.value ?? pageNotificationUnreadCount.value
+);
 
 const visibleNotificationUnreadCount = computed(() => {
   let unread = 0;
@@ -658,8 +694,6 @@ const showPagination = computed(() => {
   const activePagination = currentPagination.value;
   return activePagination.totalPages !== 1 || activePagination.hasPrev || activePagination.hasNext;
 });
-
-const quickFilters = ref<QuickFilterMap>({});
 
 const currentTabFilters = computed(() => {
   return quickFilters.value[currentTab.value] ?? {};
@@ -716,7 +750,7 @@ const filteredPulls = computed(() => {
 
 const currentTabStats = computed((): Record<string, number> => {
   if (currentTab.value === 'notifications') {
-    const total = notifications.value.length;
+    const total = Math.max(notifications.value.length, notificationUnreadCount.value);
     return {
       unread: notificationUnreadCount.value,
       read: Math.max(total - notificationUnreadCount.value, 0),
@@ -840,6 +874,24 @@ const markNotificationAsReadSafely = async (notification: DashboardNotification)
   }
 };
 
+const unsubscribeNotificationThreadSafely = async (notification: DashboardNotification) => {
+  try {
+    await unsubscribeNotificationThread(notification.id);
+    notificationActionMessage.value = {
+      tone: 'success',
+      text: t('dashboard.actions.unsubscribed'),
+    };
+    void refreshUnreadNotificationCount();
+  } catch (error) {
+    console.error('Failed to unsubscribe from GitHub notification thread:', error);
+    notificationActionMessage.value = {
+      tone: 'danger',
+      text: t('dashboard.actions.unsubscribeFailed'),
+    };
+    throw error;
+  }
+};
+
 const markAllNotificationsAsReadSafely = async () => {
   if (notificationReadActionPending.value) {
     return;
@@ -922,6 +974,52 @@ const markVisibleNotificationsAsReadSafely = async () => {
     };
   } finally {
     markingVisibleNotificationsRead.value = false;
+  }
+};
+
+const handleRepositoryUpdated = (updated: Record<string, unknown>) => {
+  if (currentRepo.value) {
+    currentRepo.value = { ...currentRepo.value, ...updated };
+  }
+  void refreshCurrentTabSafely();
+};
+
+const handleRepositoryDeleted = async () => {
+  await handleRepoDetailBack();
+  await refreshCurrentTabSafely();
+};
+
+const handleRepositoryTransferred = async (newOwner: string) => {
+  await handleRepoDetailBack();
+  setDashboardActionMessage({
+    tone: 'success',
+    text: t('repoSettings.transferred', { owner: newOwner }),
+  });
+  await refreshCurrentTabSafely();
+};
+
+const handleRepositoryCreated = async (repository: Record<string, unknown>) => {
+  isCreateRepositoryModalOpen.value = false;
+  const name = typeof repository.name === 'string' ? repository.name : '';
+  setDashboardActionMessage({
+    tone: 'success',
+    text: t('repoCreate.created', { name }),
+  });
+  await refreshCurrentTabSafely();
+
+  const owner = repository.owner;
+  const ownerLogin =
+    owner && typeof owner === 'object' && 'login' in owner ? String(owner.login || '') : '';
+  if (ownerLogin && name) {
+    await router.push(
+      localePath({
+        path: '/dashboard',
+        query: {
+          tab: 'repos',
+          repo: `${ownerLogin}/${name}`,
+        },
+      })
+    );
   }
 };
 
@@ -1164,11 +1262,36 @@ const persistQuickFilters = () => {
 };
 
 const handleFilterChange = (filters: Record<string, boolean>) => {
+  const activeTab = currentTab.value;
+
   quickFilters.value = {
     ...quickFilters.value,
-    [currentTab.value]: filters,
+    [activeTab]: filters,
   };
   persistQuickFilters();
+
+  if (selectedCustomTab.value || (activeTab !== 'issues' && activeTab !== 'pulls')) {
+    return;
+  }
+
+  if (currentPage.value !== 1) {
+    void router.replace({
+      path: localePath('/dashboard'),
+      query: buildDashboardQuery({
+        ...route.query,
+        tab: currentRouteTabId.value,
+        page: 1,
+      }),
+    });
+    return;
+  }
+
+  if (activeTab === 'issues') {
+    void fetchIssues(1, { force: true }, resolveIssueListFilter(filters));
+    return;
+  }
+
+  void fetchPulls(1, { force: true }, resolvePullListFilter(filters));
 };
 
 const hydrateQuickFilters = () => {
@@ -1188,6 +1311,29 @@ const hydrateQuickFilters = () => {
   }
 };
 
+const refreshActiveListForQuickFilters = () => {
+  if (!sessionReady.value || !loggedIn.value || selectedCustomTab.value) {
+    return;
+  }
+
+  const activeTab = currentTab.value;
+
+  if (activeTab === 'issues') {
+    const filter = resolveIssueListFilter(currentTabFilters.value);
+    if (filter.state !== 'open') {
+      void fetchIssues(1, { force: true }, filter);
+    }
+    return;
+  }
+
+  if (activeTab === 'pulls') {
+    const filter = resolvePullListFilter(currentTabFilters.value);
+    if (filter.state !== 'open' || filter.merged) {
+      void fetchPulls(1, { force: true }, filter);
+    }
+  }
+};
+
 const syncWindowFocusState = () => {
   if (!import.meta.client) {
     return;
@@ -1198,6 +1344,7 @@ const syncWindowFocusState = () => {
 
 onMounted(() => {
   hydrateQuickFilters();
+  refreshActiveListForQuickFilters();
   syncWindowFocusState();
   window.addEventListener('focus', syncWindowFocusState);
   window.addEventListener('blur', syncWindowFocusState);

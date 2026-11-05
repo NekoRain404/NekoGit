@@ -317,6 +317,18 @@
   cursor: pointer;
 }
 
+.local-repo-commit__secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.local-repo-commit__button--secondary {
+  min-width: 0;
+  height: 1.6rem;
+  font-size: 10px;
+}
+
 .local-repo-commit__button:hover:not(:disabled) {
   border-color: rgba(16, 185, 129, 0.4);
   background: rgba(16, 185, 129, 0.1);
@@ -466,6 +478,21 @@
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
+}
+
+.local-repo-files__more {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--nekogit-info);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.local-repo-files__more:hover {
+  text-decoration: underline;
 }
 
 .local-repo-files__error,

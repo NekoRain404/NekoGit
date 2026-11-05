@@ -3,7 +3,6 @@ import { Octokit } from '@octokit/core';
 import type { H3Event } from 'h3';
 
 import { resolveEnvProxyUrl } from '../../shared/utils/proxy-url';
-
 import { createProxiedFetch, resolveGitHubProxyUrl } from './github-proxy-utils';
 
 const GITHUB_API_VERSION = '2026-03-10';

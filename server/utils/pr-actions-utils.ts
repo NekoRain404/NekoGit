@@ -5,7 +5,12 @@ export type PullMergeMethod = 'merge' | 'squash' | 'rebase';
 
 export type PullUpdateAction =
   | { type: 'merge'; mergeMethod: PullMergeMethod }
-  | { type: 'update'; state: PullUpdateState };
+  | {
+      type: 'update';
+      state?: PullUpdateState;
+      title?: string;
+      body?: string;
+    };
 
 function throwValidationError(statusMessage: string): never {
   if (typeof createError === 'function') {
@@ -17,17 +22,25 @@ function throwValidationError(statusMessage: string): never {
 /**
  * Validate and normalize a PATCH pull request body into a pull action.
  * Returns `{ type: 'merge', mergeMethod }` when merging, otherwise
- * `{ type: 'update', state }` for open/close updates.
+ * `{ type: 'update', ... }` for state/title/body edits.
  */
 export function normalizePullUpdateAction(body: unknown): PullUpdateAction {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-    throwValidationError('state or merge is required');
+    throwValidationError('state, title, body, or merge is required');
   }
 
-  const { state, merge, merge_method } = body as {
+  const {
+    state,
+    merge,
+    merge_method,
+    title,
+    body: pullBody,
+  } = body as {
     state?: unknown;
     merge?: unknown;
     merge_method?: unknown;
+    title?: unknown;
+    body?: unknown;
   };
 
   if (merge) {
@@ -43,13 +56,50 @@ export function normalizePullUpdateAction(body: unknown): PullUpdateAction {
     return { type: 'merge', mergeMethod };
   }
 
-  if (state === undefined) {
-    throwValidationError('state or merge is required');
+  const update: { state?: PullUpdateState; title?: string; body?: string } = {};
+
+  if (state !== undefined) {
+    if (state !== 'open' && state !== 'closed') {
+      throwValidationError('state must be "open" or "closed"');
+    }
+    update.state = state;
   }
 
-  if (state !== 'open' && state !== 'closed') {
-    throwValidationError('state must be "open" or "closed"');
+  if (title !== undefined) {
+    if (typeof title !== 'string' || !title.trim()) {
+      throwValidationError('title must be a non-empty string');
+    }
+    update.title = title.trim();
   }
 
-  return { type: 'update', state };
+  if (pullBody !== undefined) {
+    if (typeof pullBody !== 'string') {
+      throwValidationError('body must be a string');
+    }
+    update.body = pullBody;
+  }
+
+  if (Object.keys(update).length === 0) {
+    throwValidationError('state, title, body, or merge is required');
+  }
+
+  return { type: 'update', ...update };
+}
+
+/**
+ * Validate and normalize a pull request draft transition body.
+ * Returns the requested draft state.
+ */
+export function normalizePullDraftAction(body: unknown): boolean {
+  if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+    throwValidationError('draft must be a boolean');
+  }
+
+  const { draft } = body as { draft?: unknown };
+
+  if (typeof draft !== 'boolean') {
+    throwValidationError('draft must be a boolean');
+  }
+
+  return draft;
 }

@@ -10,7 +10,7 @@
 
 ### 📬 通知
 
-按原因分组——`mention`、`review_requested`、`ci_activity`、`security_alert`、`assign`、`state_change`、`subscribed` 等。未读项有蓝色标记。点击 **标记已读** 即可消除，或让 60 秒自动刷新捕获新通知，无需重载页面。
+通过原因图标快速识别 `mention`、`review_requested`、`ci_activity`、`security_alert`、`assign`、`state_change`、`subscribed` 等通知。未读项有蓝色标记。点击 **标记已读** 即可消除，或让 60 秒自动刷新捕获新通知，无需重载页面。
 
 ### 🎯 Issue 与 Pull Request
 

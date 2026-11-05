@@ -1,5 +1,7 @@
 # 本地↔远程联动 + 自动化 实现计划
 
+> **Status (2026-11-04):** shipped. Step checkboxes below are retained as the original implementation record; see `docs/audit/2026-11-04-code-audit.md` for follow-up fixes and known gaps.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 打通 NekoGit 本地仓库面板 ↔ GitHub 远程 PR 的双向关联，实现一键开 PR 和桌面端检出 PR 分支。
@@ -23,9 +25,11 @@
 ### Task 1: 服务端 API — `POST /api/repos/[owner]/[repo]/pulls` (创建 PR)
 
 **Files:**
+
 - Create: `server/api/repos/[owner]/[repo]/pulls.post.ts`
 
 **Interfaces:**
+
 - Consumes: `extractPullRouteParams(event)` → `{ owner, repo, pullNumber }`, `readBody<CreatePullRequestBody>(event)`, `executeGitHubRequest(event, fn, errorMsg)`
 - Produces: `POST /api/repos/:owner/:repo/pulls` endpoint, returns GitHub pull request object
 
@@ -88,9 +92,11 @@ git commit -m "feat(api): add POST /repos/:owner/:repo/pulls endpoint"
 ### Task 2: 服务端 API — `GET /api/repos/[owner]/[repo]/pull-for-branch` (查询分支关联 PR)
 
 **Files:**
+
 - Create: `server/api/repos/[owner]/[repo]/pull-for-branch.get.ts`
 
 **Interfaces:**
+
 - Consumes: `extractRepoParams(event)`, `getGitHubSessionContext(event)` → `{ octokit, userLogin }`, `getQuery(event)`
 - Produces: `GET /api/repos/:owner/:repo/pull-for-branch?head=<branch>` endpoint, returns `{ pull: { number, title, state, html_url } | null }`
 
@@ -156,10 +162,12 @@ git commit -m "feat(api): add GET /repos/:owner/:repo/pull-for-branch endpoint"
 ### Task 3: 扩展 `LocalRepositoryCopy` 类型与 `RepoDetail.vue` copy 对象
 
 **Files:**
+
 - Modify: `app/composables/local-repository-panel/types.ts` (add new copy keys)
 - Modify: `app/components/dashboard/RepoDetail.vue` (add zh/en copy values)
 
 **Interfaces:**
+
 - Produces: Updated `LocalRepositoryCopy` type with `createPullRequest`, `creatingPullRequest`, `pullRequestCreated`, `noPullRequest`, `pullRequestN`, `checkoutPR`, `checkingOutPR`, `cloneFirst`, `prAlreadyExists` strings
 
 - [ ] **Step 1: Add new keys to `LocalRepositoryCopy` type**
@@ -167,15 +175,15 @@ git commit -m "feat(api): add GET /repos/:owner/:repo/pull-for-branch endpoint"
 Add after `watchers` in `app/composables/local-repository-panel/types.ts`:
 
 ```typescript
-  createPullRequest: string;
-  creatingPullRequest: string;
-  pullRequestCreated: string;
-  noPullRequest: string;
-  pullRequestN: string;
-  checkoutPR: string;
-  checkingOutPR: string;
-  cloneFirst: string;
-  prAlreadyExists: string;
+createPullRequest: string;
+creatingPullRequest: string;
+pullRequestCreated: string;
+noPullRequest: string;
+pullRequestN: string;
+checkoutPR: string;
+checkingOutPR: string;
+cloneFirst: string;
+prAlreadyExists: string;
 ```
 
 - [ ] **Step 2: Add zh copy values in `RepoDetail.vue`**
@@ -222,12 +230,14 @@ git commit -m "feat: add LocalRepositoryCopy keys for PR linkage"
 ### Task 4: 前端 — PR 关联查询与创建 PR 方法 (扩展 `useLocalRepositoryPanel`)
 
 **Files:**
+
 - Modify: `app/composables/local-repository-panel/state.ts` (add PR state + `createPR` action)
 - Modify: `app/composables/local-repository-panel/refreshers.ts` (add `refreshAssociatedPullRequest`, wire into git-status refresh)
 - Modify: `app/composables/local-repository-panel/types.ts` (add `'createPR'` to `DesktopRepositoryAction`)
 - Modify: `app/composables/useLocalRepositoryPanel.ts` (expose PR refs + `submitCreatePullRequest`)
 
 **Interfaces:**
+
 - Consumes: `apiFetch` from `useNekoGitApiFetch()` (auto-imported composable), existing `useLocalRepositoryPanelState`, `desktopRepository` computed
 - Produces:
   - `associatedPullRequest: Ref<{ number: number; title: string; state: string; html_url: string } | null>`
@@ -260,16 +270,16 @@ export type DesktopRepositoryAction =
 In `app/composables/local-repository-panel/state.ts`, change `import { ref } from 'vue';` to `import { ref, shallowRef } from 'vue';`. Then add state refs after `desktopCloneCopied` (line 58):
 
 ```typescript
-  const associatedPullRequest = shallowRef<{
-    number: number;
-    title: string;
-    state: string;
-    html_url: string;
-  } | null>(null);
-  const prLoading = shallowRef(false);
-  const createPullRequestTitle = ref('');
-  const createPullRequestBody = ref('');
-  const createPullRequestBaseBranch = ref('');
+const associatedPullRequest = shallowRef<{
+  number: number;
+  title: string;
+  state: string;
+  html_url: string;
+} | null>(null);
+const prLoading = shallowRef(false);
+const createPullRequestTitle = ref('');
+const createPullRequestBody = ref('');
+const createPullRequestBaseBranch = ref('');
 ```
 
 And add these to the returned object (after `desktopCloneCopied,`):
@@ -287,37 +297,37 @@ And add these to the returned object (after `desktopCloneCopied,`):
 In `app/composables/local-repository-panel/refreshers.ts`, destructure `associatedPullRequest` and `prLoading` from `state` (add to the destructuring block after `desktopCloneCopied`/`desktopAction` is NOT there — add after `desktopAction`-adjacent keys; specifically add `associatedPullRequest, prLoading,` after `desktopStatusLoading,` in the destructure). Then add the function after `refreshDesktopLocalRepositoryGitStatus`:
 
 ```typescript
-  const refreshAssociatedPullRequest = async () => {
-    const repository = desktopRepository.value;
-    const branch = desktopLocalRepositoryGitStatus.value?.branch;
-    if (!repository || !desktopAvailable.value || !branch) {
-      associatedPullRequest.value = null;
-      return null;
-    }
+const refreshAssociatedPullRequest = async () => {
+  const repository = desktopRepository.value;
+  const branch = desktopLocalRepositoryGitStatus.value?.branch;
+  if (!repository || !desktopAvailable.value || !branch) {
+    associatedPullRequest.value = null;
+    return null;
+  }
 
-    prLoading.value = true;
-    try {
-      const apiFetch = useNekoGitApiFetch();
-      const { pull } = await apiFetch<{
-        pull: { number: number; title: string; state: string; html_url: string } | null;
-      }>(
-        `/api/repos/${repository.owner}/${repository.repo}/pull-for-branch?head=${encodeURIComponent(branch)}`
-      );
-      associatedPullRequest.value = pull;
-      return pull;
-    } catch {
-      associatedPullRequest.value = null;
-      return null;
-    } finally {
-      prLoading.value = false;
-    }
-  };
+  prLoading.value = true;
+  try {
+    const apiFetch = useNekoGitApiFetch();
+    const { pull } = await apiFetch<{
+      pull: { number: number; title: string; state: string; html_url: string } | null;
+    }>(
+      `/api/repos/${repository.owner}/${repository.repo}/pull-for-branch?head=${encodeURIComponent(branch)}`
+    );
+    associatedPullRequest.value = pull;
+    return pull;
+  } catch {
+    associatedPullRequest.value = null;
+    return null;
+  } finally {
+    prLoading.value = false;
+  }
+};
 ```
 
 Then wire it into the git-status refresh success path. In `refreshDesktopLocalRepositoryGitStatus`, after `desktopLocalRepositoryGitStatus.value = status;` add:
 
 ```typescript
-      void refreshAssociatedPullRequest();
+void refreshAssociatedPullRequest();
 ```
 
 And add `refreshAssociatedPullRequest,` to the returned object (after `refreshDesktopLocalRepositoryBranches,`):
@@ -353,50 +363,46 @@ In `app/composables/useLocalRepositoryPanel.ts`:
 (c) Add the `submitCreatePullRequest` method (add after `copyDesktopCloneUrl`, before `onMounted`):
 
 ```typescript
-  const submitCreatePullRequest = async () => {
-    const repository = desktopRepository.value;
-    const branch = desktopLocalRepositoryGitStatus.value?.branch;
-    const base = createPullRequestBaseBranch.value.trim();
-    const title = createPullRequestTitle.value.trim();
-    if (
-      !repository ||
-      !desktopLocalRepositoryStatus.value?.exists ||
-      !branch ||
-      !base ||
-      !title ||
-      desktopAction.value
-    ) {
-      return;
-    }
+const submitCreatePullRequest = async () => {
+  const repository = desktopRepository.value;
+  const branch = desktopLocalRepositoryGitStatus.value?.branch;
+  const base = createPullRequestBaseBranch.value.trim();
+  const title = createPullRequestTitle.value.trim();
+  if (
+    !repository ||
+    !desktopLocalRepositoryStatus.value?.exists ||
+    !branch ||
+    !base ||
+    !title ||
+    desktopAction.value
+  ) {
+    return;
+  }
 
-    desktopAction.value = 'createPR';
-    try {
-      const apiFetch = useNekoGitApiFetch();
-      const pull = await apiFetch(
-        `/api/repos/${repository.owner}/${repository.repo}/pulls`,
-        {
-          method: 'POST',
-          body: {
-            head: branch,
-            base,
-            title,
-            body: createPullRequestBody.value.trim() || undefined,
-          },
-        }
-      );
-      createPullRequestTitle.value = '';
-      createPullRequestBody.value = '';
-      void refreshAssociatedPullRequest();
-      return pull;
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to create pull request.';
-      await showDesktopMessage(message, 'error');
-      throw error;
-    } finally {
-      desktopAction.value = null;
-    }
-  };
+  desktopAction.value = 'createPR';
+  try {
+    const apiFetch = useNekoGitApiFetch();
+    const pull = await apiFetch(`/api/repos/${repository.owner}/${repository.repo}/pulls`, {
+      method: 'POST',
+      body: {
+        head: branch,
+        base,
+        title,
+        body: createPullRequestBody.value.trim() || undefined,
+      },
+    });
+    createPullRequestTitle.value = '';
+    createPullRequestBody.value = '';
+    void refreshAssociatedPullRequest();
+    return pull;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to create pull request.';
+    await showDesktopMessage(message, 'error');
+    throw error;
+  } finally {
+    desktopAction.value = null;
+  }
+};
 ```
 
 > Note: `apiFetch` is auto-imported via `useNekoGitApiFetch()` which is a Nuxt auto-imported composable from `app/composables/`. Call `useNekoGitApiFetch()` at the top of each function that needs it (following the existing `useNekoGitApiFetch()` usage in `useDashboardDetails`).
@@ -433,9 +439,11 @@ git commit -m "feat: add PR association and creation methods to useLocalReposito
 ### Task 5: 前端 — PR 关联徽章展示 (LocalRepositoryGitSummary)
 
 **Files:**
+
 - Modify: `app/components/dashboard/repo/LocalRepositoryGitSummary.vue`
 
 **Interfaces:**
+
 - Consumes: `state.associatedPullRequest`, `state.prLoading`, `state.desktopLocalRepositoryGitStatus.value.branch`, router navigation to dashboard PR detail
 - Produces: PR badge shown next to branch name when PR exists, navigates to dashboard PR detail on click
 
@@ -531,10 +539,12 @@ git commit -m "feat: show PR association badge in local repository git summary"
 ### Task 6: 前端 — "Create PR" 按钮与表单 (LocalRepositoryActions)
 
 **Files:**
+
 - Modify: `app/components/dashboard/repo/LocalRepositoryActions.vue`
 - Create: `app/components/dashboard/repo/CreatePullRequestForm.vue`
 
 **Interfaces:**
+
 - Consumes: `state.associatedPullRequest`, `state.desktopLocalRepositoryGitStatus`, `state.submitCreatePullRequest`, `state.createPullRequestTitle`, `state.createPullRequestBody`, `state.createPullRequestBaseBranch`, `state.desktopAction`
 - Produces: "Create PR" button + modal form
 
@@ -634,22 +644,28 @@ const handleSubmit = async () => {
           />
         </div>
         <div class="create-pr-form__actions">
-          <button
-            class="button is-light"
-            type="button"
-            @click="emit('close')"
-          >
+          <button class="button is-light" type="button" @click="emit('close')">
             {{ copy.gitCopied }}
           </button>
           <button
             class="button is-primary"
             type="button"
-            :disabled="!state.createPullRequestTitle.value.trim() || state.desktopAction.value === 'createPR'"
+            :disabled="
+              !state.createPullRequestTitle.value.trim() || state.desktopAction.value === 'createPR'
+            "
             @click="handleSubmit"
           >
-            <Loader2Icon v-if="state.desktopAction.value === 'createPR'" :size="14" class="spin-animation" />
+            <Loader2Icon
+              v-if="state.desktopAction.value === 'createPR'"
+              :size="14"
+              class="spin-animation"
+            />
             <GitPullRequestIcon v-else :size="14" />
-            <span>{{ state.desktopAction.value === 'createPR' ? copy.creatingPullRequest : copy.createPullRequest }}</span>
+            <span>{{
+              state.desktopAction.value === 'createPR'
+                ? copy.creatingPullRequest
+                : copy.createPullRequest
+            }}</span>
           </button>
         </div>
       </div>
@@ -723,7 +739,12 @@ const handleSubmit = async () => {
 Add a new button block after the `copyDesktopCloneUrl` button (or after the `stash` button), with these conditions:
 
 ```vue
-<template v-if="state.desktopLocalRepositoryGitStatus.value?.upstream && state.desktopLocalRepositoryGitStatus.value?.clean">
+<template
+  v-if="
+    state.desktopLocalRepositoryGitStatus.value?.upstream &&
+    state.desktopLocalRepositoryGitStatus.value?.clean
+  "
+>
   <button
     v-if="!state.associatedPullRequest.value"
     class="local-repo-link local-repo-panel__action local-repo-panel__action--wide"
@@ -778,9 +799,11 @@ git commit -m "feat: add Create PR button and form in local repository panel"
 ### Task 7: 前端 — PR 详情页 "Checkout Locally" 按钮
 
 **Files:**
+
 - Modify: `app/components/dashboard/PRDetail.vue`
 
 **Interfaces:**
+
 - Consumes: `useDesktopRuntime()` → `{ available, checkoutRemoteLocalRepositoryBranch, getLocalRepositoryStatus }`, `repoOwner`, `repoName`, `currentPullRequest.value.head.ref`
 - Produces: "Checkout Locally" button (desktop only) in PR sidebar
 
@@ -791,7 +814,11 @@ In `PRDetail.vue` script, add:
 ```typescript
 import { useDesktopRuntime } from '~/composables/useDesktopRuntime';
 
-const { available: desktopAvailable, checkoutRemoteLocalRepositoryBranch, getLocalRepositoryStatus } = useDesktopRuntime();
+const {
+  available: desktopAvailable,
+  checkoutRemoteLocalRepositoryBranch,
+  getLocalRepositoryStatus,
+} = useDesktopRuntime();
 const checkoutPRLoading = shallowRef(false);
 const checkoutPRError = shallowRef('');
 ```
@@ -887,6 +914,7 @@ git commit -m "feat: add Checkout Locally button in PR detail sidebar"
 ### Task 8: 国际化 — 更新 i18n 文件
 
 **Files:**
+
 - Modify: `i18n/locales/en.json`
 - Modify: `i18n/locales/zh-cn.json`
 

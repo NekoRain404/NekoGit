@@ -38,7 +38,9 @@ fn normalize_github_cli_token_output(value: &str) -> Option<String> {
 }
 
 /// Prompt the user with a native confirmation dialog before exposing host credentials.
-pub(crate) fn confirm_github_cli_token_read<R: Runtime>(app: &AppHandle<R>) -> Result<bool, String> {
+pub(crate) fn confirm_github_cli_token_read<R: Runtime>(
+    app: &AppHandle<R>,
+) -> Result<bool, String> {
     let (sender, receiver) = mpsc::channel();
     app.dialog()
         .message(GITHUB_CLI_TOKEN_CONFIRM_MESSAGE)

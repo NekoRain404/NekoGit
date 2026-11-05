@@ -21,6 +21,19 @@
       <span v-if="discussion.category" class="ml-2 tag is-light" :style="categoryStyle">
         {{ discussion.category.name }}
       </span>
+      <button
+        class="button is-small ml-2"
+        :class="discussion.viewerHasUpvoted ? 'is-primary is-light' : 'is-light'"
+        type="button"
+        :disabled="upvotePending"
+        :aria-label="upvoteLabel"
+        @click="emit('toggle-upvote')"
+      >
+        <ThumbsUpIcon :size="14" />
+        <span>{{ discussion.upvoteCount }}</span>
+        <span class="ml-1">{{ upvoteLabel }}</span>
+      </button>
+      <span v-if="upvoteError" class="ml-2 is-size-7 has-text-danger">{{ upvoteError }}</span>
       <span class="ml-4 has-text-grey has-text-weight-medium">
         {{
           formatDurationFromNow(
@@ -79,7 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { LockIcon, MessageSquareIcon } from 'lucide-vue-next';
+import { LockIcon, MessageSquareIcon, ThumbsUpIcon } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -95,7 +108,19 @@ const props = defineProps<{
   discussion: DiscussionDetailPayload;
   repoOwner: string;
   repoName: string;
+  upvotePending?: boolean;
+  upvoteError?: string;
 }>();
+
+const emit = defineEmits<{
+  (e: 'toggle-upvote'): void;
+}>();
+
+const upvoteLabel = computed(() =>
+  props.discussion.viewerHasUpvoted
+    ? t('discussionDetail.removeUpvote')
+    : t('discussionDetail.upvote')
+);
 
 const stateLabel = computed(() =>
   props.discussion.isAnswered ? t('discussionDetail.answered') : t('discussionDetail.unanswered')

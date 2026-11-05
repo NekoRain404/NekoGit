@@ -36,7 +36,7 @@
           </div>
           <div v-if="repo.private" class="is-flex is-align-items-center repo-private-badge">
             <LockIcon :size="12" class="mr-1" />
-            <span class="is-size-7">Private</span>
+            <span class="is-size-7">{{ t('repoItem.private') }}</span>
           </div>
         </div>
       </div>
@@ -61,6 +61,7 @@ const props = defineProps<{
 }>();
 
 const localePath = useLocalePath();
+const { t } = useI18n();
 
 const detailPath = computed(() => {
   return localePath({

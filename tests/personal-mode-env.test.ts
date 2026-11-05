@@ -67,9 +67,9 @@ describe('personal password strength', () => {
   });
 
   test('assertPersonalPasswordStrength throws in production for weak passwords', () => {
-    expect(() =>
-      assertPersonalPasswordStrength('weak', { nodeEnv: 'production' })
-    ).toThrowError(/at least 12 bytes/);
+    expect(() => assertPersonalPasswordStrength('weak', { nodeEnv: 'production' })).toThrowError(
+      /at least 12 bytes/
+    );
   });
 
   test('assertPersonalPasswordStrength no-ops for empty password (missing handled elsewhere)', () => {

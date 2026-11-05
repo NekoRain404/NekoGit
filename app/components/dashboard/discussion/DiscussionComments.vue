@@ -14,6 +14,7 @@ defineProps<{
   repoOwner: string;
   repoName: string;
   canReply: boolean;
+  canMarkAnswer: boolean;
   loading?: boolean;
   loadingMore?: boolean;
   hasNextPage?: boolean;
@@ -21,7 +22,12 @@ defineProps<{
   replyErrors: Map<string, string>;
   loadingReplyIds: Set<string>;
   submittingReplyIds: Set<string>;
+  pendingUpvoteIds: Set<string>;
+  pendingAnswerIds: Set<string>;
+  actionErrors: Map<string, string>;
   submitReply: DiscussionReplySubmitHandler;
+  upvoteComment: (comment: DiscussionComment) => Promise<void>;
+  toggleAnswer: (comment: DiscussionComment) => Promise<void>;
 }>();
 
 const emit = defineEmits<{
@@ -65,10 +71,16 @@ const { t } = useI18n();
         :repo-owner="repoOwner"
         :repo-name="repoName"
         :can-reply="canReply"
+        :can-mark-answer="canMarkAnswer"
         :reply-error="replyErrors.get(comment.id)"
         :loading-more-replies="loadingReplyIds.has(comment.id)"
         :submitting-reply="submittingReplyIds.has(comment.id)"
+        :upvote-pending="pendingUpvoteIds.has(comment.id)"
+        :answer-pending="pendingAnswerIds.has(comment.id)"
+        :action-error="actionErrors.get(comment.id)"
         :submit-reply="submitReply"
+        :upvote-comment="upvoteComment"
+        :toggle-answer="toggleAnswer"
         @load-more-replies="emit('load-more-replies', $event)"
       />
     </div>

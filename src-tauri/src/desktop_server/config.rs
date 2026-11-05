@@ -9,7 +9,8 @@ use super::types::DesktopServerConfig;
 /// Generate a high-entropy readiness token for the desktop health probe.
 pub(super) fn generate_desktop_readiness_token() -> Result<String, String> {
     let mut bytes = [0u8; 32];
-    fill_random(&mut bytes).map_err(|error| format!("failed to generate readiness token: {error}"))?;
+    fill_random(&mut bytes)
+        .map_err(|error| format!("failed to generate readiness token: {error}"))?;
     Ok(hex_encode(&bytes))
 }
 

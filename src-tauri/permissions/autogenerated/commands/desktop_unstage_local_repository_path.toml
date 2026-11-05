@@ -1,0 +1,9 @@
+[[permission]]
+identifier = "allow-desktop-unstage-local-repository-path"
+description = "Enables the desktop_unstage_local_repository_path command without any pre-configured scope."
+commands.allow = ["desktop_unstage_local_repository_path"]
+
+[[permission]]
+identifier = "deny-desktop-unstage-local-repository-path"
+description = "Denies the desktop_unstage_local_repository_path command without any pre-configured scope."
+commands.deny = ["desktop_unstage_local_repository_path"]

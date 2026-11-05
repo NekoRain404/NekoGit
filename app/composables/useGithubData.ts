@@ -11,6 +11,11 @@ import type {
   NotificationSubjectStateTarget,
 } from '#shared/types/notifications';
 import {
+  buildDashboardListFilterKey,
+  buildDashboardListRequestPath,
+  type DashboardListFilterInput,
+} from '#shared/utils/dashboard-list-filter';
+import {
   normalizeNotificationThreadId,
   normalizeNotificationThreadIds,
 } from '#shared/utils/github-notification-threads';
@@ -45,8 +50,8 @@ export interface DashboardFetchOptions {
 
 interface DashboardPageCache {
   notifications: Record<number, PaginatedDashboardResponse<DashboardNotification>>;
-  issues: Record<number, PaginatedDashboardResponse<DashboardIssueSearchItem>>;
-  pulls: Record<number, PaginatedDashboardResponse<DashboardIssueSearchItem>>;
+  issues: Record<string, Record<number, PaginatedDashboardResponse<DashboardIssueSearchItem>>>;
+  pulls: Record<string, Record<number, PaginatedDashboardResponse<DashboardIssueSearchItem>>>;
   repos: Record<number, PaginatedDashboardResponse<DashboardRepositoryListItem>>;
   customTabs: Record<string, Record<number, PaginatedDashboardResponse<DashboardIssueSearchItem>>>;
 }
@@ -62,6 +67,7 @@ interface MarkNotificationThreadsReadResponse {
 const defaultPerPage = 20;
 const maxCachedPagesPerCollection = 5;
 const maxCachedCustomTabQueries = 25;
+const maxCachedListFilterVariants = 10;
 
 const createDefaultPaginationMeta = (): DashboardPaginationMeta => ({
   page: 1,
@@ -230,13 +236,16 @@ export function useGithubData() {
   const pageCache = ref(createPageCache());
   const pageCacheOrder = {
     notifications: [] as number[],
-    issues: [] as number[],
-    pulls: [] as number[],
+    issues: [] as string[],
+    pulls: [] as string[],
     repos: [] as number[],
     customTabs: [] as string[],
     customTabPages: {} as Record<string, number[]>,
+    issuePages: {} as Record<string, number[]>,
+    pullPages: {} as Record<string, number[]>,
   };
   const notifications = ref<DashboardNotification[]>([]);
+  const unreadNotificationCount = ref<number | null>(null);
   const issues = ref<DashboardIssueSearchItem[]>([]);
   const pulls = ref<DashboardIssueSearchItem[]>([]);
   const repos = ref<DashboardRepositoryListItem[]>([]);
@@ -283,6 +292,36 @@ export function useGithubData() {
       if (expiredQueryKey) {
         delete pageCache.value.customTabs[expiredQueryKey];
         delete pageCacheOrder.customTabPages[expiredQueryKey];
+      }
+    }
+  };
+
+  const touchFilteredPageCache = (
+    cache: Record<string, Record<number, PaginatedDashboardResponse<DashboardIssueSearchItem>>>,
+    filterOrder: string[],
+    pageOrder: Record<string, number[]>,
+    filterKey: string,
+    page: number
+  ) => {
+    const existingFilterIndex = filterOrder.indexOf(filterKey);
+    if (existingFilterIndex >= 0) {
+      filterOrder.splice(existingFilterIndex, 1);
+    }
+
+    filterOrder.push(filterKey);
+
+    const filterCache = cache[filterKey];
+    if (filterCache) {
+      const filterPageOrder = pageOrder[filterKey] ?? [];
+      pageOrder[filterKey] = filterPageOrder;
+      touchCachedPage(filterCache, filterPageOrder, page);
+    }
+
+    while (filterOrder.length > maxCachedListFilterVariants) {
+      const expiredFilterKey = filterOrder.shift();
+      if (expiredFilterKey) {
+        delete cache[expiredFilterKey];
+        delete pageOrder[expiredFilterKey];
       }
     }
   };
@@ -344,6 +383,41 @@ export function useGithubData() {
     return updated ? nextItems : items;
   };
 
+  const withUnsubscribedNotification = (items: DashboardNotification[], threadId: string) => {
+    let updated = false;
+    const nextItems = items.map((item) => {
+      if (normalizeNotificationThreadId(item.id) !== threadId) {
+        return item;
+      }
+
+      const subscription = item.subscription;
+      const hasSubscriptionObject = Boolean(subscription) && typeof subscription === 'object';
+      const subscriptionState = hasSubscriptionObject
+        ? (subscription as { subscribed?: unknown }).subscribed
+        : undefined;
+
+      if (item.subscribed === false && (!hasSubscriptionObject || subscriptionState === false)) {
+        return item;
+      }
+
+      updated = true;
+      return {
+        ...item,
+        subscribed: false,
+        ...(hasSubscriptionObject
+          ? {
+              subscription: {
+                ...(subscription as Record<string, unknown>),
+                subscribed: false,
+              },
+            }
+          : {}),
+      };
+    });
+
+    return updated ? nextItems : items;
+  };
+
   const applyReadNotification = (threadId: string) => {
     const activePage = pagination.value.notifications.page;
 
@@ -352,6 +426,30 @@ export function useGithubData() {
     for (const [page, cachedData] of Object.entries(pageCache.value.notifications)) {
       const pageNumber = Number(page);
       const nextItems = withReadNotification(cachedData.items, threadId);
+      if (nextItems === cachedData.items) {
+        continue;
+      }
+
+      const nextData = {
+        ...cachedData,
+        items: nextItems,
+      };
+      pageCache.value.notifications[pageNumber] = nextData;
+
+      if (pageNumber === activePage) {
+        applyNotificationsData(nextData);
+      }
+    }
+  };
+
+  const applyUnsubscribedNotification = (threadId: string) => {
+    const activePage = pagination.value.notifications.page;
+
+    notifications.value = withUnsubscribedNotification(notifications.value, threadId);
+
+    for (const [page, cachedData] of Object.entries(pageCache.value.notifications)) {
+      const pageNumber = Number(page);
+      const nextItems = withUnsubscribedNotification(cachedData.items, threadId);
       if (nextItems === cachedData.items) {
         continue;
       }
@@ -504,6 +602,19 @@ export function useGithubData() {
     pagination.value.repos = data.pagination;
   };
 
+  /** Refresh the exact unread count; falls back to the current page count when unavailable. */
+  const refreshUnreadNotificationCount = async () => {
+    try {
+      const data = await apiFetch<{ count?: unknown }>('/api/notifications/unread-count');
+      unreadNotificationCount.value =
+        typeof data?.count === 'number' && Number.isFinite(data.count)
+          ? Math.max(0, Math.trunc(data.count))
+          : null;
+    } catch (error) {
+      console.warn('Failed to refresh unread notification count:', error);
+    }
+  };
+
   const fetchNotifications = async (page = 1, options: DashboardFetchOptions = {}) => {
     const cachedData = pageCache.value.notifications[page];
     const shouldApplyNotificationsData = (resolvedPage: number) => {
@@ -515,6 +626,7 @@ export function useGithubData() {
       if (shouldApplyNotificationsData(page)) {
         applyNotificationsData(cachedData);
       }
+      void refreshUnreadNotificationCount();
       const applyToActiveList = shouldApplyNotificationsData(page);
       if (applyToActiveList && shouldEnrichNotificationSubjectStates(cachedData.items)) {
         void enrichNotificationSubjectStates(
@@ -578,6 +690,7 @@ export function useGithubData() {
           applyToActiveList
         );
       }
+      void refreshUnreadNotificationCount();
       return pendingData;
     } catch (err) {
       if (!shouldUseNotificationResponse()) return;
@@ -594,14 +707,26 @@ export function useGithubData() {
     }
   };
 
-  const fetchIssues = async (page = 1, options: DashboardFetchOptions = {}) => {
-    const cachedData = pageCache.value.issues[page];
+  const fetchIssues = async (
+    page = 1,
+    options: DashboardFetchOptions = {},
+    filter: DashboardListFilterInput = {}
+  ) => {
+    const filterKey = buildDashboardListFilterKey(filter);
+    const filterCache = pageCache.value.issues[filterKey] ?? {};
+    const cachedData = filterCache[page];
     if (cachedData && !options.force) {
-      touchCachedPage(pageCache.value.issues, pageCacheOrder.issues, page);
+      touchFilteredPageCache(
+        pageCache.value.issues,
+        pageCacheOrder.issues,
+        pageCacheOrder.issuePages,
+        filterKey,
+        page
+      );
       applyIssuesData(cachedData);
       error.value = null;
       loading.value = false;
-      return;
+      return cachedData;
     }
 
     const requestId = activeRequestId.value + 1;
@@ -611,13 +736,23 @@ export function useGithubData() {
 
     try {
       const data = await apiFetch<PaginatedDashboardResponse<DashboardIssueSearchItem>>(
-        buildPaginationUrl('/api/issues', page)
+        buildDashboardListRequestPath('/api/issues', page, defaultPerPage, filter)
       );
       if (requestId !== activeRequestId.value) return;
 
-      pageCache.value.issues[data.pagination.page] = data;
-      touchCachedPage(pageCache.value.issues, pageCacheOrder.issues, data.pagination.page);
+      if (!pageCache.value.issues[filterKey]) {
+        pageCache.value.issues[filterKey] = {};
+      }
+      pageCache.value.issues[filterKey][data.pagination.page] = data;
+      touchFilteredPageCache(
+        pageCache.value.issues,
+        pageCacheOrder.issues,
+        pageCacheOrder.issuePages,
+        filterKey,
+        data.pagination.page
+      );
       applyIssuesData(data);
+      return data;
     } catch (err) {
       if (requestId !== activeRequestId.value) return;
 
@@ -629,14 +764,26 @@ export function useGithubData() {
     }
   };
 
-  const fetchPulls = async (page = 1, options: DashboardFetchOptions = {}) => {
-    const cachedData = pageCache.value.pulls[page];
+  const fetchPulls = async (
+    page = 1,
+    options: DashboardFetchOptions = {},
+    filter: DashboardListFilterInput = {}
+  ) => {
+    const filterKey = buildDashboardListFilterKey(filter);
+    const filterCache = pageCache.value.pulls[filterKey] ?? {};
+    const cachedData = filterCache[page];
     if (cachedData && !options.force) {
-      touchCachedPage(pageCache.value.pulls, pageCacheOrder.pulls, page);
+      touchFilteredPageCache(
+        pageCache.value.pulls,
+        pageCacheOrder.pulls,
+        pageCacheOrder.pullPages,
+        filterKey,
+        page
+      );
       applyPullsData(cachedData);
       error.value = null;
       loading.value = false;
-      return;
+      return cachedData;
     }
 
     const requestId = activeRequestId.value + 1;
@@ -646,13 +793,23 @@ export function useGithubData() {
 
     try {
       const data = await apiFetch<PaginatedDashboardResponse<DashboardIssueSearchItem>>(
-        buildPaginationUrl('/api/pulls', page)
+        buildDashboardListRequestPath('/api/pulls', page, defaultPerPage, filter)
       );
       if (requestId !== activeRequestId.value) return;
 
-      pageCache.value.pulls[data.pagination.page] = data;
-      touchCachedPage(pageCache.value.pulls, pageCacheOrder.pulls, data.pagination.page);
+      if (!pageCache.value.pulls[filterKey]) {
+        pageCache.value.pulls[filterKey] = {};
+      }
+      pageCache.value.pulls[filterKey][data.pagination.page] = data;
+      touchFilteredPageCache(
+        pageCache.value.pulls,
+        pageCacheOrder.pulls,
+        pageCacheOrder.pullPages,
+        filterKey,
+        data.pagination.page
+      );
       applyPullsData(data);
+      return data;
     } catch (err) {
       if (requestId !== activeRequestId.value) return;
 
@@ -757,6 +914,22 @@ export function useGithubData() {
       method: 'PATCH',
     });
     applyReadNotification(normalizedThreadId);
+    void refreshUnreadNotificationCount();
+  };
+
+  const unsubscribeNotificationThread = async (threadId: PropertyKey) => {
+    const normalizedThreadId = normalizeNotificationThreadId(threadId);
+    if (!normalizedThreadId) {
+      throw new Error('Invalid notification thread id');
+    }
+
+    await apiFetch(
+      `/api/notifications/threads/${encodeURIComponent(normalizedThreadId)}/subscription`,
+      {
+        method: 'DELETE',
+      }
+    );
+    applyUnsubscribedNotification(normalizedThreadId);
   };
 
   const markAllNotificationsAsRead = async () => {
@@ -764,6 +937,8 @@ export function useGithubData() {
       method: 'PATCH',
     });
     applyReadNotifications();
+    unreadNotificationCount.value = 0;
+    void refreshUnreadNotificationCount();
   };
 
   const markNotificationThreadsAsRead = async (threadIds: PropertyKey[]) => {
@@ -787,6 +962,7 @@ export function useGithubData() {
     });
 
     applyReadNotificationSet(data.items);
+    void refreshUnreadNotificationCount();
     return data;
   };
 
@@ -794,6 +970,8 @@ export function useGithubData() {
     loading,
     error,
     notifications,
+    unreadNotificationCount,
+    refreshUnreadNotificationCount,
     issues,
     pulls,
     repos,
@@ -807,5 +985,6 @@ export function useGithubData() {
     markNotificationAsRead,
     markAllNotificationsAsRead,
     markNotificationThreadsAsRead,
+    unsubscribeNotificationThread,
   };
 }

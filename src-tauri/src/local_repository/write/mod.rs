@@ -6,9 +6,14 @@ mod git;
 mod sync;
 
 pub(crate) use branches::{
-    checkout_remote_local_repository_branch, create_local_repository_branch,
+    abort_local_repository_rebase, checkout_remote_local_repository_branch,
+    create_local_repository_branch, delete_local_repository_branch, rebase_local_repository,
     switch_local_repository_branch,
 };
-pub(crate) use changes::{commit_local_repository_changes, stash_local_repository_changes};
+pub(crate) use changes::{
+    amend_local_repository_commit, apply_local_repository_stash, clear_local_repository_stashes,
+    commit_local_repository_changes, pop_local_repository_stash, stage_local_repository_path,
+    stash_local_repository_changes, undo_local_repository_commit, unstage_local_repository_path,
+};
 pub(crate) use clone::clone_github_repository;
 pub(crate) use sync::{fetch_local_repository, pull_local_repository, push_local_repository};

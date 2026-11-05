@@ -68,6 +68,20 @@
                   <LoadingIcon v-else :spinning="true" />
                 </button>
               </div>
+              <div class="notification-card__unsubscribe-slot">
+                <button
+                  v-if="canUnsubscribe"
+                  class="unsubscribe-btn"
+                  type="button"
+                  @click.stop="handleUnsubscribe"
+                  :disabled="unsubscribing"
+                  :aria-label="t('dashboard.actions.unsubscribe')"
+                  :title="t('dashboard.actions.unsubscribe')"
+                >
+                  <BellOffIcon v-if="!unsubscribing" :size="16" />
+                  <LoadingIcon v-else :spinning="true" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -81,6 +95,7 @@ import {
   ActivityIcon,
   AtSignIcon,
   BellIcon,
+  BellOffIcon,
   BookmarkIcon,
   CheckCircleIcon,
   CheckIcon,
@@ -105,18 +120,35 @@ import getDashboardSubjectStateVisual from '~/utils/getDashboardSubjectStateVisu
 const props = defineProps<{
   notification: DashboardNotification;
   markRead?: (notification: DashboardNotification) => Promise<void> | void;
+  unsubscribe?: (notification: DashboardNotification) => Promise<void> | void;
 }>();
 
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 const localeCode = computed(() => locale.value);
 const relativeTimeNow = useRelativeTimeNow();
 const markingAsRead = ref(false);
 const isLocallyRead = ref(false);
+const unsubscribing = ref(false);
+const isLocallyUnsubscribed = ref(false);
 
 const currentNotification = computed(() => ({
   ...props.notification,
   unread: isLocallyRead.value ? false : props.notification.unread,
 }));
+
+const canUnsubscribe = computed(() => {
+  if (isLocallyUnsubscribed.value) {
+    return false;
+  }
+
+  const subscription = currentNotification.value.subscription;
+  const subscriptionState =
+    subscription && typeof subscription === 'object'
+      ? (subscription as { subscribed?: unknown }).subscribed
+      : undefined;
+
+  return currentNotification.value.subscribed !== false && subscriptionState !== false;
+});
 
 const isSubjectStatePending = computed(() => {
   return currentNotification.value.subject?.stateStatus === 'pending';
@@ -190,6 +222,24 @@ const handleMarkAsRead = async () => {
     console.error('Failed to mark notification as read:', error);
   } finally {
     markingAsRead.value = false;
+  }
+};
+
+const handleUnsubscribe = async () => {
+  if (unsubscribing.value || !canUnsubscribe.value) return;
+
+  if (import.meta.client && !window.confirm(t('dashboard.actions.unsubscribeConfirm'))) {
+    return;
+  }
+
+  unsubscribing.value = true;
+  try {
+    await props.unsubscribe?.(currentNotification.value);
+    isLocallyUnsubscribed.value = true;
+  } catch (error) {
+    console.error('Failed to unsubscribe from notification thread:', error);
+  } finally {
+    unsubscribing.value = false;
   }
 };
 
@@ -294,7 +344,8 @@ const reasonIcon = computed(() => {
   opacity: 0;
 }
 
-.mark-read-btn {
+.mark-read-btn,
+.unsubscribe-btn {
   opacity: 0;
   visibility: hidden;
   color: var(--nekogit-text);
@@ -308,13 +359,14 @@ const reasonIcon = computed(() => {
 
 .notification-card__actions {
   display: grid;
-  grid-template-columns: 24px 24px;
+  grid-template-columns: 24px 24px 24px;
   gap: 0.35rem;
   flex: 0 0 auto;
 }
 
 .notification-card__reason-slot,
-.notification-card__mark-read-slot {
+.notification-card__mark-read-slot,
+.notification-card__unsubscribe-slot {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -327,7 +379,10 @@ const reasonIcon = computed(() => {
   flex: 0 0 auto;
 }
 
-.notification-card:hover .mark-read-btn {
+.notification-card:hover .mark-read-btn,
+.notification-card:hover .unsubscribe-btn,
+.mark-read-btn:focus-visible,
+.unsubscribe-btn:focus-visible {
   opacity: 1;
   visibility: visible;
 }
@@ -342,12 +397,14 @@ const reasonIcon = computed(() => {
   width: 0.5rem;
 }
 
-.mark-read-btn:hover {
+.mark-read-btn:hover,
+.unsubscribe-btn:hover {
   background-color: var(--nekogit-surface-hover);
   color: var(--bulma-text-strong, var(--nekogit-text-strong));
 }
 
-.mark-read-btn:disabled {
+.mark-read-btn:disabled,
+.unsubscribe-btn:disabled {
   opacity: 0.8;
   cursor: not-allowed;
 }

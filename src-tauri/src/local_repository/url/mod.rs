@@ -4,4 +4,4 @@ mod normalize;
 mod reserved;
 
 pub(crate) use destination::clone_destination_path;
-pub(crate) use normalize::normalize_github_repository_clone_url;
+pub(crate) use normalize::{normalize_github_remote_url, normalize_github_repository_clone_url};

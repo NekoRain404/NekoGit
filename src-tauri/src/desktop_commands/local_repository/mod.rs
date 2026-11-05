@@ -1,5 +1,6 @@
 //! Tauri IPC commands that delegate local Git repository operations to blocking tasks.
 
+mod adopt;
 mod branches;
 mod changes;
 mod clone;
@@ -7,12 +8,18 @@ mod open;
 mod read;
 mod sync;
 
+pub(crate) use adopt::desktop_remember_local_repository;
 pub(crate) use branches::{
-    desktop_checkout_remote_local_repository_branch, desktop_create_local_repository_branch,
-    desktop_switch_local_repository_branch,
+    desktop_abort_local_repository_rebase, desktop_checkout_remote_local_repository_branch,
+    desktop_create_local_repository_branch, desktop_delete_local_repository_branch,
+    desktop_rebase_local_repository, desktop_switch_local_repository_branch,
 };
 pub(crate) use changes::{
-    desktop_commit_local_repository_changes, desktop_stash_local_repository_changes,
+    desktop_amend_local_repository_commit, desktop_apply_local_repository_stash,
+    desktop_cancel_local_repository_operation, desktop_clear_local_repository_stashes,
+    desktop_commit_local_repository_changes, desktop_pop_local_repository_stash,
+    desktop_stage_local_repository_path, desktop_stash_local_repository_changes,
+    desktop_undo_local_repository_commit, desktop_unstage_local_repository_path,
 };
 pub(crate) use clone::desktop_clone_repository;
 pub(crate) use open::{
@@ -22,7 +29,8 @@ pub(crate) use open::{
 pub(crate) use read::{
     desktop_local_repository_branches, desktop_local_repository_changed_files,
     desktop_local_repository_commit_history, desktop_local_repository_file_diff,
-    desktop_local_repository_git_status, desktop_local_repository_status,
+    desktop_local_repository_git_status, desktop_local_repository_stashes,
+    desktop_local_repository_status,
 };
 pub(crate) use sync::{
     desktop_fetch_local_repository, desktop_pull_local_repository, desktop_push_local_repository,

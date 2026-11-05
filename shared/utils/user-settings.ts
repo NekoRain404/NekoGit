@@ -496,9 +496,7 @@ export function normalizeUserNetworkSettings(
 
   const candidate = value as Partial<UserNetworkSettings>;
   const proxyUrl =
-    candidate.proxyUrl !== undefined
-      ? normalizeProxyUrl(candidate.proxyUrl)
-      : fallback.proxyUrl;
+    candidate.proxyUrl !== undefined ? normalizeProxyUrl(candidate.proxyUrl) : fallback.proxyUrl;
   const proxyEnabled =
     typeof candidate.proxyEnabled === 'boolean' ? candidate.proxyEnabled : fallback.proxyEnabled;
 

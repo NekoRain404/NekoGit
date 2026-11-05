@@ -635,7 +635,7 @@ const toggleReviewThread = (thread: PRReviewCommentThread) => {
 
   emit('toggle-review-thread', {
     threadId: thread.threadId,
-    resolved: !Boolean(thread.isResolved),
+    resolved: !thread.isResolved,
   });
 };
 

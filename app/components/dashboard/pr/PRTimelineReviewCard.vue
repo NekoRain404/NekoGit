@@ -41,6 +41,52 @@
             {{ formatDurationFromNow(item.createdAt || '', localeCode, relativeTimeNow) }}
           </span>
         </div>
+        <div v-if="canDismissReviewItem" class="review-item__dismiss-action">
+          <button
+            v-if="!isDismissComposerOpen"
+            class="review-item__dismiss-trigger"
+            type="button"
+            @click="openDismissComposer"
+          >
+            <BanIcon :size="14" aria-hidden="true" />
+            {{ t('prReview.dismiss') }}
+          </button>
+          <div v-else class="review-item__dismiss-composer">
+            <label class="review-item__dismiss-label">
+              {{ t('prReview.dismissTitle') }}
+              <textarea
+                v-model="dismissMessage"
+                class="review-item__dismiss-input"
+                rows="2"
+                :placeholder="t('prReview.dismissPlaceholder')"
+                :disabled="isDismissSubmitting"
+              />
+            </label>
+            <p v-if="dismissError" class="review-item__dismiss-error">
+              {{ dismissError }}
+            </p>
+            <div class="review-item__dismiss-actions">
+              <button
+                class="button is-small is-warning"
+                type="button"
+                :disabled="isDismissSubmitting"
+                @click="submitDismiss"
+              >
+                {{
+                  isDismissSubmitting ? t('prReview.dismissSending') : t('prReview.dismissConfirm')
+                }}
+              </button>
+              <button
+                class="button is-small is-light"
+                type="button"
+                :disabled="isDismissSubmitting"
+                @click="closeDismissComposer()"
+              >
+                {{ t('prReview.cancel') }}
+              </button>
+            </div>
+          </div>
+        </div>
         <div v-if="item.body" class="review-item__body content">
           <MarkdownRenderer :value="item.body" :repo-owner="repoOwner" :repo-name="repoName" />
         </div>
@@ -193,6 +239,51 @@
                     {{ t('prReview.noReviewCommentBody') }}
                   </p>
                 </div>
+                <div v-if="comment.threadId" class="review-item__reply">
+                  <button
+                    v-if="!isReplyComposerOpen(comment)"
+                    class="review-item__reply-trigger"
+                    type="button"
+                    @click="openReplyComposer(comment)"
+                  >
+                    <ReplyIcon :size="14" aria-hidden="true" />
+                    {{ t('prReview.reply') }}
+                  </button>
+                  <div v-else class="review-item__reply-composer">
+                    <textarea
+                      v-model="replyBody"
+                      class="review-item__reply-input"
+                      rows="2"
+                      :placeholder="t('prReview.replyPlaceholder')"
+                      :aria-label="t('prReview.replyPlaceholder')"
+                      :disabled="isReplySubmitting(comment)"
+                    />
+                    <p v-if="replyError" class="review-item__reply-error">
+                      {{ replyError }}
+                    </p>
+                    <div class="review-item__reply-actions">
+                      <button
+                        class="button is-small is-info is-light"
+                        type="button"
+                        :disabled="!trimmedReplyBody || isReplySubmitting(comment)"
+                        @click="submitReply(comment)"
+                      >
+                        <SendIcon :size="13" class="mr-1" aria-hidden="true" />
+                        {{
+                          isReplySubmitting(comment) ? t('prReview.sending') : t('prReview.send')
+                        }}
+                      </button>
+                      <button
+                        class="button is-small is-light"
+                        type="button"
+                        :disabled="isReplySubmitting(comment)"
+                        @click="closeReplyComposer()"
+                      >
+                        {{ t('prReview.cancel') }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </article>
@@ -204,15 +295,18 @@
 
 <script setup lang="ts">
 import {
+  BanIcon,
   CheckIcon,
   ChevronRightIcon,
   CircleIcon,
   ClockIcon,
   MessageSquareIcon,
+  ReplyIcon,
+  SendIcon,
   SlashIcon,
   XIcon,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import PRTimelineReviewDiff from '~/components/dashboard/pr/PRTimelineReviewDiff.vue';
@@ -223,15 +317,36 @@ import { parsePRReviewPatch } from '~/composables/usePRReview';
 import type { PRTimelineItem, TimelineReviewComment } from '~/composables/usePRTimelineEvents';
 import formatDurationFromNow from '~/utils/formatDurationFromNow';
 
+/** Result of a review thread reply submission. */
+interface ReviewThreadReplyResult {
+  threadId: string;
+  success: boolean;
+  error?: string;
+}
+
+/** Result of a review dismissal submission. */
+interface ReviewDismissResult {
+  reviewId: string;
+  success: boolean;
+  error?: string;
+}
+
 const props = defineProps<{
   item: PRTimelineItem;
   repoOwner: string;
   repoName: string;
+  canDismissReview?: boolean;
+  dismissingReviewId?: string | null;
+  reviewDismissResult?: ReviewDismissResult | null;
   resolvingReviewThreadId?: string | null;
+  replyingReviewThreadId?: string | null;
+  reviewThreadReplyResult?: ReviewThreadReplyResult | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'toggle-review-thread', payload: { threadId: string; resolved: boolean }): void;
+  (e: 'reply-to-review-thread', payload: { threadId: string; body: string }): void;
+  (e: 'dismiss-review', payload: { reviewId: string; message: string }): void;
 }>();
 
 const { t, locale } = useI18n();
@@ -373,9 +488,154 @@ const toggleReviewThread = (comment: TimelineReviewComment) => {
 
   emit('toggle-review-thread', {
     threadId: comment.threadId,
-    resolved: !Boolean(comment.isResolved),
+    resolved: !comment.isResolved,
   });
 };
+
+const activeReplyThreadId = ref<string | null>(null);
+const replyBody = ref('');
+const replyError = ref('');
+const trimmedReplyBody = computed(() => replyBody.value.trim());
+
+const isReplyComposerOpen = (comment: TimelineReviewComment) =>
+  Boolean(comment.threadId && comment.threadId === activeReplyThreadId.value);
+
+const isReplySubmitting = (comment: TimelineReviewComment) =>
+  Boolean(comment.threadId && comment.threadId === props.replyingReviewThreadId);
+
+const openReplyComposer = (comment: TimelineReviewComment) => {
+  if (!comment.threadId || isReplySubmitting(comment)) {
+    return;
+  }
+
+  activeReplyThreadId.value = comment.threadId;
+  replyBody.value = '';
+  replyError.value = '';
+};
+
+const closeReplyComposer = (force = false) => {
+  if (!force && props.replyingReviewThreadId === activeReplyThreadId.value) {
+    return;
+  }
+
+  activeReplyThreadId.value = null;
+  replyBody.value = '';
+  replyError.value = '';
+};
+
+const submitReply = (comment: TimelineReviewComment) => {
+  const body = trimmedReplyBody.value;
+  if (!comment.threadId || !body || isReplySubmitting(comment)) {
+    return;
+  }
+
+  replyError.value = '';
+  emit('reply-to-review-thread', { threadId: comment.threadId, body });
+};
+
+watch(
+  () => props.reviewThreadReplyResult,
+  (result) => {
+    if (!result || result.threadId !== activeReplyThreadId.value) {
+      return;
+    }
+
+    if (result.success) {
+      closeReplyComposer(true);
+      return;
+    }
+
+    replyError.value = result.error || t('prReview.replyFailed');
+  }
+);
+
+const dismissableReviewId = computed<string | null>(() => {
+  const rawId = props.item.review?.id ?? props.item.reviewId ?? props.item.id;
+
+  if (typeof rawId !== 'string' && typeof rawId !== 'number') {
+    return null;
+  }
+
+  const reviewId = String(rawId).trim();
+  if (!/^[1-9]\d*$/.test(reviewId) || !Number.isSafeInteger(Number(reviewId))) {
+    return null;
+  }
+
+  return reviewId;
+});
+
+const canDismissReviewItem = computed(() => {
+  const state = (props.item.state ?? '').toLowerCase();
+  const isDismissableState = state === 'approved' || state === 'changes_requested';
+
+  return Boolean(
+    props.canDismissReview &&
+    !props.item.dismissal &&
+    isDismissableState &&
+    dismissableReviewId.value
+  );
+});
+
+const activeDismissReviewId = ref<string | null>(null);
+const dismissMessage = ref('');
+const dismissError = ref('');
+
+const isDismissComposerOpen = computed(
+  () =>
+    Boolean(dismissableReviewId.value) && activeDismissReviewId.value === dismissableReviewId.value
+);
+
+const isDismissSubmitting = computed(
+  () => Boolean(dismissableReviewId.value) && props.dismissingReviewId === dismissableReviewId.value
+);
+
+const openDismissComposer = () => {
+  if (!canDismissReviewItem.value || !dismissableReviewId.value || isDismissSubmitting.value) {
+    return;
+  }
+
+  activeDismissReviewId.value = dismissableReviewId.value;
+  dismissMessage.value = '';
+  dismissError.value = '';
+};
+
+const closeDismissComposer = (force = false) => {
+  if (!force && isDismissSubmitting.value) {
+    return;
+  }
+
+  activeDismissReviewId.value = null;
+  dismissMessage.value = '';
+  dismissError.value = '';
+};
+
+const submitDismiss = () => {
+  if (!canDismissReviewItem.value || !dismissableReviewId.value || isDismissSubmitting.value) {
+    return;
+  }
+
+  dismissError.value = '';
+  emit('dismiss-review', {
+    reviewId: dismissableReviewId.value,
+    message: dismissMessage.value.trim(),
+  });
+};
+
+watch(
+  () => props.reviewDismissResult,
+  (result) => {
+    if (!result || result.reviewId !== dismissableReviewId.value) {
+      return;
+    }
+
+    if (result.success) {
+      closeDismissComposer(true);
+      return;
+    }
+
+    dismissError.value = result.error || t('prReview.dismissFailed');
+  }
+);
 
 const splitSuggestionBody = (body: string): CommentBodyPart[] => {
   const parts: CommentBodyPart[] = [];
@@ -1001,5 +1261,154 @@ html.dark .review-item__thread-toggle {
 .review-item__dismissal-message :deep(*:last-child),
 .review-item__comment-body :deep(*:last-child) {
   margin-bottom: 0;
+}
+
+.review-item__reply {
+  margin-top: 0.75rem;
+}
+
+.review-item__reply-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--nekogit-info);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.review-item__reply-trigger:hover {
+  text-decoration: underline;
+}
+
+.review-item__reply-trigger:focus-visible {
+  outline: 2px solid var(--nekogit-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.review-item__reply-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.review-item__reply-input {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--nekogit-border-strong);
+  border-radius: 6px;
+  background: var(--nekogit-surface);
+  color: var(--nekogit-text-strong);
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.review-item__reply-input:focus {
+  outline: 2px solid var(--nekogit-focus-ring);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.review-item__reply-input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.review-item__reply-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.review-item__reply-error {
+  margin: 0;
+  color: var(--nekogit-danger);
+  font-size: 0.75rem;
+}
+
+.review-item__dismiss-action {
+  margin-top: 0.625rem;
+}
+
+.review-item__dismiss-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0;
+  border: 0;
+  background: transparent;
+  color: var(--nekogit-warning);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.review-item__dismiss-trigger:hover {
+  text-decoration: underline;
+}
+
+.review-item__dismiss-trigger:focus-visible {
+  outline: 2px solid var(--nekogit-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.review-item__dismiss-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.review-item__dismiss-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  color: var(--nekogit-text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.review-item__dismiss-input {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--nekogit-border-strong);
+  border-radius: 6px;
+  background: var(--nekogit-surface);
+  color: var(--nekogit-text-strong);
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.review-item__dismiss-input:focus {
+  outline: 2px solid var(--nekogit-focus-ring);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+.review-item__dismiss-input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.review-item__dismiss-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.review-item__dismiss-error {
+  margin: 0;
+  color: var(--nekogit-danger);
+  font-size: 0.75rem;
 }
 </style>
