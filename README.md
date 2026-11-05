@@ -104,7 +104,7 @@ sudo apt-get install webkit2gtk-driver xvfb
 pnpm smoke:desktop
 ```
 
-The script starts the built Nitro server, launches the Tauri client under `xvfb-run`, drives it through `tauri-driver`, and verifies the landing page renders. Set `NEKOGIT_DESKTOP_BINARY`, `NEKOGIT_TAURI_DRIVER`, or `NEKOGIT_WEBKIT_DRIVER` when the binaries live elsewhere. The **Desktop Smoke** GitHub Actions workflow runs the same check on demand.
+The script starts the built Nitro server, launches the Tauri client under `xvfb-run`, drives it through `tauri-driver`, and verifies the landing page renders. Set `NEKOGIT_DESKTOP_BINARY`, `NEKOGIT_TAURI_DRIVER`, or `NEKOGIT_WEBKIT_DRIVER` when the binaries live elsewhere. A manual CI run (`gh workflow run ci.yml`) also executes the same desktop check on Ubuntu.
 
 To point the client at an external/self-hosted instance instead, set:
 
