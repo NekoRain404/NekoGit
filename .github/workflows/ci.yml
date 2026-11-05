@@ -195,7 +195,7 @@ jobs:
         run: cargo install tauri-driver --jobs 4
 
       - name: Run desktop smoke
-        run: pnpm smoke:desktop
+        run: dbus-run-session -- pnpm smoke:desktop
 
   rust:
     name: Rust

@@ -68,6 +68,8 @@ const driver = spawn('xvfb-run', driverArgs, {
     ...process.env,
     NEKOGIT_CLIENT_URL: baseUrl,
     WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS: '1',
+    WEBKIT_DISABLE_COMPOSITING_MODE: '1',
+    LIBGL_ALWAYS_SOFTWARE: '1',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
   detached: true,
@@ -105,7 +107,7 @@ const watchdog = setTimeout(() => {
   console.error('Desktop smoke timed out.');
   process.exitCode = 1;
   cleanup();
-}, 90_000);
+}, 240_000);
 watchdog.unref();
 
 let sessionId = '';
@@ -135,7 +137,9 @@ const cleanup = () => {
 
 try {
   await waitFor(`${baseUrl}/api/auth/providers`);
+  console.error('Desktop smoke: server ready');
   await waitFor(`http://127.0.0.1:${driverPort}/status`);
+  console.error('Desktop smoke: WebDriver ready');
 
   const createResponse = await request(
     `http://127.0.0.1:${driverPort}/session`,
@@ -151,11 +155,12 @@ try {
         },
       }),
     },
-    30_000
+    120_000
   );
   const createBody = await createResponse.json();
   assert(createResponse.ok, `Failed to create WebDriver session: ${JSON.stringify(createBody)}`);
   sessionId = createBody.value.sessionId;
+  console.error('Desktop smoke: session created');
 
   const navigateResponse = await request(
     `http://127.0.0.1:${driverPort}/session/${sessionId}/url`,
